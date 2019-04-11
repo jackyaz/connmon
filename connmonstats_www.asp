@@ -8,7 +8,7 @@
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
-<title><#705#> - Internet Speedtest</title>
+<title><#705#> - Internet Uptime Monitoring</title>
 <link rel="stylesheet" type="text/css" href="index_style.css">
 <link rel="stylesheet" type="text/css" href="form_style.css">
 <style>
@@ -65,9 +65,9 @@ document.form.submit();
 <div id="Loading" class="popup_bg"></div>
 <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-<input type="hidden" name="action_script" value="restart_dummysvc">
-<input type="hidden" name="current_page" value="Advanced_Feedback.asp">
-<input type="hidden" name="next_page" value="Advanced_Feedback.asp">
+<input type="hidden" name="action_script" value="">
+<input type="hidden" name="current_page" value="AdaptiveQoS_ROG.asp">
+<input type="hidden" name="next_page" value="AdaptiveQoS_ROG.asp">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="apply">
 <input type="hidden" name="action_wait" value="5">
@@ -91,14 +91,11 @@ document.form.submit();
 <tr bgcolor="#4D595D">
 <td valign="top">
 <div>&nbsp;</div>
-<div class="formfonttitle">Internet Speedtest Stats</div>
-<div class="formfonttitle" id="spdtesttitle">Latest Speedtest Result</div>
-<div id="spdtestresult" style="margin-left:5px;margin-bottom:10px;">Previous speedtest results will display here</div>
-<script language="JavaScript" type="text/javascript" src="/ext/spdtestresult.js"></script>
+<div class="formfonttitle">Internet Uptime Monitoring</div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 <tr class="apply_gen" valign="top" height="35px">
 <td>
-<input type="button" onClick="applyRule();" value="Refresh" class="button_gen" name="button">
+<input type="button" onClick="reload();" value="Refresh" class="button_gen" name="button">
 </td>
 </tr>
 <thead>
