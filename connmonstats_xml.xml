@@ -1,11 +1,11 @@
 <!-- Round Robin Database Dump --><rrd>	<version> 0003 </version>
-	<step> 60 </step> <!-- Seconds -->
+	<step> 300 </step> <!-- Seconds -->
 	<lastupdate> 1446906915 </lastupdate> <!-- 2015-11-07 22:35:15 HKT -->
 
 	<ds>
 		<name> ping </name>
 		<type> GAUGE </type>
-		<minimal_heartbeat> 120 </minimal_heartbeat>
+		<minimal_heartbeat> 600 </minimal_heartbeat>
 		<min> NaN </min>
 		<max> NaN </max>
 
@@ -18,7 +18,7 @@
 	<ds>
 		<name> pktloss </name>
 		<type> GAUGE </type>
-		<minimal_heartbeat> 120 </minimal_heartbeat>
+		<minimal_heartbeat> 600 </minimal_heartbeat>
 		<min> NaN </min>
 		<max> NaN </max>
 
@@ -30,7 +30,7 @@
 
 <!-- Round Robin Archives -->	<rra>
 		<cf> LAST </cf>
-		<pdp_per_row> 5 </pdp_per_row> <!-- 300 seconds -->
+		<pdp_per_row> 1 </pdp_per_row> <!-- 300 seconds -->
 
 		<params>
 		<xff> 5.0000000000e-01 </xff>
@@ -366,7 +366,7 @@
 	</rra>
 	<rra>
 		<cf> LAST </cf>
-		<pdp_per_row> 60 </pdp_per_row> <!-- 3600 seconds -->
+		<pdp_per_row> 12 </pdp_per_row> <!-- 3600 seconds -->
 
 		<params>
 		<xff> 5.0000000000e-01 </xff>

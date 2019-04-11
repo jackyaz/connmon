@@ -213,7 +213,7 @@ Auto_Cron(){
 			STARTUPLINECOUNT=$(cru l | grep -c "$CONNMON_NAME")
 			
 			if [ "$STARTUPLINECOUNT" -eq 0 ]; then
-				cru a "$CONNMON_NAME" "*/1 * * * * /jffs/scripts/$CONNMON_NAME generate"
+				cru a "$CONNMON_NAME" "*/5 * * * * /jffs/scripts/$CONNMON_NAME generate"
 			fi
 		;;
 		delete)
