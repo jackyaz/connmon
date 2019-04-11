@@ -295,7 +295,7 @@ Generate_Stats(){
 	export TZ
 	DATE=$(date "+%a %b %e %H:%M %Y")
 	
-	Print_Output "true" "Test results - Ping $ping ms - Packet Loss $pktloss %" "$PASS"
+	Print_Output "true" "Test results - Ping $ping ms - Packet Loss $pktloss \%" "$PASS"
 	
 	RDB=/jffs/scripts/connmonstats_rrd.rrd
 	rrdtool update $RDB N:"$ping":"$pktloss"
