@@ -295,7 +295,7 @@ Generate_Stats(){
 	export TZ
 	DATE=$(date "+%a %b %e %H:%M %Y")
 	
-	Print_Output "true" "Test results - Ping $ping ms - Packet Loss $pktloss \%" "$PASS"
+	Print_Output "true" "Test results - Ping $ping ms - Packet Loss $pktloss %%" "$PASS"
 	
 	RDB=/jffs/scripts/connmonstats_rrd.rrd
 	rrdtool update $RDB N:"$ping":"$pktloss"
@@ -326,10 +326,10 @@ Generate_Stats(){
 		DEF:pktloss="$RDB":pktloss:LAST \
 		CDEF:npktloss=pktloss,1000,/ \
 		AREA:pktloss#778787:"download" \
-		GPRINT:pktloss:MIN:"Min\: %3.2lf \%" \
-		GPRINT:pktloss:MAX:"Max\: %3.2lf \%" \
-		GPRINT:pktloss:AVERAGE:"Avg\: %3.2lf \%" \
-		GPRINT:pktloss:LAST:"Curr\: %3.2lf \%\n" >/dev/null 2>&1
+		GPRINT:pktloss:MIN:"Min\: %3.2lf %%" \
+		GPRINT:pktloss:MAX:"Max\: %3.2lf %%" \
+		GPRINT:pktloss:AVERAGE:"Avg\: %3.2lf %%" \
+		GPRINT:pktloss:LAST:"Curr\: %3.2lf %%\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-week-connmon-ping.png \
@@ -352,10 +352,10 @@ Generate_Stats(){
 		DEF:pktloss="$RDB":pktloss:LAST \
 		CDEF:npktloss=pktloss,1000,/ \
 		AREA:pktloss#778787:"download" \
-		GPRINT:pktloss:MIN:"Min\: %3.1lf \%" \
-		GPRINT:pktloss:MAX:"Max\: %3.1lf \%" \
-		GPRINT:pktloss:AVERAGE:"Avg\: %3.1lf \%" \
-		GPRINT:pktloss:LAST:"Curr\: %3.1lf \%\n" >/dev/null 2>&1
+		GPRINT:pktloss:MIN:"Min\: %3.1lf %%" \
+		GPRINT:pktloss:MAX:"Max\: %3.1lf %%" \
+		GPRINT:pktloss:AVERAGE:"Avg\: %3.1lf %%" \
+		GPRINT:pktloss:LAST:"Curr\: %3.1lf %%\n" >/dev/null 2>&1
 }
 
 Shortcut_connmon(){
