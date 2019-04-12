@@ -286,7 +286,7 @@ Generate_Stats(){
 	pingresult=$(ping -w 30 -q 8.8.8.8)
 	
 	ping="$(echo "$pingresult" | tail -n 1 | cut -f4 -d"/")"
-	pktloss="$(echo "$pingresult" | tail -n 2 | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")"
+	pktloss="$(( 100 - "$(echo "$pingresult" | tail -n 2 | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" ))"
 	
 	TZ=$(cat /etc/TZ)
 	export TZ
@@ -318,7 +318,7 @@ Generate_Stats(){
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-connmon-pktloss.png \
 		$COMMON $D_COMMON \
-		--title "Packet loss - $DATE" \
+		--title "Line Quality - $DATE" \
 		--vertical-label "%" \
 		DEF:pktloss="$RDB":pktloss:LAST \
 		CDEF:npktloss=pktloss,1000,/ \
@@ -336,15 +336,15 @@ Generate_Stats(){
 		DEF:ping="$RDB":ping:LAST \
 		CDEF:nping=ping,1000,/ \
 		LINE1.5:nping#fc8500:"ping" \
-		GPRINT:nping:MIN:"WAN Min\: %3.1lf %s" \
-		GPRINT:nping:MAX:"WAN Max\: %3.1lf %s" \
-		GPRINT:nping:AVERAGE:"Avg\: %3.1lf %s" \
-		GPRINT:nping:LAST:"WAN Curr\: %3.1lf %s\n" >/dev/null 2>&1
+		GPRINT:ping:MIN:"Min\: %3.1lf %s" \
+		GPRINT:ping:MAX:"Max\: %3.1lf %s" \
+		GPRINT:ping:AVERAGE:"Avg\: %3.1lf %s" \
+		GPRINT:ping:LAST:"Curr\: %3.1lf %s\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-week-connmon-pktloss.png \
 		$COMMON $W_COMMON --alt-autoscale-max \
-		--title "Packet loss - $DATE" \
+		--title "Line Quality - $DATE" \
 		--vertical-label "%" \
 		DEF:pktloss="$RDB":pktloss:LAST \
 		CDEF:npktloss=pktloss,1000,/ \
