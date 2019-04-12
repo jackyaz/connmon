@@ -287,7 +287,7 @@ Generate_Stats(){
 	pingresult=$(ping -w 30 -q 8.8.8.8)
 	
 	ping="$(echo "$pingresult" | tail -n 1 | cut -f4 -d"/")"
-	pktloss="$(( 100 - "$(echo "$pingresult" | tail -n 2 | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" ))"
+	pktloss="$(( 100 - $(echo "$pingresult" | tail -n 2 | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%") ))"
 	
 	TZ=$(cat /etc/TZ)
 	export TZ
