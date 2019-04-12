@@ -283,6 +283,7 @@ Generate_Stats(){
 	Conf_Exists
 	mkdir -p "$(readlink /www/ext)"
 	
+	Print_Output "false" "30 second ping test to 8.8.8.8 starting..." "$PASS"
 	pingresult=$(ping -w 30 -q 8.8.8.8)
 	
 	ping="$(echo "$pingresult" | tail -n 1 | cut -f4 -d"/")"
