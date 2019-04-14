@@ -180,6 +180,34 @@ ShowPingServer(){
 	PINGSERVER=$(grep "PINGSERVER" "$CONNMON_CONF" | cut -f2 -d"=")
 	echo "$PINGSERVER"
 }
+
+SetPingServer(){
+	exitmenu=""
+	
+	while true; do
+		ScriptHeader
+		printf "\\n\\e[1m    Current ping destination: %s\\e[0m\\n\\n" "$(ShowPingServer)"
+		printf "\\e[1mAvailable options:\\e[0m\\n\\n"
+		printf "1.    Enter IP Address\\n"
+		printf "2.    Enter Domain\\n"
+		printf "\\ne.    Go back\\n"
+		printf "\\n\\e[1mChoose an option:\\e[0m    "
+		read -r "pingoption"
+		case "$pingoption" in
+			1)
+			;;
+			2)
+			;;
+			e)
+				exitmenu="true"
+				break
+			;;
+		esac
+	done
+	
+	if [ "$exitmenu" != "true" ]; then
+		sed -i 's/^PINGSERVER.*$/PINGSERVER='"$pingserver"'/' "$CONNMON_CONF"
+	else
 		return 1
 	fi
 }
