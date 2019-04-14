@@ -289,8 +289,8 @@ Generate_Stats(){
 	ping -w 30 8.8.8.8 > "$pingfile"
 	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
 	
-	ping="$(cat "$pingfile" | tail -n 1 | cut -f4 -d"/")"
-	pktloss="$(( 100 - $(cat "$pingfile" | tail -n 2 | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%") ))"
+	ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
+	pktloss="$(( 100 - $(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%") ))"
 	
 	rm -f "$pingfile"
 	
