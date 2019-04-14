@@ -171,7 +171,15 @@ Conf_Exists(){
 		sed -i -e 's/"//g' "$CONNMON_CONF"
 		return 0
 	else
-		echo "PREFERREDSERVER=8.8.8.8" > "$CONNMON_CONF"
+		echo "PINGSERVER=8.8.8.8" > "$CONNMON_CONF"
+		return 1
+	fi
+}
+
+ShowPingServer(){
+	PINGSERVER=$(grep "PINGSERVER" "$CONNMON_CONF" | cut -f2 -d"=")
+	echo "$PINGSERVER"
+}
 		return 1
 	fi
 }
@@ -293,6 +301,25 @@ Generate_Stats(){
 	
 	ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
 	pktloss="$(( 100 - $(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%") ))"
+	
+	PREVPING=0
+	TOTALPING=0
+	COUNTER=1
+	PINGLIST="$(grep seq= "$pingfile")"
+	PINGCOUNT="$(echo "$PINGLIST" | wc -l)"
+	until [ "$COUNTER" -gt "$PINGCOUNT" ]; do
+		CURPING=$(echo "$PINGLIST" | sed -n "$COUNTER"p | cut -f4 -d"=" | cut -f1 -d" ")
+		if [ "$COUNTER" -gt 1 ]; then
+			DIFF="$(echo "$CURPING" "$PREVPING" | awk '{printf "%4.3f\n",$1-$2}')"
+			NEG="$(echo $DIFF 0 | awk '{ if ($1 < $2) print "neg"; else print "pos"}')"
+			if [ "$NEG" = "neg" ]; then DIFF="$(echo "$DIFF" "-1" | awk '{printf "%4.3f\n",$1*$2}')"; fi
+			TOTALPING="$(echo "$TOTALPING" "$DIFF" | awk '{printf "%4.3f\n",$1+$2}')"
+		fi
+		PREVPING="$CURPING"
+		COUNTER=$((COUNTER + 1))
+	done
+	
+	echo "$(echo "$TOTALPING" "$PINGCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
 	
 	rm -f "$pingfile"
 	
