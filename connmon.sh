@@ -282,12 +282,17 @@ Generate_Stats(){
 	Auto_Cron create 2>/dev/null
 	Conf_Exists
 	mkdir -p "$(readlink /www/ext)"
+	pingfile=/tmp/pingresult.txt
 	
 	Print_Output "false" "30 second ping test to 8.8.8.8 starting..." "$PASS"
-	pingresult=$(ping -w 30 -q 8.8.8.8)
+	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
+	ping -w 30 8.8.8.8 > "$pingfile"
+	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
 	
-	ping="$(echo "$pingresult" | tail -n 1 | cut -f4 -d"/")"
-	pktloss="$(( 100 - $(echo "$pingresult" | tail -n 2 | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%") ))"
+	ping="$(cat "$pingfile" | tail -n 1 | cut -f4 -d"/")"
+	pktloss="$(( 100 - $(cat "$pingfile" | tail -n 2 | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%") ))"
+	
+	rm -f "$pingfile"
 	
 	TZ=$(cat /etc/TZ)
 	export TZ
