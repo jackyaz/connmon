@@ -327,14 +327,12 @@ Generate_Stats(){
 	ping -w 30 8.8.8.8 > "$pingfile"
 	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
 	
-	ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
-	pktloss="$(( 100 - $(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%") ))"
-	
 	PREVPING=0
 	TOTALPING=0
 	COUNTER=1
 	PINGLIST="$(grep seq= "$pingfile")"
 	PINGCOUNT="$(echo "$PINGLIST" | wc -l)"
+	DIFFCOUNT="$((PINGCOUNT - 1))"
 	until [ "$COUNTER" -gt "$PINGCOUNT" ]; do
 		CURPING=$(echo "$PINGLIST" | sed -n "$COUNTER"p | cut -f4 -d"=" | cut -f1 -d" ")
 		if [ "$COUNTER" -gt 1 ]; then
@@ -347,7 +345,9 @@ Generate_Stats(){
 		COUNTER=$((COUNTER + 1))
 	done
 	
-	echo "$(echo "$TOTALPING" "$PINGCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
+	ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
+	jitter="$(echo "$TOTALPING" "$DIFFCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
+	pktloss="$(( 100 - $(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%") ))"
 	
 	rm -f "$pingfile"
 	
@@ -355,10 +355,10 @@ Generate_Stats(){
 	export TZ
 	DATE=$(date "+%a %b %e %H:%M %Y")
 	
-	Print_Output "false" "Test results - Ping $ping ms - Line Quality $pktloss %%" "$PASS"
+	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter - Line Quality $pktloss %%" "$PASS"
 	
 	RDB=/jffs/scripts/connmonstats_rrd.rrd
-	rrdtool update $RDB N:"$ping":"$pktloss"
+	rrdtool update $RDB N:"$ping":"$jitter":"$pktloss"
 	
 	COMMON="-c SHADEA#475A5F -c SHADEB#475A5F -c BACK#475A5F -c CANVAS#92A0A520 -c AXIS#92a0a520 -c FONT#ffffff -c ARROW#475A5F -n TITLE:9 -n AXIS:8 -n LEGEND:9 -w 650 -h 200"
 	
@@ -377,6 +377,19 @@ Generate_Stats(){
 		GPRINT:ping:MAX:"Max\: %3.2lf %s" \
 		GPRINT:ping:AVERAGE:"Avg\: %3.2lf %s" \
 		GPRINT:ping:LAST:"Curr\: %3.2lf %s\n" >/dev/null 2>&1
+	
+	#shellcheck disable=SC2086
+	rrdtool graph --imgformat PNG /www/ext/nstats-connmon-jitter.png \
+		$COMMON $D_COMMON \
+		--title "Jitter - $DATE" \
+		--vertical-label "mSec" \
+		DEF:jitter="$RDB":jitter:LAST \
+		CDEF:njitter=jitter,1000,/ \
+		LINE1.5:jitter#c4fd3d:"jitter" \
+		GPRINT:jitter:MIN:"Min\: %3.2lf %s" \
+		GPRINT:jitter:MAX:"Max\: %3.2lf %s" \
+		GPRINT:jitter:AVERAGE:"Avg\: %3.2lf %s" \
+		GPRINT:jitter:LAST:"Curr\: %3.2lf %s\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-connmon-pktloss.png \
@@ -403,6 +416,19 @@ Generate_Stats(){
 		GPRINT:ping:MAX:"Max\: %3.1lf %s" \
 		GPRINT:ping:AVERAGE:"Avg\: %3.1lf %s" \
 		GPRINT:ping:LAST:"Curr\: %3.1lf %s\n" >/dev/null 2>&1
+	
+	#shellcheck disable=SC2086
+	rrdtool graph --imgformat PNG /www/ext/nstats-week-connmon-jitter.png \
+		$COMMON $W_COMMON \
+		--title "Jitter - $DATE" \
+		--vertical-label "mSec" \
+		DEF:jitter="$RDB":jitter:LAST \
+		CDEF:njitter=jitter,1000,/ \
+		LINE1.5:njitter#c4fd3d:"ping" \
+		GPRINT:jitter:MIN:"Min\: %3.1lf %s" \
+		GPRINT:jitter:MAX:"Max\: %3.1lf %s" \
+		GPRINT:jitter:AVERAGE:"Avg\: %3.1lf %s" \
+		GPRINT:jitter:LAST:"Curr\: %3.1lf %s\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-week-connmon-pktloss.png \
