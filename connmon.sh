@@ -369,27 +369,27 @@ Generate_Stats(){
 	rrdtool graph --imgformat PNG /www/ext/nstats-connmon-ping.png \
 		$COMMON $D_COMMON \
 		--title "Ping - $DATE" \
-		--vertical-label "ms" \
+		--vertical-label "Milliseconds" \
 		DEF:ping="$RDB":ping:LAST \
 		CDEF:nping=ping,1000,/ \
-		LINE1.5:ping#fc8500:"ping" \
-		GPRINT:ping:MIN:"Min\: %3.2lf" \
-		GPRINT:ping:MAX:"Max\: %3.2lf" \
-		GPRINT:ping:AVERAGE:"Avg\: %3.2lf" \
-		GPRINT:ping:LAST:"Curr\: %3.2lf\n" >/dev/null 2>&1
+		LINE1.5:ping#fc8500:"ping (ms)" \
+		GPRINT:ping:MIN:"Min\: %3.4lf" \
+		GPRINT:ping:MAX:"Max\: %3.4lf" \
+		GPRINT:ping:AVERAGE:"Avg\: %3.4lf" \
+		GPRINT:ping:LAST:"Curr\: %3.4lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-connmon-jitter.png \
 		$COMMON $D_COMMON \
 		--title "Jitter - $DATE" \
-		--vertical-label "ms" \
+		--vertical-label "Milliseconds" \
 		DEF:jitter="$RDB":jitter:LAST \
 		CDEF:njitter=jitter,1000,/ \
-		LINE1.5:jitter#c4fd3d:"jitter" \
-		GPRINT:jitter:MIN:"Min\: %3.2lf" \
-		GPRINT:jitter:MAX:"Max\: %3.2lf" \
-		GPRINT:jitter:AVERAGE:"Avg\: %3.2lf" \
-		GPRINT:jitter:LAST:"Curr\: %3.2lf\n" >/dev/null 2>&1
+		LINE1.5:jitter#c4fd3d:"jitter (ms)" \
+		GPRINT:jitter:MIN:"Min\: %3.4lf" \
+		GPRINT:jitter:MAX:"Max\: %3.4lf" \
+		GPRINT:jitter:AVERAGE:"Avg\: %3.4lf" \
+		GPRINT:jitter:LAST:"Curr\: %3.4lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-connmon-pktloss.png \
@@ -398,37 +398,37 @@ Generate_Stats(){
 		--vertical-label "%" \
 		DEF:pktloss="$RDB":pktloss:LAST \
 		CDEF:npktloss=pktloss,1000,/ \
-		AREA:pktloss#778787:"download" \
-		GPRINT:pktloss:MIN:"Min\: %3.2lf %%" \
-		GPRINT:pktloss:MAX:"Max\: %3.2lf %%" \
-		GPRINT:pktloss:AVERAGE:"Avg\: %3.2lf %%" \
-		GPRINT:pktloss:LAST:"Curr\: %3.2lf %%\n" >/dev/null 2>&1
+		AREA:pktloss#778787:"line quality (%)" \
+		GPRINT:pktloss:MIN:"Min\: %3.4lf" \
+		GPRINT:pktloss:MAX:"Max\: %3.4lf" \
+		GPRINT:pktloss:AVERAGE:"Avg\: %3.4lf" \
+		GPRINT:pktloss:LAST:"Curr\: %3.4lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-week-connmon-ping.png \
 		$COMMON $W_COMMON \
 		--title "Ping - $DATE" \
-		--vertical-label "ms" \
+		--vertical-label "Milliseconds" \
 		DEF:ping="$RDB":ping:LAST \
 		CDEF:nping=ping,1000,/ \
-		LINE1.5:nping#fc8500:"ping" \
-		GPRINT:ping:MIN:"Min\: %3.1lf %s" \
-		GPRINT:ping:MAX:"Max\: %3.1lf %s" \
-		GPRINT:ping:AVERAGE:"Avg\: %3.1lf %s" \
-		GPRINT:ping:LAST:"Curr\: %3.1lf %s\n" >/dev/null 2>&1
+		LINE1.5:nping#fc8500:"ping (ms)" \
+		GPRINT:ping:MIN:"Min\: %3.4lf" \
+		GPRINT:ping:MAX:"Max\: %3.4lf" \
+		GPRINT:ping:AVERAGE:"Avg\: %3.4lf" \
+		GPRINT:ping:LAST:"Curr\: %3.4lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-week-connmon-jitter.png \
 		$COMMON $W_COMMON \
 		--title "Jitter - $DATE" \
-		--vertical-label "ms" \
+		--vertical-label "Milliseconds" \
 		DEF:jitter="$RDB":jitter:LAST \
 		CDEF:njitter=jitter,1000,/ \
-		LINE1.5:njitter#c4fd3d:"ping" \
-		GPRINT:jitter:MIN:"Min\: %3.1lf %s" \
-		GPRINT:jitter:MAX:"Max\: %3.1lf %s" \
-		GPRINT:jitter:AVERAGE:"Avg\: %3.1lf %s" \
-		GPRINT:jitter:LAST:"Curr\: %3.1lf %s\n" >/dev/null 2>&1
+		LINE1.5:njitter#c4fd3d:"ping (ms)" \
+		GPRINT:jitter:MIN:"Min\: %3.4lf" \
+		GPRINT:jitter:MAX:"Max\: %3.4lf" \
+		GPRINT:jitter:AVERAGE:"Avg\: %3.4lf" \
+		GPRINT:jitter:LAST:"Curr\: %3.4lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-week-connmon-pktloss.png \
@@ -437,11 +437,11 @@ Generate_Stats(){
 		--vertical-label "%" \
 		DEF:pktloss="$RDB":pktloss:LAST \
 		CDEF:npktloss=pktloss,1000,/ \
-		AREA:pktloss#778787:"download" \
-		GPRINT:pktloss:MIN:"Min\: %3.1lf %%" \
-		GPRINT:pktloss:MAX:"Max\: %3.1lf %%" \
-		GPRINT:pktloss:AVERAGE:"Avg\: %3.1lf %%" \
-		GPRINT:pktloss:LAST:"Curr\: %3.1lf %%\n" >/dev/null 2>&1
+		AREA:pktloss#778787:"line quality (ms)" \
+		GPRINT:pktloss:MIN:"Min\: %3.4lf" \
+		GPRINT:pktloss:MAX:"Max\: %3.4lf" \
+		GPRINT:pktloss:AVERAGE:"Avg\: %3.4lf" \
+		GPRINT:pktloss:LAST:"Curr\: %3.4lf\n" >/dev/null 2>&1
 }
 
 Shortcut_connmon(){
