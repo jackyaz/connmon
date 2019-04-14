@@ -106,6 +106,7 @@ document.form.submit();
 <tr>
 <td colspan="2" align="center">
 <img src="/ext/nstats-connmon-ping.png">
+<img src="/ext/nstats-connmon-jitter.png">
 <img src="/ext/nstats-connmon-pktloss.png">
 </td>
 </tr>
@@ -119,6 +120,7 @@ document.form.submit();
 <tr>
 <td colspan="2" align="center">
 <img src="/ext/nstats-week-connmon-ping.png">
+<img src="/ext/nstats-week-connmon-jitter.png">
 <img src="/ext/nstats-week-connmon-pktloss.png">
 </td>
 </tr>
