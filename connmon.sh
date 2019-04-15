@@ -187,7 +187,7 @@ SetPingServer(){
 	
 	while true; do
 		ScriptHeader
-		printf "\\n\\e[1m    Current ping destination: %s\\e[0m\\n\\n" "$pingserver"
+		printf "\\n\\e[1mCurrent ping destination: %s\\e[0m\\n\\n" "$pingserver"
 		printf "\\e[1mAvailable options:\\e[0m\\n\\n"
 		printf "1.    Enter IP Address\\n"
 		printf "2.    Enter Domain\\n"
