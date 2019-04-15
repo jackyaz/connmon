@@ -183,10 +183,11 @@ ShowPingServer(){
 
 SetPingServer(){
 	exitmenu=""
+	pingserver="$(ShowPingServer)"
 	
 	while true; do
 		ScriptHeader
-		printf "\\n\\e[1m    Current ping destination: %s\\e[0m\\n\\n" "$(ShowPingServer)"
+		printf "\\n\\e[1m    Current ping destination: %s\\e[0m\\n\\n" "$pingserver"
 		printf "\\e[1mAvailable options:\\e[0m\\n\\n"
 		printf "1.    Enter IP Address\\n"
 		printf "2.    Enter Domain\\n"
@@ -195,12 +196,17 @@ SetPingServer(){
 		read -r "pingoption"
 		case "$pingoption" in
 			1)
+				
 			;;
 			2)
+				
 			;;
 			e)
 				exitmenu="true"
 				break
+			;;
+			*)
+				printf "\\nPlease choose a valid option\\n\\n"
 			;;
 		esac
 	done
@@ -337,7 +343,7 @@ Generate_Stats(){
 		CURPING=$(echo "$PINGLIST" | sed -n "$COUNTER"p | cut -f4 -d"=" | cut -f1 -d" ")
 		if [ "$COUNTER" -gt 1 ]; then
 			DIFF="$(echo "$CURPING" "$PREVPING" | awk '{printf "%4.3f\n",$1-$2}')"
-			NEG="$(echo $DIFF 0 | awk '{ if ($1 < $2) print "neg"; else print "pos"}')"
+			NEG="$(echo "$DIFF" 0 | awk '{ if ($1 < $2) print "neg"; else print "pos"}')"
 			if [ "$NEG" = "neg" ]; then DIFF="$(echo "$DIFF" "-1" | awk '{printf "%4.3f\n",$1*$2}')"; fi
 			TOTALDIFF="$(echo "$TOTALDIFF" "$DIFF" | awk '{printf "%4.3f\n",$1+$2}')"
 		fi
@@ -493,6 +499,7 @@ ScriptHeader(){
 
 MainMenu(){
 	printf "1.    Check connection now\\n\\n"
+	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(ShowPingServer)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$CONNMON_NAME"
 	printf "e.    Exit %s\\n\\n" "$CONNMON_NAME"
@@ -508,6 +515,12 @@ MainMenu(){
 			1)
 				printf "\\n"
 				Menu_GenerateStats
+				PressEnter
+				break
+			;;
+			2)
+				printf "\\n"
+				Menu_SetPingServer
 				PressEnter
 				break
 			;;
@@ -617,6 +630,12 @@ Menu_Startup(){
 Menu_GenerateStats(){
 	Check_Lock
 	Generate_Stats
+	Clear_Lock
+}
+
+Menu_SetPingServer(){
+	Check_Lock
+	SetPingServer
 	Clear_Lock
 }
 
