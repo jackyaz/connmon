@@ -182,7 +182,6 @@ ShowPingServer(){
 }
 
 SetPingServer(){
-	exitmenu=""
 	pingserver="$(ShowPingServer)"
 	
 	while true; do
@@ -203,7 +202,7 @@ SetPingServer(){
 						break
 					fi
 					if Validate_IP "$ipoption"; then
-						pingserver="$ipoption"
+						sed -i 's/^PINGSERVER.*$/PINGSERVER='"$ipoption"'/' "$CONNMON_CONF"
 						break
 					else
 						printf "\\n"
@@ -214,7 +213,6 @@ SetPingServer(){
 				
 			;;
 			e)
-				exitmenu="true"
 				break
 			;;
 			*)
@@ -222,12 +220,6 @@ SetPingServer(){
 			;;
 		esac
 	done
-	
-	if [ "$exitmenu" != "true" ]; then
-		sed -i 's/^PINGSERVER.*$/PINGSERVER='"$pingserver"'/' "$CONNMON_CONF"
-	else
-		return 1
-	fi
 }
 
 Auto_Startup(){
