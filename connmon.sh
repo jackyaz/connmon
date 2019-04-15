@@ -328,7 +328,7 @@ Generate_Stats(){
 	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
 	
 	PREVPING=0
-	TOTALPING=0
+	TOTALDIFF=0
 	COUNTER=1
 	PINGLIST="$(grep seq= "$pingfile")"
 	PINGCOUNT="$(echo "$PINGLIST" | wc -l)"
@@ -339,14 +339,14 @@ Generate_Stats(){
 			DIFF="$(echo "$CURPING" "$PREVPING" | awk '{printf "%4.3f\n",$1-$2}')"
 			NEG="$(echo $DIFF 0 | awk '{ if ($1 < $2) print "neg"; else print "pos"}')"
 			if [ "$NEG" = "neg" ]; then DIFF="$(echo "$DIFF" "-1" | awk '{printf "%4.3f\n",$1*$2}')"; fi
-			TOTALPING="$(echo "$TOTALPING" "$DIFF" | awk '{printf "%4.3f\n",$1+$2}')"
+			TOTALDIFF="$(echo "$TOTALDIFF" "$DIFF" | awk '{printf "%4.3f\n",$1+$2}')"
 		fi
 		PREVPING="$CURPING"
 		COUNTER=$((COUNTER + 1))
 	done
 	
 	ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
-	jitter="$(echo "$TOTALPING" "$DIFFCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
+	jitter="$(echo "$TOTALDIFF" "$DIFFCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
 	pktloss="$(echo "100" "$(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" | awk '{printf "%4.3f\n",$1-$2}')"
 	
 	rm -f "$pingfile"
