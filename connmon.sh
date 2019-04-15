@@ -196,7 +196,19 @@ SetPingServer(){
 		read -r "pingoption"
 		case "$pingoption" in
 			1)
-				
+				while true; do
+					printf "\\n\\e[1mPlease enter an IP address, or enter e to go back:\\e[0m    "
+					read -r "ipoption"
+					if [ "$ipoption" = "e" ]; then
+						break
+					fi
+					if Validate_IP "$ipoption"; then
+						pingserver="$ipoption"
+						break
+					else
+						printf "\\n"
+					fi
+				done
 			;;
 			2)
 				
@@ -481,7 +493,6 @@ PressEnter(){
 
 ScriptHeader(){
 	clear
-	
 	printf "\\n"
 	printf "\\e[1m############################################################\\e[0m\\n"
 	printf "\\e[1m##   ___   ___   _ __   _ __   _ __ ___    ___   _ __     ##\\e[0m\\n"
