@@ -373,10 +373,10 @@ Generate_Stats(){
 		DEF:ping="$RDB":ping:LAST \
 		CDEF:nping=ping,1000,/ \
 		LINE1.5:ping#fc8500:"ping (ms)" \
-		GPRINT:ping:MIN:"Min\: %3.4lf" \
-		GPRINT:ping:MAX:"Max\: %3.4lf" \
-		GPRINT:ping:AVERAGE:"Avg\: %3.4lf" \
-		GPRINT:ping:LAST:"Curr\: %3.4lf\n" >/dev/null 2>&1
+		GPRINT:ping:MIN:"Min\: %3.3lf" \
+		GPRINT:ping:MAX:"Max\: %3.3lf" \
+		GPRINT:ping:AVERAGE:"Avg\: %3.3lf" \
+		GPRINT:ping:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-connmon-jitter.png \
@@ -386,10 +386,10 @@ Generate_Stats(){
 		DEF:jitter="$RDB":jitter:LAST \
 		CDEF:njitter=jitter,1000,/ \
 		LINE1.5:jitter#c4fd3d:"jitter (ms)" \
-		GPRINT:jitter:MIN:"Min\: %3.4lf" \
-		GPRINT:jitter:MAX:"Max\: %3.4lf" \
-		GPRINT:jitter:AVERAGE:"Avg\: %3.4lf" \
-		GPRINT:jitter:LAST:"Curr\: %3.4lf\n" >/dev/null 2>&1
+		GPRINT:jitter:MIN:"Min\: %3.3lf" \
+		GPRINT:jitter:MAX:"Max\: %3.3lf" \
+		GPRINT:jitter:AVERAGE:"Avg\: %3.3lf" \
+		GPRINT:jitter:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-connmon-pktloss.png \
@@ -399,10 +399,10 @@ Generate_Stats(){
 		DEF:pktloss="$RDB":pktloss:LAST \
 		CDEF:npktloss=pktloss,1000,/ \
 		AREA:pktloss#778787:"line quality (%)" \
-		GPRINT:pktloss:MIN:"Min\: %3.4lf" \
-		GPRINT:pktloss:MAX:"Max\: %3.4lf" \
-		GPRINT:pktloss:AVERAGE:"Avg\: %3.4lf" \
-		GPRINT:pktloss:LAST:"Curr\: %3.4lf\n" >/dev/null 2>&1
+		GPRINT:pktloss:MIN:"Min\: %3.3lf" \
+		GPRINT:pktloss:MAX:"Max\: %3.3lf" \
+		GPRINT:pktloss:AVERAGE:"Avg\: %3.3lf" \
+		GPRINT:pktloss:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-week-connmon-ping.png \
@@ -412,10 +412,10 @@ Generate_Stats(){
 		DEF:ping="$RDB":ping:LAST \
 		CDEF:nping=ping,1000,/ \
 		LINE1.5:nping#fc8500:"ping (ms)" \
-		GPRINT:ping:MIN:"Min\: %3.4lf" \
-		GPRINT:ping:MAX:"Max\: %3.4lf" \
-		GPRINT:ping:AVERAGE:"Avg\: %3.4lf" \
-		GPRINT:ping:LAST:"Curr\: %3.4lf\n" >/dev/null 2>&1
+		GPRINT:ping:MIN:"Min\: %3.3lf" \
+		GPRINT:ping:MAX:"Max\: %3.3lf" \
+		GPRINT:ping:AVERAGE:"Avg\: %3.3lf" \
+		GPRINT:ping:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-week-connmon-jitter.png \
@@ -425,10 +425,10 @@ Generate_Stats(){
 		DEF:jitter="$RDB":jitter:LAST \
 		CDEF:njitter=jitter,1000,/ \
 		LINE1.5:njitter#c4fd3d:"ping (ms)" \
-		GPRINT:jitter:MIN:"Min\: %3.4lf" \
-		GPRINT:jitter:MAX:"Max\: %3.4lf" \
-		GPRINT:jitter:AVERAGE:"Avg\: %3.4lf" \
-		GPRINT:jitter:LAST:"Curr\: %3.4lf\n" >/dev/null 2>&1
+		GPRINT:jitter:MIN:"Min\: %3.3lf" \
+		GPRINT:jitter:MAX:"Max\: %3.3lf" \
+		GPRINT:jitter:AVERAGE:"Avg\: %3.3lf" \
+		GPRINT:jitter:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG /www/ext/nstats-week-connmon-pktloss.png \
@@ -438,10 +438,10 @@ Generate_Stats(){
 		DEF:pktloss="$RDB":pktloss:LAST \
 		CDEF:npktloss=pktloss,1000,/ \
 		AREA:pktloss#778787:"line quality (ms)" \
-		GPRINT:pktloss:MIN:"Min\: %3.4lf" \
-		GPRINT:pktloss:MAX:"Max\: %3.4lf" \
-		GPRINT:pktloss:AVERAGE:"Avg\: %3.4lf" \
-		GPRINT:pktloss:LAST:"Curr\: %3.4lf\n" >/dev/null 2>&1
+		GPRINT:pktloss:MIN:"Min\: %3.3lf" \
+		GPRINT:pktloss:MAX:"Max\: %3.3lf" \
+		GPRINT:pktloss:AVERAGE:"Avg\: %3.3lf" \
+		GPRINT:pktloss:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
 }
 
 Shortcut_connmon(){
