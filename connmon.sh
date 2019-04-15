@@ -159,7 +159,7 @@ Validate_IP(){
 			fi
 		done
 	else
-		Print_Output "false" "$2 - is not a valid IPv4 address, valid format is 1.2.3.4" "$ERR"
+		Print_Output "false" "$1 - is not a valid IPv4 address, valid format is 1.2.3.4" "$ERR"
 		return 1
 	fi
 }
