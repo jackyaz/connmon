@@ -347,7 +347,7 @@ Generate_Stats(){
 	
 	ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
 	jitter="$(echo "$TOTALPING" "$DIFFCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
-	pktloss="$(( 100 - $(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%") ))"
+	pktloss="$(echo "100" "$(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" | awk '{printf "%4.3f\n",$1-$2}')"
 	
 	rm -f "$pingfile"
 	
