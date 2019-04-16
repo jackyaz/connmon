@@ -321,6 +321,25 @@ Modify_WebUI_File(){
 	
 	mount -o bind "/jffs/scripts/custom_menuTree.js" "/www/require/modules/menuTree.js"
 	### ###
+	
+	### start_apply.htm ###
+	umount /www/start_apply.htm 2>/dev/null
+	tmpfile=/tmp/start_apply.htm
+	cp "/www/start_apply.htm" "$tmpfile"
+	sed -i -e 's/setTimeout("parent.redirect();", action_wait\*1000);/parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect(); alert("Please force-reload this page (e.g. Ctrl+F5)");}, restart_time\*1000);/' "$tmpfile"
+	
+	if [ ! -f /jffs/scripts/custom_start_apply.htm ]; then
+		cp "/www/start_apply.htm" "/jffs/scripts/custom_start_apply.htm"
+	fi
+	
+	if ! diff -q "$tmpfile" "/jffs/scripts/custom_start_apply.htm" >/dev/null 2>&1; then
+		cp "$tmpfile" "/jffs/scripts/custom_start_apply.htm"
+	fi
+	
+	rm -f "$tmpfile"
+	
+	mount -o bind /jffs/scripts/custom_start_apply.htm /www/start_apply.htm
+	### ###
 }
 
 Generate_Stats(){
