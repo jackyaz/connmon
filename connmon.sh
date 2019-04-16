@@ -330,9 +330,9 @@ Generate_Stats(){
 	mkdir -p "$(readlink /www/ext)"
 	pingfile=/tmp/pingresult.txt
 	
-	Print_Output "false" "30 second ping test to 8.8.8.8 starting..." "$PASS"
+	Print_Output "false" "30 second ping test to $(ShowPingServer) starting..." "$PASS"
 	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
-	ping -w 30 8.8.8.8 > "$pingfile"
+	ping -w 30 "$(ShowPingServer)" > "$pingfile"
 	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
 	
 	PREVPING=0
