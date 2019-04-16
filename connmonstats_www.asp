@@ -54,7 +54,7 @@ function reload() {
 location.reload(true);
 }
 function applyRule() {
-var action_script_tmp = "restart_dummysvc";
+var action_script_tmp = "start_connmon";
 document.form.action_script.value = action_script_tmp;
 document.form.submit();
 }
@@ -65,12 +65,12 @@ document.form.submit();
 <div id="Loading" class="popup_bg"></div>
 <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-<input type="hidden" name="action_script" value="">
+<input type="hidden" name="action_script" value="start_connmon">
 <input type="hidden" name="current_page" value="AdaptiveQoS_ROG.asp">
 <input type="hidden" name="next_page" value="AdaptiveQoS_ROG.asp">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="apply">
-<input type="hidden" name="action_wait" value="5">
+<input type="hidden" name="action_wait" value="30">
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="SystemCmd" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
@@ -95,7 +95,7 @@ document.form.submit();
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 <tr class="apply_gen" valign="top" height="35px">
 <td>
-<input type="button" onClick="reload();" value="Refresh" class="button_gen" name="button">
+<input type="button" onClick="applyRule();" value="Run Ping Test now" class="button_gen" name="button">
 </td>
 </tr>
 <thead>
