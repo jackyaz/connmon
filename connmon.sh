@@ -237,6 +237,42 @@ SetPingServer(){
 	done
 }
 
+Auto_ServiceEvent(){
+	case $1 in
+		create)
+			if [ -f /jffs/scripts/service-event ]; then
+				STARTUPLINECOUNT=$(grep -c '# '"$CONNMON_NAME" /jffs/scripts/service-event)
+				# shellcheck disable=SC2016
+				STARTUPLINECOUNTEX=$(grep -cx "/jffs/scripts/$CONNMON_NAME_LOWER generate"' "$1" "$2" &'' # '"$CONNMON_NAME" /jffs/scripts/service-event)
+				
+				if [ "$STARTUPLINECOUNT" -gt 1 ] || { [ "$STARTUPLINECOUNTEX" -eq 0 ] && [ "$STARTUPLINECOUNT" -gt 0 ]; }; then
+					sed -i -e '/# '"$CONNMON_NAME"'/d' /jffs/scripts/service-event
+				fi
+				
+				if [ "$STARTUPLINECOUNTEX" -eq 0 ]; then
+					# shellcheck disable=SC2016
+					echo "/jffs/scripts/$CONNMON_NAME_LOWER generate"' "$1" "$2" &'' # '"$CONNMON_NAME" >> /jffs/scripts/service-event
+				fi
+			else
+				echo "#!/bin/sh" > /jffs/scripts/service-event
+				echo "" >> /jffs/scripts/service-event
+				# shellcheck disable=SC2016
+				echo "/jffs/scripts/$CONNMON_NAME_LOWER generate"' "$1" "$2" &'' # '"$CONNMON_NAME" >> /jffs/scripts/service-event
+				chmod 0755 /jffs/scripts/service-event
+			fi
+		;;
+		delete)
+			if [ -f /jffs/scripts/service-event ]; then
+				STARTUPLINECOUNT=$(grep -c '# '"$CONNMON_NAME" /jffs/scripts/service-event)
+				
+				if [ "$STARTUPLINECOUNT" -gt 0 ]; then
+					sed -i -e '/# '"$CONNMON_NAME"'/d' /jffs/scripts/service-event
+				fi
+			fi
+		;;
+	esac
+}
+
 Auto_Startup(){
 	case $1 in
 		create)
@@ -343,7 +379,11 @@ Modify_WebUI_File(){
 	umount /www/start_apply.htm 2>/dev/null
 	tmpfile=/tmp/start_apply.htm
 	cp "/www/start_apply.htm" "$tmpfile"
-	sed -i -e 's/setTimeout("parent.redirect();", action_wait\*1000);/parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect(); alert("Please force-reload this page (e.g. Ctrl+F5)");}, restart_time\*1000);/' "$tmpfile"
+	if [ -f "/jffs/scripts/ntpmerlin" ] || [ -f "/jffs/scripts/spdmerlin" ]; then
+		sed -i -e 's/setTimeout("parent.redirect();", action_wait\*1000);/parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect(); alert("Please force-reload this page (e.g. Ctrl+F5)");}, restart_time\*1000);/' "$tmpfile"
+	fi
+	
+	sed -i '/else if(current_page.indexOf("Feedback") != -1){/a else if(current_page.indexOf("ROG") != -1){\\r\\nparent.showLoading(restart_time, "waiting");\\r\\nsetTimeout(function(){ getXMLAndRedirect(); alert("Please force-reload this page (e.g. Ctrl+F5)");}, restart_time*1000);\\r\\n}' "$tmpfile"
 	
 	if [ ! -f /jffs/scripts/custom_start_apply.htm ]; then
 		cp "/www/start_apply.htm" "/jffs/scripts/custom_start_apply.htm"
@@ -749,7 +789,11 @@ case "$1" in
 		exit 0
 	;;
 	generate)
-		Menu_GenerateStats
+		if [ -z "$2" ] && [ -z "$3" ]; then
+			Menu_GenerateStats
+		elif [ "$2" = "start" ] && [ "$3" = "$CONNMON_NAME" ]; then
+			Menu_GenerateStats
+		fi
 		exit 0
 	;;
 	update)
