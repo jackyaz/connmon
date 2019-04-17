@@ -402,6 +402,7 @@ Modify_WebUI_File(){
 Generate_Stats(){
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
+	Auto_ServiceEvent create 2>/dev/null
 	Conf_Exists
 	mkdir -p "$(readlink /www/ext)"
 	pingfile=/tmp/pingresult.txt
@@ -701,10 +702,10 @@ Menu_Startup(){
 	Check_Lock
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
+	Auto_ServiceEvent create 2>/dev/null
 	Mount_CONNMON_WebUI
 	Modify_WebUI_File
 	RRD_Initialise
-	CacheGraphImages extract 2>/dev/null
 	Clear_Lock
 }
 
@@ -737,6 +738,7 @@ Menu_Uninstall(){
 	Print_Output "true" "Removing $CONNMON_NAME..." "$PASS"
 	Auto_Startup delete 2>/dev/null
 	Auto_Cron delete 2>/dev/null
+	Auto_ServiceEvent delete 2>/dev/null
 	while true; do
 		printf "\\n\\e[1mDo you want to delete %s stats? (y/n)\\e[0m\\n" "$CONNMON_NAME"
 		read -r "confirm"
@@ -771,6 +773,7 @@ if [ -z "$1" ]; then
 	Check_Lock
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
+	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_connmon create
 	Clear_Lock
 	Conf_Exists
