@@ -165,7 +165,7 @@ Validate_IP(){
 }
 
 Validate_Domain(){
-	if ! nslookup "$1"; then
+	if ! nslookup "$1" >/dev/null 2>&1; then
 		Print_Output "false" "$1 cannot be resolved by nslookup, please ensure you enter a valid domain name" "$ERR"
 		return 1
 	else
