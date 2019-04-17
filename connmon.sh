@@ -164,6 +164,15 @@ Validate_IP(){
 	fi
 }
 
+Validate_Domain(){
+	if ! nslookup "$1"; then
+		Print_Output "false" "$1 cannot be resolved by nslookup, please ensure you enter a valid domain name" "$ERR"
+		return 1
+	else
+		return 0
+	fi
+}
+
 Conf_Exists(){
 	if [ -f "$CONNMON_CONF" ]; then
 		dos2unix "$CONNMON_CONF"
@@ -207,7 +216,19 @@ SetPingServer(){
 				done
 			;;
 			2)
-				
+				while true; do
+					printf "\\n\\e[1mPlease enter a domain name, or enter e to go back:\\e[0m    "
+					read -r "domainoption"
+					if [ "$domainoption" = "e" ]; then
+						break
+					fi
+					if Validate_Domain "$domainoption"; then
+						sed -i 's/^PINGSERVER.*$/PINGSERVER='"$domainoption"'/' "$CONNMON_CONF"
+						break
+					else
+						printf "\\n"
+					fi
+				done
 			;;
 			e)
 				printf "\\n"
