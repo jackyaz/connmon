@@ -243,7 +243,7 @@ Auto_ServiceEvent(){
 			if [ -f /jffs/scripts/service-event ]; then
 				STARTUPLINECOUNT=$(grep -c '# '"$CONNMON_NAME" /jffs/scripts/service-event)
 				# shellcheck disable=SC2016
-				STARTUPLINECOUNTEX=$(grep -cx "/jffs/scripts/$CONNMON_NAME_LOWER generate"' "$1" "$2" &'' # '"$CONNMON_NAME" /jffs/scripts/service-event)
+				STARTUPLINECOUNTEX=$(grep -cx "/jffs/scripts/$CONNMON_NAME generate"' "$1" "$2" &'' # '"$CONNMON_NAME" /jffs/scripts/service-event)
 				
 				if [ "$STARTUPLINECOUNT" -gt 1 ] || { [ "$STARTUPLINECOUNTEX" -eq 0 ] && [ "$STARTUPLINECOUNT" -gt 0 ]; }; then
 					sed -i -e '/# '"$CONNMON_NAME"'/d' /jffs/scripts/service-event
@@ -251,13 +251,13 @@ Auto_ServiceEvent(){
 				
 				if [ "$STARTUPLINECOUNTEX" -eq 0 ]; then
 					# shellcheck disable=SC2016
-					echo "/jffs/scripts/$CONNMON_NAME_LOWER generate"' "$1" "$2" &'' # '"$CONNMON_NAME" >> /jffs/scripts/service-event
+					echo "/jffs/scripts/$CONNMON_NAME generate"' "$1" "$2" &'' # '"$CONNMON_NAME" >> /jffs/scripts/service-event
 				fi
 			else
 				echo "#!/bin/sh" > /jffs/scripts/service-event
 				echo "" >> /jffs/scripts/service-event
 				# shellcheck disable=SC2016
-				echo "/jffs/scripts/$CONNMON_NAME_LOWER generate"' "$1" "$2" &'' # '"$CONNMON_NAME" >> /jffs/scripts/service-event
+				echo "/jffs/scripts/$CONNMON_NAME generate"' "$1" "$2" &'' # '"$CONNMON_NAME" >> /jffs/scripts/service-event
 				chmod 0755 /jffs/scripts/service-event
 			fi
 		;;
