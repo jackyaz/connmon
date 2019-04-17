@@ -367,10 +367,8 @@ Generate_Stats(){
 	pingfile=/tmp/pingresult.txt
 	
 	Print_Output "false" "30 second ping test to $(ShowPingServer) starting..." "$PASS"
-	if ! Validate_IP "$(ShowPingServer)"; then
-		return 1
-	fi
-	if ! Validate_Domain "$(ShowPingServer)"; then
+	if ! Validate_IP "$(ShowPingServer)" >/dev/null 2>&1 && ! Validate_Domain "$(ShowPingServer)" >/dev/null 2>&1; then
+		Print_Output "false" "$(ShowPingServer) not valid, aborting test. Please correct ASAP" "$ERR"
 		return 1
 	fi
 	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
