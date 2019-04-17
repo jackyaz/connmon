@@ -210,8 +210,6 @@ SetPingServer(){
 					if Validate_IP "$ipoption"; then
 						sed -i 's/^PINGSERVER.*$/PINGSERVER='"$ipoption"'/' "$CONNMON_CONF"
 						break
-					else
-						printf "\\n"
 					fi
 				done
 			;;
@@ -225,8 +223,6 @@ SetPingServer(){
 					if Validate_Domain "$domainoption"; then
 						sed -i 's/^PINGSERVER.*$/PINGSERVER='"$domainoption"'/' "$CONNMON_CONF"
 						break
-					else
-						printf "\\n"
 					fi
 				done
 			;;
