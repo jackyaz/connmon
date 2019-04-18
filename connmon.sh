@@ -338,12 +338,13 @@ RRD_Initialise(){
 }
 
 Mount_CONNMON_WebUI(){
+	umount /www/AiMesh_Node_FirmwareUpgrade.asp 2>/dev/null
 	umount /www/AdaptiveQoS_ROG.asp 2>/dev/null
 	if [ ! -f /jffs/scripts/connmonstats_www.asp ]; then
 		Download_File "$CONNMON_REPO/connmonstats_www.asp" "/jffs/scripts/connmonstats_www.asp"
 	fi
 	
-	mount -o bind /jffs/scripts/connmonstats_www.asp /www/AdaptiveQoS_ROG.asp
+	mount -o bind /jffs/scripts/connmonstats_www.asp /www/AiMesh_Node_FirmwareUpgrade.asp
 }
 
 Modify_WebUI_File(){
@@ -352,9 +353,9 @@ Modify_WebUI_File(){
 	tmpfile=/tmp/menuTree.js
 	cp "/www/require/modules/menuTree.js" "$tmpfile"
 	
-	sed -i '/{url: "AdaptiveQoS_ROG.asp", tabName: /d' "$tmpfile"
-	sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "AdaptiveQoS_ROG.asp", tabName: "Uptime Monitoring"},' "$tmpfile"
-	sed -i '/retArray.push("AdaptiveQoS_ROG.asp");/d' "$tmpfile"
+	sed -i '/{url: "AiMesh_Node_FirmwareUpgrade.asp", tabName: /d' "$tmpfile"
+	sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "AiMesh_Node_FirmwareUpgrade.asp", tabName: "Uptime Monitoring"},' "$tmpfile"
+	sed -i '/retArray.push("AiMesh_Node_FirmwareUpgrade.asp");/d' "$tmpfile"
 	
 	if [ -f "/jffs/scripts/spdmerlin" ]; then
 		sed -i '/{url: "Advanced_Feedback.asp", tabName: /d' "$tmpfile"
@@ -383,7 +384,7 @@ Modify_WebUI_File(){
 		sed -i -e 's/setTimeout("parent.redirect();", action_wait\*1000);/parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect(); alert("Please force-reload this page (e.g. Ctrl+F5)");}, restart_time\*1000);/' "$tmpfile"
 	fi
 	
-	sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("ROG") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect(); alert("Please force-reload this page (e.g. Ctrl+F5)");}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
+	sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("AiMesh") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect(); alert("Please force-reload this page (e.g. Ctrl+F5)");}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
 	
 	if [ ! -f /jffs/scripts/custom_start_apply.htm ]; then
 		cp "/www/start_apply.htm" "/jffs/scripts/custom_start_apply.htm"
@@ -757,8 +758,9 @@ Menu_Uninstall(){
 		esac
 	done
 	Shortcut_connmon delete
+	umount /www/AiMesh_Node_FirmwareUpgrade.asp 2>/dev/null
 	umount /www/AdaptiveQoS_ROG.asp 2>/dev/null
-	sed -i '/{url: "AdaptiveQoS_ROG.asp", tabName: "Uptime Monitoring"}/d' "/jffs/scripts/custom_menuTree.js"
+	sed -i '/{url: "AiMesh_Node_FirmwareUpgrade.asp", tabName: "Uptime Monitoring"}/d' "/jffs/scripts/custom_menuTree.js"
 	umount /www/require/modules/menuTree.js 2>/dev/null
 	
 	if [ ! -f "/jffs/scripts/ntpmerlin" ] && [ ! -f "/jffs/scripts/spdmerlin" ]; then
