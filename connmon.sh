@@ -54,7 +54,7 @@ Check_Lock(){
 			echo "$$" > "/tmp/$CONNMON_NAME.lock"
 			return 0
 		else
-			Print_Output "true" "Lock file found (age: $ageoflock seconds) - stopping to prevent duplicate runs" "$ERR"
+			Print_Output "true" "Lock file found (age: $ageoflock seconds) - ping test likely currently running" "$ERR"
 			if [ -z "$1" ]; then
 				exit 1
 			else
@@ -696,14 +696,13 @@ Menu_Install(){
 	
 	Conf_Exists
 	
-	Mount_CONNMON_WebUI
-	
-	Modify_WebUI_File
-	
-	RRD_Initialise
-	
+	Auto_Startup create 2>/dev/null
+	Auto_Cron create 2>/dev/null
+	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_connmon create
-	
+	Mount_CONNMON_WebUI
+	Modify_WebUI_File
+	RRD_Initialise
 	Menu_GenerateStats
 	
 	Clear_Lock
@@ -713,6 +712,7 @@ Menu_Startup(){
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
+	Shortcut_connmon create
 	Mount_CONNMON_WebUI
 	Modify_WebUI_File
 	RRD_Initialise
@@ -775,13 +775,6 @@ Menu_Uninstall(){
 }
 
 if [ -z "$1" ]; then
-	Check_Lock
-	Auto_Startup create 2>/dev/null
-	Auto_Cron create 2>/dev/null
-	Auto_ServiceEvent create 2>/dev/null
-	Shortcut_connmon create
-	Clear_Lock
-	Conf_Exists
 	ScriptHeader
 	MainMenu
 	exit 0
