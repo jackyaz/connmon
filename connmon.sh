@@ -726,7 +726,6 @@ Menu_GenerateStats(){
 
 Menu_SetPingServer(){
 	SetPingServer
-	Clear_Lock
 }
 
 Menu_Update(){
