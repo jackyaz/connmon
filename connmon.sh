@@ -47,19 +47,19 @@ Firmware_Version_Check(){
 Check_Lock(){
 	if [ -f "/tmp/$CONNMON_NAME.lock" ]; then
 		ageoflock=$(($(date +%s) - $(date +%s -r /tmp/$CONNMON_NAME.lock)))
-		if [ "$ageoflock" -gt 120 ]; then
-			Print_Output "true" "Stale lock file found (>120 seconds old) - purging lock" "$ERR"
+		if [ "$ageoflock" -gt 60 ]; then
+			Print_Output "true" "Stale lock file found (>60 seconds old) - purging lock" "$ERR"
 			kill "$(sed -n '1p' /tmp/$CONNMON_NAME.lock)" >/dev/null 2>&1
 			Clear_Lock
 			echo "$$" > "/tmp/$CONNMON_NAME.lock"
 			return 0
 		else
 			Print_Output "true" "Lock file found (age: $ageoflock seconds) - stopping to prevent duplicate runs" "$ERR"
-			#if [ -z "$1" ]; then
+			if [ -z "$1" ]; then
 				exit 1
-			#else
-			#	return 1
-			#fi
+			else
+				return 1
+			fi
 		fi
 	else
 		echo "$$" > "/tmp/$CONNMON_NAME.lock"
@@ -410,6 +410,7 @@ Generate_Stats(){
 	Print_Output "false" "30 second ping test to $(ShowPingServer) starting..." "$PASS"
 	if ! Validate_IP "$(ShowPingServer)" >/dev/null 2>&1 && ! Validate_Domain "$(ShowPingServer)" >/dev/null 2>&1; then
 		Print_Output "true" "$(ShowPingServer) not valid, aborting test. Please correct ASAP" "$ERR"
+		Clear_Lock
 		return 1
 	fi
 	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
@@ -531,6 +532,8 @@ Generate_Stats(){
 		GPRINT:pktloss:MAX:"Max\: %3.3lf" \
 		GPRINT:pktloss:AVERAGE:"Avg\: %3.3lf" \
 		GPRINT:pktloss:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
+		
+	Clear_Lock
 }
 
 Shortcut_connmon(){
@@ -596,7 +599,9 @@ MainMenu(){
 		case "$menu" in
 			1)
 				printf "\\n"
-				Menu_GenerateStats
+				if Check_Lock "menu"; then
+					Menu_GenerateStats
+				fi
 				PressEnter
 				break
 			;;
@@ -608,13 +613,17 @@ MainMenu(){
 			;;
 			u)
 				printf "\\n"
-				Menu_Update
+				if Check_Lock "menu"; then
+					Menu_Update
+				fi
 				PressEnter
 				break
 			;;
 			uf)
 				printf "\\n"
-				Menu_ForceUpdate
+				if Check_Lock "menu"; then
+					Menu_ForceUpdate
+				fi
 				PressEnter
 				break
 			;;
@@ -696,10 +705,11 @@ Menu_Install(){
 	Shortcut_connmon create
 	
 	Menu_GenerateStats
+	
+	Clear_Lock
 }
 
 Menu_Startup(){
-	Check_Lock
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
@@ -710,31 +720,26 @@ Menu_Startup(){
 }
 
 Menu_GenerateStats(){
-	Check_Lock
 	Generate_Stats
 	Clear_Lock
 }
 
 Menu_SetPingServer(){
-	Check_Lock
 	SetPingServer
 	Clear_Lock
 }
 
 Menu_Update(){
-	Check_Lock
 	Update_Version
 	Clear_Lock
 }
 
 Menu_ForceUpdate(){
-	Check_Lock
 	Update_Version force
 	Clear_Lock
 }
 
 Menu_Uninstall(){
-	Check_Lock
 	Print_Output "true" "Removing $CONNMON_NAME..." "$PASS"
 	Auto_Startup delete 2>/dev/null
 	Auto_Cron delete 2>/dev/null
@@ -784,30 +789,37 @@ fi
 
 case "$1" in
 	install)
+		Check_Lock
 		Menu_Install
 		exit 0
 	;;
 	startup)
+		Check_Lock
 		Menu_Startup
 		exit 0
 	;;
 	generate)
 		if [ -z "$2" ] && [ -z "$3" ]; then
+			Check_Lock
 			Menu_GenerateStats
 		elif [ "$2" = "start" ] && [ "$3" = "$CONNMON_NAME" ]; then
+			Check_Lock
 			Menu_GenerateStats
 		fi
 		exit 0
 	;;
 	update)
+		Check_Lock
 		Menu_Update
 		exit 0
 	;;
 	forceupdate)
+		Check_Lock
 		Menu_ForceUpdate
 		exit 0
 	;;
 	uninstall)
+		Check_Lock
 		Menu_Uninstall
 		exit 0
 	;;
