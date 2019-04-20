@@ -13,7 +13,7 @@
 
 ### Start of script variables ###
 readonly CONNMON_NAME="connmon"
-readonly CONNMON_VERSION="v1.0.0"
+readonly CONNMON_VERSION="v1.0.1"
 readonly CONNMON_BRANCH="develop"
 readonly CONNMON_REPO="https://raw.githubusercontent.com/jackyaz/""$CONNMON_NAME""/""$CONNMON_BRANCH"
 readonly CONNMON_CONF="/jffs/configs/$CONNMON_NAME.config"
