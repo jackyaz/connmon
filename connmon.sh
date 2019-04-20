@@ -337,6 +337,14 @@ RRD_Initialise(){
 	fi
 }
 
+Get_CONNMON_UI(){
+	if [ -f /www/AdaptiveQoS_ROG.asp ]; then
+		echo "AdaptiveQoS_ROG.asp"
+	else
+		echo "AiMesh_Node_FirmwareUpgrade.asp"
+	fi
+}
+
 Mount_CONNMON_WebUI(){
 	umount /www/AiMesh_Node_FirmwareUpgrade.asp 2>/dev/null
 	umount /www/AdaptiveQoS_ROG.asp 2>/dev/null
@@ -344,7 +352,7 @@ Mount_CONNMON_WebUI(){
 		Download_File "$CONNMON_REPO/connmonstats_www.asp" "/jffs/scripts/connmonstats_www.asp"
 	fi
 	
-	mount -o bind /jffs/scripts/connmonstats_www.asp /www/AiMesh_Node_FirmwareUpgrade.asp
+	mount -o bind /jffs/scripts/connmonstats_www.asp "/www/$(Get_CONNMON_UI)"
 }
 
 Modify_WebUI_File(){
@@ -353,9 +361,9 @@ Modify_WebUI_File(){
 	tmpfile=/tmp/menuTree.js
 	cp "/www/require/modules/menuTree.js" "$tmpfile"
 	
-	sed -i '/{url: "AiMesh_Node_FirmwareUpgrade.asp", tabName: /d' "$tmpfile"
-	sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "AiMesh_Node_FirmwareUpgrade.asp", tabName: "Uptime Monitoring"},' "$tmpfile"
-	sed -i '/retArray.push("AiMesh_Node_FirmwareUpgrade.asp");/d' "$tmpfile"
+	sed -i '/{url: "'"$(Get_CONNMON_UI)"'", tabName: /d' "$tmpfile"
+	sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "'"$(Get_CONNMON_UI)"'", tabName: "Uptime Monitoring"},' "$tmpfile"
+	sed -i '/retArray.push("'"$(Get_CONNMON_UI)"'");/d' "$tmpfile"
 	
 	if [ -f "/jffs/scripts/spdmerlin" ]; then
 		sed -i '/{url: "Advanced_Feedback.asp", tabName: /d' "$tmpfile"
