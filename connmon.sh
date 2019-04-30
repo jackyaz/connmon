@@ -758,10 +758,11 @@ Menu_Uninstall(){
 	Auto_Cron delete 2>/dev/null
 	Auto_ServiceEvent delete 2>/dev/null
 	while true; do
-		printf "\\n\\e[1mDo you want to delete %s stats? (y/n)\\e[0m\\n" "$CONNMON_NAME"
+		printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m\\n" "$CONNMON_NAME"
 		read -r "confirm"
 		case "$confirm" in
 			y|Y)
+				rm -f "/jffs/configs/connmon.config" 2> /dev/null
 				rm -f "/jffs/scripts/connmonstats_rrd.rrd" 2>/dev/null
 				break
 			;;
