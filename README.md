@@ -43,7 +43,7 @@ If this does not work, you will need to use the full path:
 Launch connmon and select option u
 
 ## Help
-Please post about any issues and problems here: [connmon on SNBForums](https://www.snbforums.com/threads/spdmerlin-automated-speedtests-with-graphs.55904/)
+Please post about any issues and problems here: [connmon on SNBForums](https://www.snbforums.com/threads/connmon-internet-connection-monitoring.56163/)
 
 ## FAQs
 ### I haven't used scripts before on AsusWRT-Merlin
