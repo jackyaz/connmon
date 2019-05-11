@@ -28,6 +28,7 @@ font-weight: bolder;
 <script>
 function initial(){
 show_menu();
+}
 function reload() {
 location.reload(true);
 }
