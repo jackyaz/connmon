@@ -177,15 +177,15 @@ Validate_Domain(){
 }
 
 Create_Dirs(){
-	if [ -d "$SCRIPT_DIR" ]; then
+	if [ ! -d "$SCRIPT_DIR" ]; then
 		mkdir -p "$SCRIPT_DIR"
 	fi
 	
-	if [ -d "$SHARED_DIR" ]; then
+	if [ ! -d "$SHARED_DIR" ]; then
 		mkdir -p "$SHARED_DIR"
 	fi
 	
-	if [ -d "$SCRIPT_WEB_DIR" ]; then
+	if [ ! -d "$SCRIPT_WEB_DIR" ]; then
 		mkdir -p "$SCRIPT_WEB_DIR"
 	fi
 }
