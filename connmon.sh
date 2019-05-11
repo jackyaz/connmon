@@ -12,11 +12,11 @@
 ############################################################
 
 ### Start of script variables ###
-readonly CONNMON_NAME="connmon"
-readonly CONNMON_VERSION="v1.0.1"
-readonly CONNMON_BRANCH="develop"
-readonly CONNMON_REPO="https://raw.githubusercontent.com/jackyaz/""$CONNMON_NAME""/""$CONNMON_BRANCH"
-readonly CONNMON_CONF="/jffs/configs/$CONNMON_NAME.config"
+readonly SCRIPT_NAME="connmon"
+readonly SCRIPT_VERSION="v1.0.1"
+readonly SCRIPT_BRANCH="develop"
+readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
+readonly SCRIPT_CONF="/jffs/configs/$SCRIPT_NAME.config"
 [ -z "$(nvram get odmpid)" ] && ROUTER_MODEL=$(nvram get productid) || ROUTER_MODEL=$(nvram get odmpid)
 ### End of script variables ###
 
@@ -30,10 +30,10 @@ readonly PASS="\\e[32m"
 # $1 = print to syslog, $2 = message to print, $3 = log level
 Print_Output(){
 	if [ "$1" = "true" ]; then
-		logger -t "$CONNMON_NAME" "$2"
-		printf "\\e[1m$3%s: $2\\e[0m\\n\\n" "$CONNMON_NAME"
+		logger -t "$SCRIPT_NAME" "$2"
+		printf "\\e[1m$3%s: $2\\e[0m\\n\\n" "$SCRIPT_NAME"
 	else
-		printf "\\e[1m$3%s: $2\\e[0m\\n\\n" "$CONNMON_NAME"
+		printf "\\e[1m$3%s: $2\\e[0m\\n\\n" "$SCRIPT_NAME"
 	fi
 }
 
@@ -45,13 +45,13 @@ Firmware_Version_Check(){
 
 ### Code for these functions inspired by https://github.com/Adamm00 - credit to @Adamm ###
 Check_Lock(){
-	if [ -f "/tmp/$CONNMON_NAME.lock" ]; then
-		ageoflock=$(($(date +%s) - $(date +%s -r /tmp/$CONNMON_NAME.lock)))
+	if [ -f "/tmp/$SCRIPT_NAME.lock" ]; then
+		ageoflock=$(($(date +%s) - $(date +%s -r /tmp/$SCRIPT_NAME.lock)))
 		if [ "$ageoflock" -gt 60 ]; then
 			Print_Output "true" "Stale lock file found (>60 seconds old) - purging lock" "$ERR"
-			kill "$(sed -n '1p' /tmp/$CONNMON_NAME.lock)" >/dev/null 2>&1
+			kill "$(sed -n '1p' /tmp/$SCRIPT_NAME.lock)" >/dev/null 2>&1
 			Clear_Lock
-			echo "$$" > "/tmp/$CONNMON_NAME.lock"
+			echo "$$" > "/tmp/$SCRIPT_NAME.lock"
 			return 0
 		else
 			Print_Output "true" "Lock file found (age: $ageoflock seconds) - ping test likely currently running" "$ERR"
@@ -62,44 +62,44 @@ Check_Lock(){
 			fi
 		fi
 	else
-		echo "$$" > "/tmp/$CONNMON_NAME.lock"
+		echo "$$" > "/tmp/$SCRIPT_NAME.lock"
 		return 0
 	fi
 }
 
 Clear_Lock(){
-	rm -f "/tmp/$CONNMON_NAME.lock" 2>/dev/null
+	rm -f "/tmp/$SCRIPT_NAME.lock" 2>/dev/null
 	return 0
 }
 
 Update_Version(){
 	if [ -z "$1" ]; then
 		doupdate="false"
-		localver=$(grep "CONNMON_VERSION=" /jffs/scripts/"$CONNMON_NAME" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
-		/usr/sbin/curl -fsL --retry 3 "$CONNMON_REPO/$CONNMON_NAME.sh" | grep -qF "jackyaz" || { Print_Output "true" "404 error detected - stopping update" "$ERR"; return 1; }
-		serverver=$(/usr/sbin/curl -fsL --retry 3 "$CONNMON_REPO/$CONNMON_NAME.sh" | grep "CONNMON_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
+		localver=$(grep "SCRIPT_VERSION=" /jffs/scripts/"$SCRIPT_NAME" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
+		/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep -qF "jackyaz" || { Print_Output "true" "404 error detected - stopping update" "$ERR"; return 1; }
+		serverver=$(/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 		if [ "$localver" != "$serverver" ]; then
 			doupdate="version"
 		else
-			localmd5="$(md5sum "/jffs/scripts/$CONNMON_NAME" | awk '{print $1}')"
-			remotemd5="$(curl -fsL --retry 3 "$CONNMON_REPO/$CONNMON_NAME.sh" | md5sum | awk '{print $1}')"
+			localmd5="$(md5sum "/jffs/scripts/$SCRIPT_NAME" | awk '{print $1}')"
+			remotemd5="$(curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | md5sum | awk '{print $1}')"
 			if [ "$localmd5" != "$remotemd5" ]; then
 				doupdate="md5"
 			fi
 		fi
 		
 		if [ "$doupdate" = "version" ]; then
-			Print_Output "true" "New version of $CONNMON_NAME available - updating to $serverver" "$PASS"
+			Print_Output "true" "New version of $SCRIPT_NAME available - updating to $serverver" "$PASS"
 		elif [ "$doupdate" = "md5" ]; then
-			Print_Output "true" "MD5 hash of $CONNMON_NAME does not match - downloading updated $serverver" "$PASS"
+			Print_Output "true" "MD5 hash of $SCRIPT_NAME does not match - downloading updated $serverver" "$PASS"
 		fi
 		
 		Update_File "connmonstats_www.asp"
 		Modify_WebUI_File
 		
 		if [ "$doupdate" != "false" ]; then
-			/usr/sbin/curl -fsL --retry 3 "$CONNMON_REPO/$CONNMON_NAME.sh" -o "/jffs/scripts/$CONNMON_NAME" && Print_Output "true" "$CONNMON_NAME successfully updated"
-			chmod 0755 /jffs/scripts/"$CONNMON_NAME"
+			/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output "true" "$SCRIPT_NAME successfully updated"
+			chmod 0755 /jffs/scripts/"$SCRIPT_NAME"
 			Clear_Lock
 			exit 0
 		else
@@ -110,12 +110,12 @@ Update_Version(){
 	
 	case "$1" in
 		force)
-			serverver=$(/usr/sbin/curl -fsL --retry 3 "$CONNMON_REPO/$CONNMON_NAME.sh" | grep "CONNMON_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
-			Print_Output "true" "Downloading latest version ($serverver) of $CONNMON_NAME" "$PASS"
+			serverver=$(/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
+			Print_Output "true" "Downloading latest version ($serverver) of $SCRIPT_NAME" "$PASS"
 			Update_File "connmonstats_www.asp"
 			Modify_WebUI_File
-			/usr/sbin/curl -fsL --retry 3 "$CONNMON_REPO/$CONNMON_NAME.sh" -o "/jffs/scripts/$CONNMON_NAME" && Print_Output "true" "$CONNMON_NAME successfully updated"
-			chmod 0755 /jffs/scripts/"$CONNMON_NAME"
+			/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output "true" "$SCRIPT_NAME successfully updated"
+			chmod 0755 /jffs/scripts/"$SCRIPT_NAME"
 			Clear_Lock
 			exit 0
 		;;
@@ -126,7 +126,7 @@ Update_Version(){
 Update_File(){
 	if [ "$1" = "connmonstats_www.asp" ]; then
 		tmpfile="/tmp/$1"
-		Download_File "$CONNMON_REPO/$1" "$tmpfile"
+		Download_File "$SCRIPT_REPO/$1" "$tmpfile"
 		if ! diff -q "$tmpfile" "/jffs/scripts/$1" >/dev/null 2>&1; then
 			Print_Output "true" "New version of $1 downloaded" "$PASS"
 			rm -f "/jffs/scripts/$1"
@@ -174,19 +174,19 @@ Validate_Domain(){
 }
 
 Conf_Exists(){
-	if [ -f "$CONNMON_CONF" ]; then
-		dos2unix "$CONNMON_CONF"
-		chmod 0644 "$CONNMON_CONF"
-		sed -i -e 's/"//g' "$CONNMON_CONF"
+	if [ -f "$SCRIPT_CONF" ]; then
+		dos2unix "$SCRIPT_CONF"
+		chmod 0644 "$SCRIPT_CONF"
+		sed -i -e 's/"//g' "$SCRIPT_CONF"
 		return 0
 	else
-		echo "PINGSERVER=8.8.8.8" > "$CONNMON_CONF"
+		echo "PINGSERVER=8.8.8.8" > "$SCRIPT_CONF"
 		return 1
 	fi
 }
 
 ShowPingServer(){
-	PINGSERVER=$(grep "PINGSERVER" "$CONNMON_CONF" | cut -f2 -d"=")
+	PINGSERVER=$(grep "PINGSERVER" "$SCRIPT_CONF" | cut -f2 -d"=")
 	echo "$PINGSERVER"
 }
 
@@ -208,7 +208,7 @@ SetPingServer(){
 						break
 					fi
 					if Validate_IP "$ipoption"; then
-						sed -i 's/^PINGSERVER.*$/PINGSERVER='"$ipoption"'/' "$CONNMON_CONF"
+						sed -i 's/^PINGSERVER.*$/PINGSERVER='"$ipoption"'/' "$SCRIPT_CONF"
 						break
 					fi
 				done
@@ -221,7 +221,7 @@ SetPingServer(){
 						break
 					fi
 					if Validate_Domain "$domainoption"; then
-						sed -i 's/^PINGSERVER.*$/PINGSERVER='"$domainoption"'/' "$CONNMON_CONF"
+						sed -i 's/^PINGSERVER.*$/PINGSERVER='"$domainoption"'/' "$SCRIPT_CONF"
 						break
 					fi
 				done
@@ -241,32 +241,32 @@ Auto_ServiceEvent(){
 	case $1 in
 		create)
 			if [ -f /jffs/scripts/service-event ]; then
-				STARTUPLINECOUNT=$(grep -c '# '"$CONNMON_NAME" /jffs/scripts/service-event)
+				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/service-event)
 				# shellcheck disable=SC2016
-				STARTUPLINECOUNTEX=$(grep -cx "/jffs/scripts/$CONNMON_NAME generate"' "$1" "$2" &'' # '"$CONNMON_NAME" /jffs/scripts/service-event)
+				STARTUPLINECOUNTEX=$(grep -cx "/jffs/scripts/$SCRIPT_NAME generate"' "$1" "$2" &'' # '"$SCRIPT_NAME" /jffs/scripts/service-event)
 				
 				if [ "$STARTUPLINECOUNT" -gt 1 ] || { [ "$STARTUPLINECOUNTEX" -eq 0 ] && [ "$STARTUPLINECOUNT" -gt 0 ]; }; then
-					sed -i -e '/# '"$CONNMON_NAME"'/d' /jffs/scripts/service-event
+					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/service-event
 				fi
 				
 				if [ "$STARTUPLINECOUNTEX" -eq 0 ]; then
 					# shellcheck disable=SC2016
-					echo "/jffs/scripts/$CONNMON_NAME generate"' "$1" "$2" &'' # '"$CONNMON_NAME" >> /jffs/scripts/service-event
+					echo "/jffs/scripts/$SCRIPT_NAME generate"' "$1" "$2" &'' # '"$SCRIPT_NAME" >> /jffs/scripts/service-event
 				fi
 			else
 				echo "#!/bin/sh" > /jffs/scripts/service-event
 				echo "" >> /jffs/scripts/service-event
 				# shellcheck disable=SC2016
-				echo "/jffs/scripts/$CONNMON_NAME generate"' "$1" "$2" &'' # '"$CONNMON_NAME" >> /jffs/scripts/service-event
+				echo "/jffs/scripts/$SCRIPT_NAME generate"' "$1" "$2" &'' # '"$SCRIPT_NAME" >> /jffs/scripts/service-event
 				chmod 0755 /jffs/scripts/service-event
 			fi
 		;;
 		delete)
 			if [ -f /jffs/scripts/service-event ]; then
-				STARTUPLINECOUNT=$(grep -c '# '"$CONNMON_NAME" /jffs/scripts/service-event)
+				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/service-event)
 				
 				if [ "$STARTUPLINECOUNT" -gt 0 ]; then
-					sed -i -e '/# '"$CONNMON_NAME"'/d' /jffs/scripts/service-event
+					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/service-event
 				fi
 			fi
 		;;
@@ -277,29 +277,29 @@ Auto_Startup(){
 	case $1 in
 		create)
 			if [ -f /jffs/scripts/services-start ]; then
-				STARTUPLINECOUNT=$(grep -c '# '"$CONNMON_NAME" /jffs/scripts/services-start)
-				STARTUPLINECOUNTEX=$(grep -cx "/jffs/scripts/$CONNMON_NAME startup"' # '"$CONNMON_NAME" /jffs/scripts/services-start)
+				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/services-start)
+				STARTUPLINECOUNTEX=$(grep -cx "/jffs/scripts/$SCRIPT_NAME startup"' # '"$SCRIPT_NAME" /jffs/scripts/services-start)
 				
 				if [ "$STARTUPLINECOUNT" -gt 1 ] || { [ "$STARTUPLINECOUNTEX" -eq 0 ] && [ "$STARTUPLINECOUNT" -gt 0 ]; }; then
-					sed -i -e '/# '"$CONNMON_NAME"'/d' /jffs/scripts/services-start
+					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/services-start
 				fi
 				
 				if [ "$STARTUPLINECOUNTEX" -eq 0 ]; then
-					echo "/jffs/scripts/$CONNMON_NAME startup"' # '"$CONNMON_NAME" >> /jffs/scripts/services-start
+					echo "/jffs/scripts/$SCRIPT_NAME startup"' # '"$SCRIPT_NAME" >> /jffs/scripts/services-start
 				fi
 			else
 				echo "#!/bin/sh" > /jffs/scripts/services-start
 				echo "" >> /jffs/scripts/services-start
-				echo "/jffs/scripts/$CONNMON_NAME startup"' # '"$CONNMON_NAME" >> /jffs/scripts/services-start
+				echo "/jffs/scripts/$SCRIPT_NAME startup"' # '"$SCRIPT_NAME" >> /jffs/scripts/services-start
 				chmod 0755 /jffs/scripts/services-start
 			fi
 		;;
 		delete)
 			if [ -f /jffs/scripts/services-start ]; then
-				STARTUPLINECOUNT=$(grep -c '# '"$CONNMON_NAME" /jffs/scripts/services-start)
+				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/services-start)
 				
 				if [ "$STARTUPLINECOUNT" -gt 0 ]; then
-					sed -i -e '/# '"$CONNMON_NAME"'/d' /jffs/scripts/services-start
+					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/services-start
 				fi
 			fi
 		;;
@@ -309,17 +309,17 @@ Auto_Startup(){
 Auto_Cron(){
 	case $1 in
 		create)
-			STARTUPLINECOUNT=$(cru l | grep -c "$CONNMON_NAME")
+			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
 			
 			if [ "$STARTUPLINECOUNT" -eq 0 ]; then
-				cru a "$CONNMON_NAME" "*/5 * * * * /jffs/scripts/$CONNMON_NAME generate"
+				cru a "$SCRIPT_NAME" "*/5 * * * * /jffs/scripts/$SCRIPT_NAME generate"
 			fi
 		;;
 		delete)
-			STARTUPLINECOUNT=$(cru l | grep -c "$CONNMON_NAME")
+			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
 			
 			if [ "$STARTUPLINECOUNT" -gt 0 ]; then
-				cru d "$CONNMON_NAME"
+				cru d "$SCRIPT_NAME"
 			fi
 		;;
 	esac
@@ -331,7 +331,7 @@ Download_File(){
 
 RRD_Initialise(){
 	if [ ! -f /jffs/scripts/connmonstats_rrd.rrd ]; then
-		Download_File "$CONNMON_REPO/connmonstats_xml.xml" "/jffs/scripts/connmonstats_xml.xml"
+		Download_File "$SCRIPT_REPO/connmonstats_xml.xml" "/jffs/scripts/connmonstats_xml.xml"
 		rrdtool restore -f /jffs/scripts/connmonstats_xml.xml /jffs/scripts/connmonstats_rrd.rrd
 		rm -f /jffs/scripts/connmonstats_xml.xml
 	fi
@@ -349,7 +349,7 @@ Mount_CONNMON_WebUI(){
 	umount /www/AiMesh_Node_FirmwareUpgrade.asp 2>/dev/null
 	umount /www/AdaptiveQoS_ROG.asp 2>/dev/null
 	if [ ! -f /jffs/scripts/connmonstats_www.asp ]; then
-		Download_File "$CONNMON_REPO/connmonstats_www.asp" "/jffs/scripts/connmonstats_www.asp"
+		Download_File "$SCRIPT_REPO/connmonstats_www.asp" "/jffs/scripts/connmonstats_www.asp"
 	fi
 	
 	mount -o bind /jffs/scripts/connmonstats_www.asp "/www/$(Get_CONNMON_UI)"
@@ -553,14 +553,14 @@ Generate_Stats(){
 Shortcut_connmon(){
 	case $1 in
 		create)
-			if [ -d "/opt/bin" ] && [ ! -f "/opt/bin/$CONNMON_NAME" ] && [ -f "/jffs/scripts/$CONNMON_NAME" ]; then
-				ln -s /jffs/scripts/"$CONNMON_NAME" /opt/bin
-				chmod 0755 /opt/bin/"$CONNMON_NAME"
+			if [ -d "/opt/bin" ] && [ ! -f "/opt/bin/$SCRIPT_NAME" ] && [ -f "/jffs/scripts/$SCRIPT_NAME" ]; then
+				ln -s /jffs/scripts/"$SCRIPT_NAME" /opt/bin
+				chmod 0755 /opt/bin/"$SCRIPT_NAME"
 			fi
 		;;
 		delete)
-			if [ -f "/opt/bin/$CONNMON_NAME" ]; then
-				rm -f /opt/bin/"$CONNMON_NAME"
+			if [ -f "/opt/bin/$SCRIPT_NAME" ]; then
+				rm -f /opt/bin/"$SCRIPT_NAME"
 			fi
 		;;
 	esac
@@ -588,7 +588,7 @@ ScriptHeader(){
 	printf "\\e[1m## | (__ | (_) || | | || | | || | | | | || (_) || | | |   ##\\e[0m\\n"
 	printf "\\e[1m##  \___| \___/ |_| |_||_| |_||_| |_| |_| \___/ |_| |_|   ##\\e[0m\\n"
 	printf "\\e[1m##                                                        ##\\e[0m\\n"
-	printf "\\e[1m##                  %s on %-9s                   ##\\e[0m\\n" "$CONNMON_VERSION" "$ROUTER_MODEL"
+	printf "\\e[1m##                  %s on %-9s                   ##\\e[0m\\n" "$SCRIPT_VERSION" "$ROUTER_MODEL"
 	printf "\\e[1m##                                                        ##\\e[0m\\n"
 	printf "\\e[1m##          https://github.com/jackyaz/connmon            ##\\e[0m\\n"
 	printf "\\e[1m##                                                        ##\\e[0m\\n"
@@ -600,9 +600,9 @@ MainMenu(){
 	printf "1.    Check connection now\\n\\n"
 	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(ShowPingServer)"
 	printf "u.    Check for updates\\n"
-	printf "uf.   Update %s with latest version (force update)\\n\\n" "$CONNMON_NAME"
-	printf "e.    Exit %s\\n\\n" "$CONNMON_NAME"
-	printf "z.    Uninstall %s\\n" "$CONNMON_NAME"
+	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
+	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
+	printf "z.    Uninstall %s\\n" "$SCRIPT_NAME"
 	printf "\\n"
 	printf "\\e[1m############################################################\\e[0m\\n"
 	printf "\\n"
@@ -643,12 +643,12 @@ MainMenu(){
 			;;
 			e)
 				ScriptHeader
-				printf "\\n\\e[1mThanks for using %s!\\e[0m\\n\\n\\n" "$CONNMON_NAME"
+				printf "\\n\\e[1mThanks for using %s!\\e[0m\\n\\n\\n" "$SCRIPT_NAME"
 				exit 0
 			;;
 			z)
 				while true; do
-					printf "\\n\\e[1mAre you sure you want to uninstall %s? (y/n)\\e[0m\\n" "$CONNMON_NAME"
+					printf "\\n\\e[1mAre you sure you want to uninstall %s? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
 					read -r "confirm"
 					case "$confirm" in
 						y|Y)
@@ -693,13 +693,13 @@ Check_Requirements(){
 }
 
 Menu_Install(){
-	Print_Output "true" "Welcome to $CONNMON_NAME $CONNMON_VERSION, a script by JackYaz"
+	Print_Output "true" "Welcome to $SCRIPT_NAME $SCRIPT_VERSION, a script by JackYaz"
 	sleep 1
 	
-	Print_Output "true" "Checking your router meets the requirements for $CONNMON_NAME"
+	Print_Output "true" "Checking your router meets the requirements for $SCRIPT_NAME"
 	
 	if ! Check_Requirements; then
-		Print_Output "true" "Requirements for $CONNMON_NAME not met, please see above for the reason(s)" "$CRIT"
+		Print_Output "true" "Requirements for $SCRIPT_NAME not met, please see above for the reason(s)" "$CRIT"
 		PressEnter
 		Clear_Lock
 		exit 1
@@ -753,12 +753,12 @@ Menu_ForceUpdate(){
 }
 
 Menu_Uninstall(){
-	Print_Output "true" "Removing $CONNMON_NAME..." "$PASS"
+	Print_Output "true" "Removing $SCRIPT_NAME..." "$PASS"
 	Auto_Startup delete 2>/dev/null
 	Auto_Cron delete 2>/dev/null
 	Auto_ServiceEvent delete 2>/dev/null
 	while true; do
-		printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m\\n" "$CONNMON_NAME"
+		printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
 		read -r "confirm"
 		case "$confirm" in
 			y|Y)
@@ -784,7 +784,7 @@ Menu_Uninstall(){
 		mount -o bind "/jffs/scripts/custom_menuTree.js" "/www/require/modules/menuTree.js"
 	fi
 	rm -f "/jffs/scripts/connmonstats_www.asp" 2>/dev/null
-	rm -f "/jffs/scripts/$CONNMON_NAME" 2>/dev/null
+	rm -f "/jffs/scripts/$SCRIPT_NAME" 2>/dev/null
 	Clear_Lock
 	Print_Output "true" "Uninstall completed" "$PASS"
 }
@@ -810,7 +810,7 @@ case "$1" in
 		if [ -z "$2" ] && [ -z "$3" ]; then
 			Check_Lock
 			Menu_GenerateStats
-		elif [ "$2" = "start" ] && [ "$3" = "$CONNMON_NAME" ]; then
+		elif [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME" ]; then
 			Check_Lock
 			Menu_GenerateStats
 		fi
