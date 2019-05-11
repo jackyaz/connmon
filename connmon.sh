@@ -17,9 +17,9 @@ readonly SCRIPT_VERSION="v1.1.0"
 readonly SCRIPT_BRANCH="develop"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
 readonly SCRIPT_CONF="/jffs/configs/$SCRIPT_NAME.config"
-readonly SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME"
+readonly SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME.d"
 readonly SCRIPT_WEB_DIR="$(readlink /www/ext)/$SCRIPT_NAME"
-readonly SHARED_DIR="/jffs/scripts/shared"
+readonly SHARED_DIR="/jffs/scripts/shared-jy"
 [ -z "$(nvram get odmpid)" ] && ROUTER_MODEL=$(nvram get productid) || ROUTER_MODEL=$(nvram get odmpid)
 ### End of script variables ###
 
