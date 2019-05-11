@@ -17,6 +17,9 @@ readonly SCRIPT_VERSION="v1.1.0"
 readonly SCRIPT_BRANCH="develop"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
 readonly SCRIPT_CONF="/jffs/configs/$SCRIPT_NAME.config"
+readonly SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME"
+readonly SCRIPT_WEB_DIR="$(readlink /www/ext)/$SCRIPT_NAME"
+readonly SHARED_DIR="/jffs/scripts/shared"
 [ -z "$(nvram get odmpid)" ] && ROUTER_MODEL=$(nvram get productid) || ROUTER_MODEL=$(nvram get odmpid)
 ### End of script variables ###
 
@@ -127,9 +130,9 @@ Update_File(){
 	if [ "$1" = "connmonstats_www.asp" ]; then
 		tmpfile="/tmp/$1"
 		Download_File "$SCRIPT_REPO/$1" "$tmpfile"
-		if ! diff -q "$tmpfile" "/jffs/scripts/$1" >/dev/null 2>&1; then
+		if ! diff -q "$tmpfile" "$SCRIPT_DIR/$1" >/dev/null 2>&1; then
 			Print_Output "true" "New version of $1 downloaded" "$PASS"
-			rm -f "/jffs/scripts/$1"
+			rm -f "$SCRIPT_DIR/$1"
 			Mount_CONNMON_WebUI
 		fi
 		rm -f "$tmpfile"
@@ -170,6 +173,20 @@ Validate_Domain(){
 		return 1
 	else
 		return 0
+	fi
+}
+
+Create_Dirs(){
+	if [ -d "$SCRIPT_DIR" ]; then
+		mkdir -p "$SCRIPT_DIR"
+	fi
+	
+	if [ -d "$SHARED_DIR" ]; then
+		mkdir -p "$SHARED_DIR"
+	fi
+	
+	if [ -d "$SCRIPT_WEB_DIR" ]; then
+		mkdir -p "$SCRIPT_WEB_DIR"
 	fi
 }
 
@@ -330,10 +347,14 @@ Download_File(){
 }
 
 RRD_Initialise(){
-	if [ ! -f /jffs/scripts/connmonstats_rrd.rrd ]; then
-		Download_File "$SCRIPT_REPO/connmonstats_xml.xml" "/jffs/scripts/connmonstats_xml.xml"
-		rrdtool restore -f /jffs/scripts/connmonstats_xml.xml /jffs/scripts/connmonstats_rrd.rrd
-		rm -f /jffs/scripts/connmonstats_xml.xml
+	if [ -f "/jffs/scripts/connmonstats_rrd.rrd" ]; then
+		mv "/jffs/scripts/connmonstats_rrd.rrd" "$SCRIPT_DIR/connmonstats_rrd.rrd"
+	fi
+	
+	if [ ! -f "$SCRIPT_DIR/connmonstats_rrd.rrd" ]; then
+		Download_File "$SCRIPT_REPO/connmonstats_xml.xml" "$SCRIPT_DIR/connmonstats_xml.xml"
+		rrdtool restore -f "$SCRIPT_DIR/connmonstats_xml.xml" "$SCRIPT_DIR/connmonstats_rrd.rrd"
+		rm -f "$SCRIPT_DIR/connmonstats_xml.xml"
 	fi
 }
 
@@ -348,11 +369,15 @@ Get_CONNMON_UI(){
 Mount_CONNMON_WebUI(){
 	umount /www/AiMesh_Node_FirmwareUpgrade.asp 2>/dev/null
 	umount /www/AdaptiveQoS_ROG.asp 2>/dev/null
-	if [ ! -f /jffs/scripts/connmonstats_www.asp ]; then
-		Download_File "$SCRIPT_REPO/connmonstats_www.asp" "/jffs/scripts/connmonstats_www.asp"
+	if [ ! -f "/jffs/scripts/connmonstats_www.asp" ]; then
+		mv "/jffs/scripts/connmonstats_www.asp" "$SCRIPT_DIR/connmonstats_www.asp"
 	fi
 	
-	mount -o bind /jffs/scripts/connmonstats_www.asp "/www/$(Get_CONNMON_UI)"
+	if [ ! -f "$SCRIPT_DIR/connmonstats_www.asp" ]; then
+		Download_File "$SCRIPT_REPO/connmonstats_www.asp" "$SCRIPT_DIR/connmonstats_www.asp"
+	fi
+	
+	mount -o bind "$SCRIPT_DIR/connmonstats_www.asp" "/www/$(Get_CONNMON_UI)"
 }
 
 Modify_WebUI_File(){
@@ -418,7 +443,7 @@ Generate_Stats(){
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
 	Conf_Exists
-	mkdir -p "$(readlink /www/ext)"
+	Create_Dirs
 	pingfile=/tmp/pingresult.txt
 	
 	Print_Output "false" "30 second ping test to $(ShowPingServer) starting..." "$PASS"
@@ -461,7 +486,7 @@ Generate_Stats(){
 	
 	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $pktloss %%" "$PASS"
 	
-	RDB=/jffs/scripts/connmonstats_rrd.rrd
+	RDB="$SCRIPT_DIR/connmonstats_rrd.rrd"
 	rrdtool update $RDB N:"$ping":"$jitter":"$pktloss"
 	
 	COMMON="-c SHADEA#475A5F -c SHADEB#475A5F -c BACK#475A5F -c CANVAS#92A0A520 -c AXIS#92a0a520 -c FONT#ffffff -c ARROW#475A5F -n TITLE:9 -n AXIS:8 -n LEGEND:9 -w 650 -h 200"
@@ -469,8 +494,10 @@ Generate_Stats(){
 	D_COMMON='--start -86400 --x-grid MINUTE:20:HOUR:2:HOUR:2:0:%H:%M'
 	W_COMMON='--start -604800 --x-grid HOUR:3:DAY:1:DAY:1:0:%Y-%m-%d'
 	
+	rm -f /www/ext/*connmon*
+	
 	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG /www/ext/nstats-connmon-ping.png \
+	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/ping.png" \
 		$COMMON $D_COMMON \
 		--title "Ping - $DATE" \
 		--vertical-label "Milliseconds" \
@@ -483,7 +510,7 @@ Generate_Stats(){
 		GPRINT:ping:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG /www/ext/nstats-connmon-jitter.png \
+	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/jitter.png" \
 		$COMMON $D_COMMON \
 		--title "Jitter - $DATE" \
 		--vertical-label "Milliseconds" \
@@ -496,7 +523,7 @@ Generate_Stats(){
 		GPRINT:jitter:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG /www/ext/nstats-connmon-pktloss.png \
+	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/pktloss.png" \
 		$COMMON $D_COMMON \
 		--title "Line Quality - $DATE" \
 		--vertical-label "%" \
@@ -509,7 +536,7 @@ Generate_Stats(){
 		GPRINT:pktloss:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG /www/ext/nstats-week-connmon-ping.png \
+	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/week-ping.png" \
 		$COMMON $W_COMMON \
 		--title "Ping - $DATE" \
 		--vertical-label "Milliseconds" \
@@ -522,7 +549,7 @@ Generate_Stats(){
 		GPRINT:ping:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG /www/ext/nstats-week-connmon-jitter.png \
+	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/week-jitter.png" \
 		$COMMON $W_COMMON \
 		--title "Jitter - $DATE" \
 		--vertical-label "Milliseconds" \
@@ -535,7 +562,7 @@ Generate_Stats(){
 		GPRINT:jitter:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
 	
 	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG /www/ext/nstats-week-connmon-pktloss.png \
+	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/week-pktloss.png" \
 		$COMMON $W_COMMON --alt-autoscale-max \
 		--title "Line Quality - $DATE" \
 		--vertical-label "%" \
@@ -708,6 +735,7 @@ Menu_Install(){
 	opkg update
 	opkg install rrdtool
 	
+	Create_Dirs
 	Conf_Exists
 	
 	Auto_Startup create 2>/dev/null
@@ -763,7 +791,7 @@ Menu_Uninstall(){
 		case "$confirm" in
 			y|Y)
 				rm -f "/jffs/configs/connmon.config" 2> /dev/null
-				rm -f "/jffs/scripts/connmonstats_rrd.rrd" 2>/dev/null
+				rm -f "$SCRIPT_DIR/connmonstats_rrd.rrd" 2>/dev/null
 				break
 			;;
 			*)
@@ -783,7 +811,7 @@ Menu_Uninstall(){
 	else
 		mount -o bind "/jffs/scripts/custom_menuTree.js" "/www/require/modules/menuTree.js"
 	fi
-	rm -f "/jffs/scripts/connmonstats_www.asp" 2>/dev/null
+	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null
 	rm -f "/jffs/scripts/$SCRIPT_NAME" 2>/dev/null
 	Clear_Lock
 	Print_Output "true" "Uninstall completed" "$PASS"

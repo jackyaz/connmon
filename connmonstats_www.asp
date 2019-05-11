@@ -28,28 +28,6 @@ font-weight: bolder;
 <script>
 function initial(){
 show_menu();
-if (wl_info.band5g_2_support) {
-document.getElementById("wifi5_1_clients_tr").style.display = "";
-document.getElementById("wifi5_2_clients_tr").style.display = "";
-} else if (based_modelid == "RT-AC87U") {
-document.getElementById("wifi5_clients_tr_qtn").style.display = "";
-document.getElementById("qtn_version").style.display = "";
-} else if (band5g_support) {
-document.getElementById("wifi5_clients_tr").style.display = "";
-}
-showbootTime();
-if (odmpid != "")
-document.getElementById("model_id").innerHTML = odmpid;
-else
-document.getElementById("model_id").innerHTML = productid;
-var buildno = '<% nvram_get("buildno"); %>';
-var firmver = '<% nvram_get("firmver"); %>'
-var extendno = '<% nvram_get("extendno"); %>';
-if ((extendno == "") || (extendno == "0"))
-document.getElementById("fwver").innerHTML = buildno;
-else
-document.getElementById("fwver").innerHTML = buildno + '_' + extendno;
-}
 function reload() {
 location.reload(true);
 }
@@ -105,9 +83,9 @@ document.form.submit();
 </thead>
 <tr>
 <td colspan="2" align="center">
-<img src="/ext/nstats-connmon-ping.png">
-<img src="/ext/nstats-connmon-jitter.png">
-<img src="/ext/nstats-connmon-pktloss.png">
+<img src="/ext/connmon/ping.png">
+<img src="/ext/connmon/jitter.png">
+<img src="/ext/connmon/pktloss.png">
 </td>
 </tr>
 </table>
@@ -119,9 +97,9 @@ document.form.submit();
 </thead>
 <tr>
 <td colspan="2" align="center">
-<img src="/ext/nstats-week-connmon-ping.png">
-<img src="/ext/nstats-week-connmon-jitter.png">
-<img src="/ext/nstats-week-connmon-pktloss.png">
+<img src="/ext/connmon/week-ping.png">
+<img src="/ext/connmon/week-jitter.png">
+<img src="/ext/connmon/week-pktloss.png">
 </td>
 </tr>
 </table>
