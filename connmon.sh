@@ -400,13 +400,21 @@ Modify_WebUI_File(){
 		sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "Feedback_Info.asp", tabName: "NTP Daemon"},' "$tmpfile"
 	fi
 	
-	if ! diff -q "$tmpfile" "/jffs/scripts/custom_menuTree.js" >/dev/null 2>&1; then
-		cp "$tmpfile" "/jffs/scripts/custom_menuTree.js"
+	if [ -f /jffs/scripts/custom_menuTree.js ]; then
+		mv /jffs/scripts/custom_menuTree.js "$SHARED_DIR/custom_menuTree.js"
+	fi
+	
+	if [ ! -f "$SHARED_DIR/custom_menuTree.js" ]; then
+		cp "$tmpfile" "$SHARED_DIR/custom_menuTree.js"
+	fi
+	
+	if ! diff -q "$tmpfile" "$SHARED_DIR/custom_menuTree.js" >/dev/null 2>&1; then
+		cp "$tmpfile" "$SHARED_DIR/custom_menuTree.js"
 	fi
 	
 	rm -f "$tmpfile"
 	
-	mount -o bind "/jffs/scripts/custom_menuTree.js" "/www/require/modules/menuTree.js"
+	mount -o bind "$SHARED_DIR/custom_menuTree.js" "/www/require/modules/menuTree.js"
 	### ###
 	
 	### start_apply.htm ###
@@ -423,18 +431,22 @@ Modify_WebUI_File(){
 	if [ -f /jffs/scripts/ntpmerlin ]; then
 		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Feedback_Info.asp") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect(); alert("Please force-reload this page (e.g. Ctrl+F5)");}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
 	fi
-		
-	if [ ! -f /jffs/scripts/custom_start_apply.htm ]; then
-		cp "/www/start_apply.htm" "/jffs/scripts/custom_start_apply.htm"
+	
+	if [ -f /jffs/scripts/custom_start_apply.htm ]; then
+		mv /jffs/scripts/custom_start_apply.htm "$SHARED_DIR/custom_start_apply.htm"
 	fi
 	
-	if ! diff -q "$tmpfile" "/jffs/scripts/custom_start_apply.htm" >/dev/null 2>&1; then
-		cp "$tmpfile" "/jffs/scripts/custom_start_apply.htm"
+	if [ ! -f "$SHARED_DIR/custom_start_apply.htm" ]; then
+		cp "/www/start_apply.htm" "$SHARED_DIR/custom_start_apply.htm"
+	fi
+	
+	if ! diff -q "$tmpfile" "$SHARED_DIR/custom_start_apply.htm" >/dev/null 2>&1; then
+		cp "$tmpfile" "$SHARED_DIR/custom_start_apply.htm"
 	fi
 	
 	rm -f "$tmpfile"
 	
-	mount -o bind /jffs/scripts/custom_start_apply.htm /www/start_apply.htm
+	mount -o bind "$SHARED_DIR/custom_start_apply.htm" /www/start_apply.htm
 	### ###
 }
 
@@ -802,14 +814,14 @@ Menu_Uninstall(){
 	Shortcut_connmon delete
 	umount /www/AiMesh_Node_FirmwareUpgrade.asp 2>/dev/null
 	umount /www/AdaptiveQoS_ROG.asp 2>/dev/null
-	sed -i '/{url: "AiMesh_Node_FirmwareUpgrade.asp", tabName: "Uptime Monitoring"}/d' "/jffs/scripts/custom_menuTree.js"
+	sed -i '/{url: "AiMesh_Node_FirmwareUpgrade.asp", tabName: "Uptime Monitoring"}/d' "$SHARED_DIR/custom_menuTree.js"
 	umount /www/require/modules/menuTree.js 2>/dev/null
 	
 	if [ ! -f "/jffs/scripts/ntpmerlin" ] && [ ! -f "/jffs/scripts/spdmerlin" ]; then
 		opkg remove --autoremove rrdtool
-		rm -f "/jffs/scripts/custom_menuTree.js" 2>/dev/null
+		rm -f "$SHARED_DIR/custom_menuTree.js" 2>/dev/null
 	else
-		mount -o bind "/jffs/scripts/custom_menuTree.js" "/www/require/modules/menuTree.js"
+		mount -o bind "$SHARED_DIR/custom_menuTree.js" "/www/require/modules/menuTree.js"
 	fi
 	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null
 	rm -f "/jffs/scripts/$SCRIPT_NAME" 2>/dev/null
