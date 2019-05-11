@@ -499,7 +499,7 @@ Generate_Stats(){
 	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $pktloss %%" "$PASS"
 	
 	RDB="$SCRIPT_DIR/connmonstats_rrd.rrd"
-	rrdtool update $RDB N:"$ping":"$jitter":"$pktloss"
+	rrdtool update "$RDB" N:"$ping":"$jitter":"$pktloss"
 	
 	COMMON="-c SHADEA#475A5F -c SHADEB#475A5F -c BACK#475A5F -c CANVAS#92A0A520 -c AXIS#92a0a520 -c FONT#ffffff -c ARROW#475A5F -n TITLE:9 -n AXIS:8 -n LEGEND:9 -w 650 -h 200"
 	
@@ -767,6 +767,7 @@ Menu_Startup(){
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_connmon create
+	Create_Dirs
 	Mount_CONNMON_WebUI
 	Modify_WebUI_File
 	RRD_Initialise
@@ -830,6 +831,12 @@ Menu_Uninstall(){
 }
 
 if [ -z "$1" ]; then
+	Create_Dirs
+	Auto_Startup create 2>/dev/null
+	Auto_Cron create 2>/dev/null
+	Auto_ServiceEvent create 2>/dev/null
+	Shortcut_connmon create
+	Clear_Lock
 	ScriptHeader
 	MainMenu
 	exit 0
