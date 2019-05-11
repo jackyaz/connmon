@@ -369,7 +369,7 @@ Get_CONNMON_UI(){
 Mount_CONNMON_WebUI(){
 	umount /www/AiMesh_Node_FirmwareUpgrade.asp 2>/dev/null
 	umount /www/AdaptiveQoS_ROG.asp 2>/dev/null
-	if [ ! -f "/jffs/scripts/connmonstats_www.asp" ]; then
+	if [ -f "/jffs/scripts/connmonstats_www.asp" ]; then
 		mv "/jffs/scripts/connmonstats_www.asp" "$SCRIPT_DIR/connmonstats_www.asp"
 	fi
 	
@@ -494,7 +494,7 @@ Generate_Stats(){
 	D_COMMON='--start -86400 --x-grid MINUTE:20:HOUR:2:HOUR:2:0:%H:%M'
 	W_COMMON='--start -604800 --x-grid HOUR:3:DAY:1:DAY:1:0:%Y-%m-%d'
 	
-	rm -f /www/ext/*connmon*
+	rm -f /www/ext/*-connmon-*
 	
 	#shellcheck disable=SC2086
 	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/ping.png" \
