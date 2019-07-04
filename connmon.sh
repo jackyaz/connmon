@@ -392,15 +392,17 @@ Modify_WebUI_File(){
 		sed -i '/retArray.push("Advanced_MultiSubnet_Content.asp");/d' "$tmpfile"
 	fi
 	
-	if [ -f "/jffs/scripts/spdmerlin" ]; then
-		sed -i '/{url: "Advanced_Feedback.asp", tabName: /d' "$tmpfile"
-		sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "Advanced_Feedback.asp", tabName: "Uptime Monitoring"},' "$tmpfile"
-		sed -i '/retArray.push("Advanced_Feedback.asp");/d' "$tmpfile"
-	fi
 	
-	sed -i '/{url: "'"$(Get_spdMerlin_UI)"'", tabName: /d' "$tmpfile"
-	sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "'"$(Get_spdMerlin_UI)"'", tabName: "SpeedTest"},' "$tmpfile"
-	sed -i '/retArray.push("'"$(Get_spdMerlin_UI)"'");/d' "$tmpfile"
+	sed -i '/{url: "Advanced_Feedback.asp", tabName: /d' "$tmpfile"
+	sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "Advanced_Feedback.asp", tabName: "Uptime Monitoring"},' "$tmpfile"
+	sed -i '/retArray.push("Advanced_Feedback.asp");/d' "$tmpfile"
+	
+	
+	if [ -f "/jffs/scripts/spdmerlin" ]; then
+		sed -i '/{url: "'"$(Get_spdMerlin_UI)"'", tabName: /d' "$tmpfile"
+		sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "'"$(Get_spdMerlin_UI)"'", tabName: "SpeedTest"},' "$tmpfile"
+		sed -i '/retArray.push("'"$(Get_spdMerlin_UI)"'");/d' "$tmpfile"
+	fi
 	
 	if [ -f "/jffs/scripts/ntpmerlin" ]; then
 		sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "Feedback_Info.asp", tabName: "NTP Daemon"},' "$tmpfile"
