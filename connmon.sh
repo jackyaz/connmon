@@ -347,18 +347,6 @@ Download_File(){
 	/usr/sbin/curl -fsL --retry 3 "$1" -o "$2"
 }
 
-RRD_Initialise(){
-	if [ -f "/jffs/scripts/connmonstats_rrd.rrd" ]; then
-		mv "/jffs/scripts/connmonstats_rrd.rrd" "$SCRIPT_DIR/connmonstats_rrd.rrd"
-	fi
-	
-	if [ ! -f "$SCRIPT_DIR/connmonstats_rrd.rrd" ]; then
-		Download_File "$SCRIPT_REPO/connmonstats_xml.xml" "$SCRIPT_DIR/connmonstats_xml.xml"
-		rrdtool restore -f "$SCRIPT_DIR/connmonstats_xml.xml" "$SCRIPT_DIR/connmonstats_rrd.rrd"
-		rm -f "$SCRIPT_DIR/connmonstats_xml.xml"
-	fi
-}
-
 Get_spdMerlin_UI(){
 	if [ -f /www/AdaptiveQoS_ROG.asp ]; then
 		echo "AdaptiveQoS_ROG.asp"
@@ -369,9 +357,6 @@ Get_spdMerlin_UI(){
 
 Mount_CONNMON_WebUI(){
 	umount /www/Advanced_Feedback.asp 2>/dev/null
-	if [ -f "/jffs/scripts/connmonstats_www.asp" ]; then
-		mv "/jffs/scripts/connmonstats_www.asp" "$SCRIPT_DIR/connmonstats_www.asp"
-	fi
 	
 	if [ ! -f "$SCRIPT_DIR/connmonstats_www.asp" ]; then
 		Download_File "$SCRIPT_REPO/connmonstats_www.asp" "$SCRIPT_DIR/connmonstats_www.asp"
@@ -392,11 +377,9 @@ Modify_WebUI_File(){
 		sed -i '/retArray.push("Advanced_MultiSubnet_Content.asp");/d' "$tmpfile"
 	fi
 	
-	
 	sed -i '/{url: "Advanced_Feedback.asp", tabName: /d' "$tmpfile"
 	sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "Advanced_Feedback.asp", tabName: "Uptime Monitoring"},' "$tmpfile"
 	sed -i '/retArray.push("Advanced_Feedback.asp");/d' "$tmpfile"
-	
 	
 	if [ -f "/jffs/scripts/spdmerlin" ]; then
 		sed -i '/{url: "'"$(Get_spdMerlin_UI)"'", tabName: /d' "$tmpfile"
@@ -510,93 +493,7 @@ Generate_Stats(){
 	
 	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $pktloss %%" "$PASS"
 	
-	RDB="$SCRIPT_DIR/connmonstats_rrd.rrd"
-	rrdtool update "$RDB" N:"$ping":"$jitter":"$pktloss"
-	
-	COMMON="-c SHADEA#475A5F -c SHADEB#475A5F -c BACK#475A5F -c CANVAS#92A0A520 -c AXIS#92a0a520 -c FONT#ffffff -c ARROW#475A5F -n TITLE:9 -n AXIS:8 -n LEGEND:9 -w 650 -h 200"
-	
-	D_COMMON='--start -86400 --x-grid MINUTE:20:HOUR:2:HOUR:2:0:%H:%M'
-	W_COMMON='--start -604800 --x-grid HOUR:3:DAY:1:DAY:1:0:%Y-%m-%d'
-	
 	rm -f /www/ext/*-connmon-*
-	
-	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/ping.png" \
-		$COMMON $D_COMMON \
-		--title "Ping - $DATE" \
-		--vertical-label "Milliseconds" \
-		DEF:ping="$RDB":ping:LAST \
-		CDEF:nping=ping,1000,/ \
-		LINE1.5:ping#fc8500:"ping (ms)" \
-		GPRINT:ping:MIN:"Min\: %3.3lf" \
-		GPRINT:ping:MAX:"Max\: %3.3lf" \
-		GPRINT:ping:AVERAGE:"Avg\: %3.3lf" \
-		GPRINT:ping:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
-	
-	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/jitter.png" \
-		$COMMON $D_COMMON \
-		--title "Jitter - $DATE" \
-		--vertical-label "Milliseconds" \
-		DEF:jitter="$RDB":jitter:LAST \
-		CDEF:njitter=jitter,1000,/ \
-		LINE1.5:jitter#c4fd3d:"jitter (ms)" \
-		GPRINT:jitter:MIN:"Min\: %3.3lf" \
-		GPRINT:jitter:MAX:"Max\: %3.3lf" \
-		GPRINT:jitter:AVERAGE:"Avg\: %3.3lf" \
-		GPRINT:jitter:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
-	
-	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/pktloss.png" \
-		$COMMON $D_COMMON \
-		--title "Line Quality - $DATE" \
-		--vertical-label "%" \
-		DEF:pktloss="$RDB":pktloss:LAST \
-		CDEF:npktloss=pktloss,1000,/ \
-		AREA:pktloss#778787:"line quality (%)" \
-		GPRINT:pktloss:MIN:"Min\: %3.3lf" \
-		GPRINT:pktloss:MAX:"Max\: %3.3lf" \
-		GPRINT:pktloss:AVERAGE:"Avg\: %3.3lf" \
-		GPRINT:pktloss:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
-	
-	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/week-ping.png" \
-		$COMMON $W_COMMON \
-		--title "Ping - $DATE" \
-		--vertical-label "Milliseconds" \
-		DEF:ping="$RDB":ping:LAST \
-		CDEF:nping=ping,1000,/ \
-		LINE1.5:nping#fc8500:"ping (ms)" \
-		GPRINT:ping:MIN:"Min\: %3.3lf" \
-		GPRINT:ping:MAX:"Max\: %3.3lf" \
-		GPRINT:ping:AVERAGE:"Avg\: %3.3lf" \
-		GPRINT:ping:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
-	
-	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/week-jitter.png" \
-		$COMMON $W_COMMON \
-		--title "Jitter - $DATE" \
-		--vertical-label "Milliseconds" \
-		DEF:jitter="$RDB":jitter:LAST \
-		CDEF:njitter=jitter,1000,/ \
-		LINE1.5:njitter#c4fd3d:"ping (ms)" \
-		GPRINT:jitter:MIN:"Min\: %3.3lf" \
-		GPRINT:jitter:MAX:"Max\: %3.3lf" \
-		GPRINT:jitter:AVERAGE:"Avg\: %3.3lf" \
-		GPRINT:jitter:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
-	
-	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/week-pktloss.png" \
-		$COMMON $W_COMMON --alt-autoscale-max \
-		--title "Line Quality - $DATE" \
-		--vertical-label "%" \
-		DEF:pktloss="$RDB":pktloss:LAST \
-		CDEF:npktloss=pktloss,1000,/ \
-		AREA:pktloss#778787:"line quality (ms)" \
-		GPRINT:pktloss:MIN:"Min\: %3.3lf" \
-		GPRINT:pktloss:MAX:"Max\: %3.3lf" \
-		GPRINT:pktloss:AVERAGE:"Avg\: %3.3lf" \
-		GPRINT:pktloss:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
 		
 	Clear_Lock
 }
@@ -758,7 +655,6 @@ Menu_Install(){
 	fi
 	
 	opkg update
-	opkg install rrdtool
 	
 	Create_Dirs
 	Conf_Exists
@@ -769,7 +665,6 @@ Menu_Install(){
 	Shortcut_connmon create
 	Mount_CONNMON_WebUI
 	Modify_WebUI_File
-	RRD_Initialise
 	Menu_GenerateStats
 	
 	Clear_Lock
@@ -783,7 +678,6 @@ Menu_Startup(){
 	Create_Dirs
 	Mount_CONNMON_WebUI
 	Modify_WebUI_File
-	RRD_Initialise
 	Clear_Lock
 }
 
@@ -817,7 +711,6 @@ Menu_Uninstall(){
 		case "$confirm" in
 			y|Y)
 				rm -f "/jffs/configs/connmon.config" 2> /dev/null
-				rm -f "$SCRIPT_DIR/connmonstats_rrd.rrd" 2>/dev/null
 				break
 			;;
 			*)
@@ -831,7 +724,6 @@ Menu_Uninstall(){
 	umount /www/require/modules/menuTree.js 2>/dev/null
 	
 	if [ ! -f "/jffs/scripts/ntpmerlin" ] && [ ! -f "/jffs/scripts/spdmerlin" ]; then
-		opkg remove --autoremove rrdtool
 		rm -f "$SHARED_DIR/custom_menuTree.js" 2>/dev/null
 	else
 		mount -o bind "$SHARED_DIR/custom_menuTree.js" "/www/require/modules/menuTree.js"
