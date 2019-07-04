@@ -21,6 +21,8 @@ readonly SCRIPT_CONF="/jffs/configs/$SCRIPT_NAME.config"
 readonly SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME.d"
 readonly SCRIPT_WEB_DIR="$(readlink /www/ext)/$SCRIPT_NAME"
 readonly SHARED_DIR="/jffs/scripts/shared-jy"
+readonly SHARED_REPO="https://raw.githubusercontent.com/jackyaz/shared-jy/master"
+readonly SHARED_WEB_DIR="$(readlink /www/ext)/shared-jy"
 [ -z "$(nvram get odmpid)" ] && ROUTER_MODEL=$(nvram get productid) || ROUTER_MODEL=$(nvram get odmpid)
 ### End of script variables ###
 
@@ -99,6 +101,10 @@ Update_Version(){
 		fi
 		
 		Update_File "connmonstats_www.asp"
+		Update_File "chartjs-plugin-zoom.js"
+		Update_File "chartjs-plugin-annotation.js"
+		Update_File "hammerjs.js"
+		Update_File "moment.js"
 		Modify_WebUI_File
 		
 		if [ "$doupdate" != "false" ]; then
@@ -117,6 +123,10 @@ Update_Version(){
 			serverver=$(/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 			Print_Output "true" "Downloading latest version ($serverver) of $SCRIPT_NAME" "$PASS"
 			Update_File "connmonstats_www.asp"
+			Update_File "chartjs-plugin-zoom.js"
+			Update_File "chartjs-plugin-annotation.js"
+			Update_File "hammerjs.js"
+			Update_File "moment.js"
 			Modify_WebUI_File
 			/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output "true" "$SCRIPT_NAME successfully updated"
 			chmod 0755 /jffs/scripts/"$SCRIPT_NAME"
@@ -135,6 +145,17 @@ Update_File(){
 			Print_Output "true" "New version of $1 downloaded" "$PASS"
 			rm -f "$SCRIPT_DIR/$1"
 			Mount_CONNMON_WebUI
+		fi
+		rm -f "$tmpfile"
+	elif [ "$1" = "chartjs-plugin-zoom.js" ] || [ "$1" = "chartjs-plugin-annotation.js" ] || [ "$1" = "moment.js" ] || [ "$1" =  "hammerjs.js" ]; then
+		tmpfile="/tmp/$1"
+		Download_File "$SHARED_REPO/$1" "$tmpfile"
+		if [ ! -f "$SHARED_DIR/$1" ]; then
+			touch "$SHARED_DIR/$1"
+		fi
+		if ! diff -q "$tmpfile" "$SHARED_DIR/$1" >/dev/null 2>&1; then
+			Print_Output "true" "New version of $1 downloaded" "$PASS"
+			Download_File "$SHARED_REPO/$1" "$SHARED_DIR/$1"
 		fi
 		rm -f "$tmpfile"
 	else
@@ -189,6 +210,11 @@ Create_Dirs(){
 	if [ ! -d "$SCRIPT_WEB_DIR" ]; then
 		mkdir -p "$SCRIPT_WEB_DIR"
 	fi
+	
+	if [ ! -d "$SHARED_WEB_DIR" ]; then
+		mkdir -p "$SHARED_WEB_DIR"
+	fi
+}
 }
 
 Conf_Exists(){
@@ -658,6 +684,11 @@ Menu_Install(){
 	
 	Create_Dirs
 	Conf_Exists
+	
+	Update_File "chartjs-plugin-zoom.js"
+	Update_File "chartjs-plugin-annotation.js"
+	Update_File "hammerjs.js"
+	Update_File "moment.js"
 	
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
