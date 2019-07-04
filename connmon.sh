@@ -215,6 +215,17 @@ Create_Dirs(){
 		mkdir -p "$SHARED_WEB_DIR"
 	fi
 }
+
+Create_Symlinks(){
+	rm -f "$SCRIPT_WEB_DIR/"* 2>/dev/null
+	
+	ln -s "$SCRIPT_DIR/connstatsdata.js" "$SCRIPT_WEB_DIR/connstatsdata.js" 2>/dev/null
+	ln -s "$SCRIPT_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
+	
+	ln -s "$SHARED_DIR/chartjs-plugin-zoom.js" "$SHARED_WEB_DIR/chartjs-plugin-zoom.js" 2>/dev/null
+	ln -s "$SHARED_DIR/chartjs-plugin-annotation.js" "$SHARED_WEB_DIR/chartjs-plugin-annotation.js" 2>/dev/null
+	ln -s "$SHARED_DIR/hammerjs.js" "$SHARED_WEB_DIR/hammerjs.js" 2>/dev/null
+	ln -s "$SHARED_DIR/moment.js" "$SHARED_WEB_DIR/moment.js" 2>/dev/null
 }
 
 Conf_Exists(){
@@ -477,6 +488,7 @@ Generate_Stats(){
 	Auto_ServiceEvent create 2>/dev/null
 	Conf_Exists
 	Create_Dirs
+	Create_Symlinks
 	pingfile=/tmp/pingresult.txt
 	
 	Print_Output "false" "30 second ping test to $(ShowPingServer) starting..." "$PASS"
@@ -659,6 +671,14 @@ Check_Requirements(){
 		CHECKSFAILED="true"
 	fi
 	
+	if [ "$(Firmware_Version_Check "$(nvram get buildno)")" -lt "$(Firmware_Version_Check 384.11)" ] && [ "$(Firmware_Version_Check "$(nvram get buildno)")" -ne "$(Firmware_Version_Check 374.43)" ]; then
+		Print_Output "true" "Older Merlin firmware detected - $SCRIPT_NAME requires 384.11 or later" "$ERR"
+		CHECKSFAILED="true"
+	elif [ "$(Firmware_Version_Check "$(nvram get buildno)")" -eq "$(Firmware_Version_Check 374.43)" ]; then
+		Print_Output "true" "John's fork detected - unsupported" "$ERR"
+		CHECKSFAILED="true"
+	fi
+		
 	if [ "$CHECKSFAILED" = "false" ]; then
 		return 0
 	else
@@ -683,6 +703,7 @@ Menu_Install(){
 	opkg update
 	
 	Create_Dirs
+	Create_Symlinks
 	Conf_Exists
 	
 	Update_File "chartjs-plugin-zoom.js"
@@ -707,6 +728,7 @@ Menu_Startup(){
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_connmon create
 	Create_Dirs
+	Create_Symlinks
 	Mount_CONNMON_WebUI
 	Modify_WebUI_File
 	Clear_Lock
@@ -767,6 +789,7 @@ Menu_Uninstall(){
 
 if [ -z "$1" ]; then
 	Create_Dirs
+	Create_Symlinks
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
