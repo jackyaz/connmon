@@ -554,7 +554,7 @@ Generate_Stats(){
 	
 	{
 	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[Packet_Loss] REAL NOT NULL);"
-	echo "INSERT INTO ntpstats ([Timestamp],[Ping],[Jitter],[Packet_Loss]) values($(date '+%s'),$ping,$jitter,$pktloss);"
+	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[Packet_Loss]) values($(date '+%s'),$ping,$jitter,$pktloss);"
 	} > /tmp/connmon-stats.sql
 	
 	/usr/sbin/sqlite3 "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
@@ -608,7 +608,7 @@ Generate_Stats(){
 	
 	/usr/sbin/sqlite3 "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
-	rm -f "$SCRIPT_DIR/ntpstatsdata.js"
+	rm -f "$SCRIPT_DIR/connstatsdata.js"
 	WriteData_ToJS "/tmp/connmon-pingdaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataPingDaily"
 	WriteData_ToJS "/tmp/connmon-jitterdaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataJitterDaily"
 	WriteData_ToJS "/tmp/connmon-qualitydaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataQualityDaily"
