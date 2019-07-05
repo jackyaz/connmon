@@ -45,8 +45,8 @@ document.form.submit();
 <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
 <input type="hidden" name="action_script" value="start_connmon">
-<input type="hidden" name="current_page" value="AdaptiveQoS_ROG.asp">
-<input type="hidden" name="next_page" value="AdaptiveQoS_ROG.asp">
+<input type="hidden" name="current_page" value="Advanced_Feedback.asp">
+<input type="hidden" name="next_page" value="Advanced_Feedback.asp">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="apply">
 <input type="hidden" name="action_wait" value="30">
