@@ -573,6 +573,40 @@ Generate_Stats(){
 	
 	rm -f /tmp/connmon-stats.sql
 	
+	{
+	echo ".mode csv"
+	echo ".output /tmp/connmon-pingweekly.csv"
+	} >> /tmp/connmon-stats.sql
+	COUNTER=0
+	timenow="$(date '+%s')"
+	until [ $COUNTER -gt 168 ]; do
+		echo "select $timenow - (3600*($COUNTER)),IFNULL(avg([Ping]),0) from connstats WHERE ([Timestamp] >= $timenow - (3600*($COUNTER+1))) AND ([Timestamp] <= $timenow - (3600*$COUNTER));" >> /tmp/connmon-stats.sql
+		COUNTER=$((COUNTER + 1))
+	done
+
+	{
+		echo ".mode csv"
+		echo ".output /tmp/connmon-jitterweekly.csv"
+	} >> /tmp/connmon-stats.sql
+	COUNTER=0
+	timenow="$(date '+%s')"
+	until [ $COUNTER -gt 168 ]; do
+		echo "select $timenow - (3600*($COUNTER)),IFNULL(avg([Jitter]),0) from connstats WHERE ([Timestamp] >= $timenow - (3600*($COUNTER+1))) AND ([Timestamp] <= $timenow - (3600*$COUNTER));" >> /tmp/connmon-stats.sql
+		COUNTER=$((COUNTER + 1))
+	done
+
+	{
+		echo ".mode csv"
+		echo ".output /tmp/connmon-qualityweekly.csv"
+	} >> /tmp/connmon-stats.sql
+	COUNTER=0
+	timenow="$(date '+%s')"
+	until [ $COUNTER -gt 168 ]; do
+		echo "select $timenow - (3600*($COUNTER)),IFNULL(avg([Packet_Loss]),0) from connstats WHERE ([Timestamp] >= $timenow - (3600*($COUNTER+1))) AND ([Timestamp] <= $timenow - (3600*$COUNTER));" >> /tmp/connmon-stats.sql
+		COUNTER=$((COUNTER + 1))
+	done
+	
+	/usr/sbin/sqlite3 "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
 	rm -f "$SCRIPT_DIR/ntpstatsdata.js"
 	WriteData_ToJS "/tmp/connmon-pingdaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataPingDaily"
