@@ -482,6 +482,30 @@ Modify_WebUI_File(){
 	### ###
 }
 
+WriteData_ToJS(){
+	{
+	echo "var $3;"
+	echo "$3 = [];"; } >> "$2"
+	contents="$3"'.unshift('
+	while IFS='' read -r line || [ -n "$line" ]; do
+		datapoint="{ x: moment.unix(""$(echo "$line" | awk 'BEGIN{FS=","}{ print $1 }' | awk '{$1=$1};1')""), y: ""$(echo "$line" | awk 'BEGIN{FS=","}{ print $2 }' | awk '{$1=$1};1')"" }"
+		contents="$contents""$datapoint"","
+	done < "$1"
+	contents=$(echo "$contents" | sed 's/.$//')
+	contents="$contents"");"
+	printf "%s\\r\\n\\r\\n" "$contents" >> "$2"
+}
+
+WriteStats_ToJS(){
+	echo "function $3(){" > "$2"
+	html='document.getElementById("'"$4"'").innerHTML="'
+	while IFS='' read -r line || [ -n "$line" ]; do
+		html="$html""$line""\\r\\n"
+	done < "$1"
+	html="$html"'"'
+	printf "%s\\r\\n}\\r\\n" "$html" >> "$2"
+}
+
 Generate_Stats(){
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
@@ -489,6 +513,7 @@ Generate_Stats(){
 	Conf_Exists
 	Create_Dirs
 	Create_Symlinks
+	
 	pingfile=/tmp/pingresult.txt
 	
 	Print_Output "false" "30 second ping test to $(ShowPingServer) starting..." "$PASS"
@@ -497,6 +522,7 @@ Generate_Stats(){
 		Clear_Lock
 		return 1
 	fi
+	
 	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
 	ping -w 30 "$(ShowPingServer)" > "$pingfile"
 	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
@@ -519,21 +545,52 @@ Generate_Stats(){
 		COUNTER=$((COUNTER + 1))
 	done
 	
+	TZ=$(cat /etc/TZ)
+	export TZ
+	
 	ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
 	jitter="$(echo "$TOTALDIFF" "$DIFFCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
 	pktloss="$(echo "100" "$(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" | awk '{printf "%4.3f\n",$1-$2}')"
 	
-	rm -f "$pingfile"
+	{
+	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[Packet_Loss] REAL NOT NULL);"
+	echo "INSERT INTO ntpstats ([Timestamp],[Ping],[Jitter],[Packet_Loss]) values($(date '+%s'),$ping,$jitter,$pktloss);"
+	} > /tmp/connmon-stats.sql
 	
-	TZ=$(cat /etc/TZ)
-	export TZ
-	DATE=$(date "+%a %b %e %H:%M %Y")
+	/usr/sbin/sqlite3 "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
+	{
+		echo ".mode csv"
+		echo ".output /tmp/connmon-pingdaily.csv"
+		echo "select [Timestamp],[Ping] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
+		echo ".output /tmp/connmon-jitterdaily.csv"
+		echo "select [Timestamp],[Jitter] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
+		echo ".output /tmp/connmon-qualitydaily.csv"
+		echo "select [Timestamp],[Packet_Loss] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
+	} > /tmp/connmon-stats.sql
+	
+	/usr/sbin/sqlite3 "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+	
+	rm -f /tmp/connmon-stats.sql
+	
+	
+	rm -f "$SCRIPT_DIR/ntpstatsdata.js"
+	WriteData_ToJS "/tmp/connmon-pingdaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataPingDaily"
+	WriteData_ToJS "/tmp/connmon-jitterdaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataJitterDaily"
+	WriteData_ToJS "/tmp/connmon-qualitydaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataQualityDaily"
+
+	WriteData_ToJS "/tmp/connmon-pingweekly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataPingWeekly"
+	WriteData_ToJS "/tmp/connmon-jitterweekly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataJitterWeekly"
+	WriteData_ToJS "/tmp/connmon-qualityweekly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataQualityWeekly"
+
+	echo "Internet Uptime Monitoring generated on $(date +"%c")" > "/tmp/connstatstitle.txt"
+	WriteStats_ToJS "/tmp/connstatstitle.txt" "$SCRIPT_DIR/connstatstext.js" "SetConnmonStatsTitle" "statstitle"
 	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $pktloss %%" "$PASS"
 	
-	rm -f /www/ext/*-connmon-*
-		
-	Clear_Lock
+	rm -f "$pingfile"
+	rm -f "/tmp/connmon-"*".csv"
+	rm -f "/tmp/connmon-stats.sql"
+	rm -f "/tmp/connstatstitle.txt"
 }
 
 Shortcut_connmon(){
