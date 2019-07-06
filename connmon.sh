@@ -587,6 +587,9 @@ Generate_Stats(){
 	WriteSql_ToFile "Ping" "connstats" 1 7 "/tmp/connmon-pingweekly.csv" "/tmp/connmon-stats.sql"
 	WriteSql_ToFile "Jitter" "connstats" 1 7 "/tmp/connmon-jitterweekly.csv" "/tmp/connmon-stats.sql"
 	WriteSql_ToFile "Packet_Loss" "connstats" 1 7 "/tmp/connmon-qualityweekly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Ping" "connstats" 3 30 "/tmp/connmon-pingmonthly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Jitter" "connstats" 3 30 "/tmp/connmon-jittermonthly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Packet_Loss" "connstats" 3 30 "/tmp/connmon-qualitymonthly.csv" "/tmp/connmon-stats.sql"
 	
 	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
@@ -598,6 +601,10 @@ Generate_Stats(){
 	WriteData_ToJS "/tmp/connmon-pingweekly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataPingWeekly"
 	WriteData_ToJS "/tmp/connmon-jitterweekly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataJitterWeekly"
 	WriteData_ToJS "/tmp/connmon-qualityweekly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataQualityWeekly"
+	
+	WriteData_ToJS "/tmp/connmon-pingmonthly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataPingMonthly"
+	WriteData_ToJS "/tmp/connmon-jittermonthly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataJitterMonthly"
+	WriteData_ToJS "/tmp/connmon-qualitymonthly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataQualityMonthly"
 
 	echo "Internet Uptime Monitoring generated on $(date +"%c")" > "/tmp/connstatstitle.txt"
 	WriteStats_ToJS "/tmp/connstatstitle.txt" "$SCRIPT_DIR/connstatstext.js" "SetConnmonStatsTitle" "statstitle"
