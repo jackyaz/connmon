@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/jackyaz/connmon.svg?branch=master)](https://travis-ci.com/jackyaz/connmon)
 
 ## v2.0.0
-### Updated on 2019-07-05
+### Updated on 2019-07-06
 ## About
 Track your Internet uptime, on your router. Graphs available for on the Tools page of the WebUI.
 
@@ -16,10 +16,14 @@ Love the script and want to support future development? Any and all donations gr
 [**PayPal donation**](https://paypal.me/jackyaz21)
 
 ## Supported Models
+### Models
 All modes supported by [Asuswrt-Merlin](https://asuswrt.lostrealm.ca/about). Models confirmed to work are below:
 *   RT-AC68U
 *   RT-AC86U
 *   RT-AC3100
+
+### Firmware versions
+You must be running firmware no earlier than 384.XX [Asuswrt-Merlin](https://asuswrt.lostrealm.ca/)
 
 ## Installation
 Using your preferred SSH client/terminal, copy and paste the following command, then press Enter:
