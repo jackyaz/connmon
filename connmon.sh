@@ -144,7 +144,7 @@ Update_File(){
 		Download_File "$SCRIPT_REPO/$1" "$tmpfile"
 		if ! diff -q "$tmpfile" "$SCRIPT_DIR/$1" >/dev/null 2>&1; then
 			Print_Output "true" "New version of $1 downloaded" "$PASS"
-			rm -f "$SCRIPT_DIR/$1"
+			mv "$SCRIPT_DIR/$1" "$SCRIPT_DIR/$1.old"
 			Mount_CONNMON_WebUI
 		fi
 		rm -f "$tmpfile"
