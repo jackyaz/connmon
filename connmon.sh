@@ -24,6 +24,7 @@ readonly SHARED_DIR="/jffs/scripts/shared-jy"
 readonly SHARED_REPO="https://raw.githubusercontent.com/jackyaz/shared-jy/master"
 readonly SHARED_WEB_DIR="$(readlink /www/ext)/shared-jy"
 [ -z "$(nvram get odmpid)" ] && ROUTER_MODEL=$(nvram get productid) || ROUTER_MODEL=$(nvram get odmpid)
+[ -f /opt/bin/sqlite3 ] && SQLITE3_PATH=/opt/bin/sqlite3 || SQLITE3_PATH=/usr/sbin/sqlite3
 ### End of script variables ###
 
 ### Start of output format variables ###
@@ -557,7 +558,7 @@ Generate_Stats(){
 	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[Packet_Loss]) values($(date '+%s'),$ping,$jitter,$pktloss);"
 	} > /tmp/connmon-stats.sql
 	
-	/usr/sbin/sqlite3 "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
 	{
 		echo ".mode csv"
@@ -569,7 +570,7 @@ Generate_Stats(){
 		echo "select [Timestamp],[Packet_Loss] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
 	} > /tmp/connmon-stats.sql
 	
-	/usr/sbin/sqlite3 "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
 	rm -f /tmp/connmon-stats.sql
 	
@@ -606,7 +607,7 @@ Generate_Stats(){
 		COUNTER=$((COUNTER + 1))
 	done
 	
-	/usr/sbin/sqlite3 "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
 	rm -f "$SCRIPT_DIR/connstatsdata.js"
 	WriteData_ToJS "/tmp/connmon-pingdaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataPingDaily"
@@ -760,14 +761,18 @@ Check_Requirements(){
 	if [ ! -f "/opt/bin/opkg" ]; then
 		Print_Output "true" "Entware not detected!" "$ERR"
 		CHECKSFAILED="true"
+		return 1
 	fi
 	
 	if [ "$(Firmware_Version_Check "$(nvram get buildno)")" -lt "$(Firmware_Version_Check 384.11)" ] && [ "$(Firmware_Version_Check "$(nvram get buildno)")" -ne "$(Firmware_Version_Check 374.43)" ]; then
-		Print_Output "true" "Older Merlin firmware detected - $SCRIPT_NAME requires 384.11 or later" "$ERR"
-		CHECKSFAILED="true"
+		Print_Output "true" "Older Merlin firmware detected - $SCRIPT_NAME requires 384.11 or later for sqlite3 support" "$WARN"
+		Print_Output "true" "Installing sqlite3-cli from Entware..." "$WARN"
+		opkg update
+		opkg install sqlite3-cli
 	elif [ "$(Firmware_Version_Check "$(nvram get buildno)")" -eq "$(Firmware_Version_Check 374.43)" ]; then
 		Print_Output "true" "John's fork detected - unsupported" "$ERR"
 		CHECKSFAILED="true"
+		return 1
 	fi
 		
 	if [ "$CHECKSFAILED" = "false" ]; then
