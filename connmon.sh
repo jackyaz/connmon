@@ -503,6 +503,20 @@ WriteStats_ToJS(){
 	printf "%s\\r\\n}\\r\\n" "$html" >> "$2"
 }
 
+#$1 fieldname $2 tablename $3 frequency (hours) $4 length (days) $5 outputfile $6 sqlfile
+WriteSql_ToFile(){
+	{
+		echo ".mode csv"
+		echo ".output $5"
+	} >> "$6"
+	COUNTER=0
+	timenow="$(date '+%s')"
+	until [ $COUNTER -gt "$((24*$4/$3))" ]; do
+		echo "select $timenow - ((60*60*$3)*($COUNTER)),IFNULL(avg([$1]),0) from $2 WHERE ([Timestamp] >= $timenow - ((60*60*$3)*($COUNTER+1))) AND ([Timestamp] <= $timenow - ((60*60*$3)*$COUNTER));" >> "$6"
+		COUNTER=$((COUNTER + 1))
+	done
+}
+
 Generate_Stats(){
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
@@ -570,38 +584,9 @@ Generate_Stats(){
 	
 	rm -f /tmp/connmon-stats.sql
 	
-	{
-	echo ".mode csv"
-	echo ".output /tmp/connmon-pingweekly.csv"
-	} >> /tmp/connmon-stats.sql
-	COUNTER=0
-	timenow="$(date '+%s')"
-	until [ $COUNTER -gt 168 ]; do
-		echo "select $timenow - (3600*($COUNTER)),IFNULL(avg([Ping]),0) from connstats WHERE ([Timestamp] >= $timenow - (3600*($COUNTER+1))) AND ([Timestamp] <= $timenow - (3600*$COUNTER));" >> /tmp/connmon-stats.sql
-		COUNTER=$((COUNTER + 1))
-	done
-
-	{
-		echo ".mode csv"
-		echo ".output /tmp/connmon-jitterweekly.csv"
-	} >> /tmp/connmon-stats.sql
-	COUNTER=0
-	timenow="$(date '+%s')"
-	until [ $COUNTER -gt 168 ]; do
-		echo "select $timenow - (3600*($COUNTER)),IFNULL(avg([Jitter]),0) from connstats WHERE ([Timestamp] >= $timenow - (3600*($COUNTER+1))) AND ([Timestamp] <= $timenow - (3600*$COUNTER));" >> /tmp/connmon-stats.sql
-		COUNTER=$((COUNTER + 1))
-	done
-
-	{
-		echo ".mode csv"
-		echo ".output /tmp/connmon-qualityweekly.csv"
-	} >> /tmp/connmon-stats.sql
-	COUNTER=0
-	timenow="$(date '+%s')"
-	until [ $COUNTER -gt 168 ]; do
-		echo "select $timenow - (3600*($COUNTER)),IFNULL(avg([Packet_Loss]),0) from connstats WHERE ([Timestamp] >= $timenow - (3600*($COUNTER+1))) AND ([Timestamp] <= $timenow - (3600*$COUNTER));" >> /tmp/connmon-stats.sql
-		COUNTER=$((COUNTER + 1))
-	done
+	WriteSql_ToFile "Ping" "connstats" 1 7 "/tmp/connmon-pingweekly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Jitter" "connstats" 1 7 "/tmp/connmon-jitterweekly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Packet_Loss" "connstats" 1 7 "/tmp/connmon-qualityweekly.csv" "/tmp/connmon-stats.sql"
 	
 	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
