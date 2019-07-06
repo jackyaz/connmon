@@ -277,7 +277,7 @@ function RedrawAllCharts() {
 	Draw_Chart("LineChartQualityDaily",LineChartQualityDaily,"DataQualityDaily",DataQualityDaily,"Quality","%","hour",24,"#ffffff");
 	Draw_Chart("LineChartPingWeekly",LineChartPingWeekly,"DataPingWeekly",DataPingWeekly,"Ping","ms","day",7,"#fc8500");
 	Draw_Chart("LineChartJitterWeekly",LineChartJitterWeekly,"DataJitterWeekly",DataJitterWeekly,"Jitter","ms","day",7,"#42ecf5");
-	Draw_Chart("LineChartQualityMonthly",LineChartQualityMonthly,"DataQualityMonthly",DataQualityMonthly,"Quality","%","day",7,"#ffffff");
+	Draw_Chart("LineChartQualityWeekly",LineChartQualityWeekly,"DataQualityWeekly",DataQualityWeekly,"Quality","%","day",7,"#ffffff");
 	Draw_Chart("LineChartPingMonthly",LineChartPingMonthly,"DataPingMonthly",DataPingMonthly,"Ping","ms","day",30,"#fc8500");
 	Draw_Chart("LineChartJitterMonthly",LineChartJitterMonthly,"DataJitterMonthly",DataJitterMonthly,"Jitter","ms","day",30,"#42ecf5");
 	Draw_Chart("LineChartQualityMonthly",LineChartQualityMonthly,"DataQualityMonthly",DataQualityMonthly,"Quality","%","day",30,"#ffffff");
