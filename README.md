@@ -3,13 +3,15 @@
 [![Build Status](https://travis-ci.com/jackyaz/connmon.svg?branch=master)](https://travis-ci.com/jackyaz/connmon)
 
 ## v2.0.0
-### Updated on 2019-07-06
+### Updated on 2019-07-07
 ## About
 Track your Internet uptime, on your router. Graphs available for on the Tools page of the WebUI.
 
 connmon is free to use under the [GNU General Public License version 3](https://opensource.org/licenses/GPL-3.0) (GPL 3.0).
 
-![Menu UI](https://puu.sh/DfKf9/b90295e188.png)
+![Menu UI](https://puu.sh/DPKBK/a17409eb04.png)
+
+![Graph example](https://puu.sh/DPKCC/a314d9b1a4.png)
 
 ### Supporting development
 Love the script and want to support future development? Any and all donations gratefully received!
