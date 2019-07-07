@@ -13,15 +13,18 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v1.1.0"
-readonly CONNMON_VERSION="v1.1.0"
+readonly SCRIPT_VERSION="v2.0.0"
+readonly CONNMON_VERSION="v2.0.0"
 readonly SCRIPT_BRANCH="master"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
 readonly SCRIPT_CONF="/jffs/configs/$SCRIPT_NAME.config"
 readonly SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME.d"
 readonly SCRIPT_WEB_DIR="$(readlink /www/ext)/$SCRIPT_NAME"
 readonly SHARED_DIR="/jffs/scripts/shared-jy"
+readonly SHARED_REPO="https://raw.githubusercontent.com/jackyaz/shared-jy/master"
+readonly SHARED_WEB_DIR="$(readlink /www/ext)/shared-jy"
 [ -z "$(nvram get odmpid)" ] && ROUTER_MODEL=$(nvram get productid) || ROUTER_MODEL=$(nvram get odmpid)
+[ -f /opt/bin/sqlite3 ] && SQLITE3_PATH=/opt/bin/sqlite3 || SQLITE3_PATH=/usr/sbin/sqlite3
 ### End of script variables ###
 
 ### Start of output format variables ###
@@ -99,6 +102,10 @@ Update_Version(){
 		fi
 		
 		Update_File "connmonstats_www.asp"
+		Update_File "chartjs-plugin-zoom.js"
+		Update_File "chartjs-plugin-annotation.js"
+		Update_File "hammerjs.js"
+		Update_File "moment.js"
 		Modify_WebUI_File
 		
 		if [ "$doupdate" != "false" ]; then
@@ -117,6 +124,10 @@ Update_Version(){
 			serverver=$(/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 			Print_Output "true" "Downloading latest version ($serverver) of $SCRIPT_NAME" "$PASS"
 			Update_File "connmonstats_www.asp"
+			Update_File "chartjs-plugin-zoom.js"
+			Update_File "chartjs-plugin-annotation.js"
+			Update_File "hammerjs.js"
+			Update_File "moment.js"
 			Modify_WebUI_File
 			/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output "true" "$SCRIPT_NAME successfully updated"
 			chmod 0755 /jffs/scripts/"$SCRIPT_NAME"
@@ -133,8 +144,19 @@ Update_File(){
 		Download_File "$SCRIPT_REPO/$1" "$tmpfile"
 		if ! diff -q "$tmpfile" "$SCRIPT_DIR/$1" >/dev/null 2>&1; then
 			Print_Output "true" "New version of $1 downloaded" "$PASS"
-			rm -f "$SCRIPT_DIR/$1"
+			mv "$SCRIPT_DIR/$1" "$SCRIPT_DIR/$1.old"
 			Mount_CONNMON_WebUI
+		fi
+		rm -f "$tmpfile"
+	elif [ "$1" = "chartjs-plugin-zoom.js" ] || [ "$1" = "chartjs-plugin-annotation.js" ] || [ "$1" = "moment.js" ] || [ "$1" =  "hammerjs.js" ]; then
+		tmpfile="/tmp/$1"
+		Download_File "$SHARED_REPO/$1" "$tmpfile"
+		if [ ! -f "$SHARED_DIR/$1" ]; then
+			touch "$SHARED_DIR/$1"
+		fi
+		if ! diff -q "$tmpfile" "$SHARED_DIR/$1" >/dev/null 2>&1; then
+			Print_Output "true" "New version of $1 downloaded" "$PASS"
+			Download_File "$SHARED_REPO/$1" "$SHARED_DIR/$1"
 		fi
 		rm -f "$tmpfile"
 	else
@@ -189,6 +211,22 @@ Create_Dirs(){
 	if [ ! -d "$SCRIPT_WEB_DIR" ]; then
 		mkdir -p "$SCRIPT_WEB_DIR"
 	fi
+	
+	if [ ! -d "$SHARED_WEB_DIR" ]; then
+		mkdir -p "$SHARED_WEB_DIR"
+	fi
+}
+
+Create_Symlinks(){
+	rm -f "$SCRIPT_WEB_DIR/"* 2>/dev/null
+	
+	ln -s "$SCRIPT_DIR/connstatsdata.js" "$SCRIPT_WEB_DIR/connstatsdata.js" 2>/dev/null
+	ln -s "$SCRIPT_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
+	
+	ln -s "$SHARED_DIR/chartjs-plugin-zoom.js" "$SHARED_WEB_DIR/chartjs-plugin-zoom.js" 2>/dev/null
+	ln -s "$SHARED_DIR/chartjs-plugin-annotation.js" "$SHARED_WEB_DIR/chartjs-plugin-annotation.js" 2>/dev/null
+	ln -s "$SHARED_DIR/hammerjs.js" "$SHARED_WEB_DIR/hammerjs.js" 2>/dev/null
+	ln -s "$SHARED_DIR/moment.js" "$SHARED_WEB_DIR/moment.js" 2>/dev/null
 }
 
 Conf_Exists(){
@@ -347,18 +385,6 @@ Download_File(){
 	/usr/sbin/curl -fsL --retry 3 "$1" -o "$2"
 }
 
-RRD_Initialise(){
-	if [ -f "/jffs/scripts/connmonstats_rrd.rrd" ]; then
-		mv "/jffs/scripts/connmonstats_rrd.rrd" "$SCRIPT_DIR/connmonstats_rrd.rrd"
-	fi
-	
-	if [ ! -f "$SCRIPT_DIR/connmonstats_rrd.rrd" ]; then
-		Download_File "$SCRIPT_REPO/connmonstats_xml.xml" "$SCRIPT_DIR/connmonstats_xml.xml"
-		rrdtool restore -f "$SCRIPT_DIR/connmonstats_xml.xml" "$SCRIPT_DIR/connmonstats_rrd.rrd"
-		rm -f "$SCRIPT_DIR/connmonstats_xml.xml"
-	fi
-}
-
 Get_spdMerlin_UI(){
 	if [ -f /www/AdaptiveQoS_ROG.asp ]; then
 		echo "AdaptiveQoS_ROG.asp"
@@ -369,9 +395,6 @@ Get_spdMerlin_UI(){
 
 Mount_CONNMON_WebUI(){
 	umount /www/Advanced_Feedback.asp 2>/dev/null
-	if [ -f "/jffs/scripts/connmonstats_www.asp" ]; then
-		mv "/jffs/scripts/connmonstats_www.asp" "$SCRIPT_DIR/connmonstats_www.asp"
-	fi
 	
 	if [ ! -f "$SCRIPT_DIR/connmonstats_www.asp" ]; then
 		Download_File "$SCRIPT_REPO/connmonstats_www.asp" "$SCRIPT_DIR/connmonstats_www.asp"
@@ -392,11 +415,9 @@ Modify_WebUI_File(){
 		sed -i '/retArray.push("Advanced_MultiSubnet_Content.asp");/d' "$tmpfile"
 	fi
 	
-	
 	sed -i '/{url: "Advanced_Feedback.asp", tabName: /d' "$tmpfile"
 	sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "Advanced_Feedback.asp", tabName: "Uptime Monitoring"},' "$tmpfile"
 	sed -i '/retArray.push("Advanced_Feedback.asp");/d' "$tmpfile"
-	
 	
 	if [ -f "/jffs/scripts/spdmerlin" ]; then
 		sed -i '/{url: "'"$(Get_spdMerlin_UI)"'", tabName: /d' "$tmpfile"
@@ -431,17 +452,17 @@ Modify_WebUI_File(){
 	cp "/www/start_apply.htm" "$tmpfile"
 	
 	if [ -f "/jffs/scripts/uiDivStats" ]; then
-		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Advanced_MultiSubnet_Content.asp") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect(); alert("Please force-reload this page (e.g. Ctrl+F5)");}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
+		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Advanced_MultiSubnet_Content.asp") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect();}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
 	fi
 	
-	sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Advanced_Feedback.asp") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect(); alert("Please force-reload this page (e.g. Ctrl+F5)");}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
+	sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Advanced_Feedback.asp") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect();}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
 	
 	if [ -f /jffs/scripts/spdmerlin ]; then
-		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("'"$(Get_spdMerlin_UI)"'") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect(); alert("Please force-reload this page (e.g. Ctrl+F5)");}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
+		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("'"$(Get_spdMerlin_UI)"'") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect();}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
 	fi
 	
 	if [ -f /jffs/scripts/ntpmerlin ]; then
-		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Feedback_Info.asp") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect(); alert("Please force-reload this page (e.g. Ctrl+F5)");}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
+		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Feedback_Info.asp") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect();}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
 	fi
 	
 	if [ -f /jffs/scripts/custom_start_apply.htm ]; then
@@ -462,12 +483,52 @@ Modify_WebUI_File(){
 	### ###
 }
 
+WriteData_ToJS(){
+	{
+	echo "var $3;"
+	echo "$3 = [];"; } >> "$2"
+	contents="$3"'.unshift('
+	while IFS='' read -r line || [ -n "$line" ]; do
+		datapoint="{ x: moment.unix(""$(echo "$line" | awk 'BEGIN{FS=","}{ print $1 }' | awk '{$1=$1};1')""), y: ""$(echo "$line" | awk 'BEGIN{FS=","}{ print $2 }' | awk '{$1=$1};1')"" }"
+		contents="$contents""$datapoint"","
+	done < "$1"
+	contents=$(echo "$contents" | sed 's/.$//')
+	contents="$contents"");"
+	printf "%s\\r\\n\\r\\n" "$contents" >> "$2"
+}
+
+WriteStats_ToJS(){
+	echo "function $3(){" > "$2"
+	html='document.getElementById("'"$4"'").innerHTML="'
+	while IFS='' read -r line || [ -n "$line" ]; do
+		html="$html""$line""\\r\\n"
+	done < "$1"
+	html="$html"'"'
+	printf "%s\\r\\n}\\r\\n" "$html" >> "$2"
+}
+
+#$1 fieldname $2 tablename $3 frequency (hours) $4 length (days) $5 outputfile $6 sqlfile
+WriteSql_ToFile(){
+	{
+		echo ".mode csv"
+		echo ".output $5"
+	} >> "$6"
+	COUNTER=0
+	timenow="$(date '+%s')"
+	until [ $COUNTER -gt "$((24*$4/$3))" ]; do
+		echo "select $timenow - ((60*60*$3)*($COUNTER)),IFNULL(avg([$1]),0) from $2 WHERE ([Timestamp] >= $timenow - ((60*60*$3)*($COUNTER+1))) AND ([Timestamp] <= $timenow - ((60*60*$3)*$COUNTER));" >> "$6"
+		COUNTER=$((COUNTER + 1))
+	done
+}
+
 Generate_Stats(){
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
 	Conf_Exists
 	Create_Dirs
+	Create_Symlinks
+	
 	pingfile=/tmp/pingresult.txt
 	
 	Print_Output "false" "30 second ping test to $(ShowPingServer) starting..." "$PASS"
@@ -476,6 +537,7 @@ Generate_Stats(){
 		Clear_Lock
 		return 1
 	fi
+	
 	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
 	ping -w 30 "$(ShowPingServer)" > "$pingfile"
 	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
@@ -498,107 +560,64 @@ Generate_Stats(){
 		COUNTER=$((COUNTER + 1))
 	done
 	
+	TZ=$(cat /etc/TZ)
+	export TZ
+	
 	ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
 	jitter="$(echo "$TOTALDIFF" "$DIFFCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
 	pktloss="$(echo "100" "$(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" | awk '{printf "%4.3f\n",$1-$2}')"
 	
-	rm -f "$pingfile"
+	{
+	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[Packet_Loss] REAL NOT NULL);"
+	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[Packet_Loss]) values($(date '+%s'),$ping,$jitter,$pktloss);"
+	} > /tmp/connmon-stats.sql
 	
-	TZ=$(cat /etc/TZ)
-	export TZ
-	DATE=$(date "+%a %b %e %H:%M %Y")
+	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
+	{
+		echo ".mode csv"
+		echo ".output /tmp/connmon-pingdaily.csv"
+		echo "select [Timestamp],[Ping] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
+		echo ".output /tmp/connmon-jitterdaily.csv"
+		echo "select [Timestamp],[Jitter] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
+		echo ".output /tmp/connmon-qualitydaily.csv"
+		echo "select [Timestamp],[Packet_Loss] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
+	} > /tmp/connmon-stats.sql
+	
+	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+	
+	rm -f /tmp/connmon-stats.sql
+	
+	WriteSql_ToFile "Ping" "connstats" 1 7 "/tmp/connmon-pingweekly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Jitter" "connstats" 1 7 "/tmp/connmon-jitterweekly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Packet_Loss" "connstats" 1 7 "/tmp/connmon-qualityweekly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Ping" "connstats" 3 30 "/tmp/connmon-pingmonthly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Jitter" "connstats" 3 30 "/tmp/connmon-jittermonthly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Packet_Loss" "connstats" 3 30 "/tmp/connmon-qualitymonthly.csv" "/tmp/connmon-stats.sql"
+	
+	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+	
+	rm -f "$SCRIPT_DIR/connstatsdata.js"
+	WriteData_ToJS "/tmp/connmon-pingdaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataPingDaily"
+	WriteData_ToJS "/tmp/connmon-jitterdaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataJitterDaily"
+	WriteData_ToJS "/tmp/connmon-qualitydaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataQualityDaily"
+
+	WriteData_ToJS "/tmp/connmon-pingweekly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataPingWeekly"
+	WriteData_ToJS "/tmp/connmon-jitterweekly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataJitterWeekly"
+	WriteData_ToJS "/tmp/connmon-qualityweekly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataQualityWeekly"
+	
+	WriteData_ToJS "/tmp/connmon-pingmonthly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataPingMonthly"
+	WriteData_ToJS "/tmp/connmon-jittermonthly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataJitterMonthly"
+	WriteData_ToJS "/tmp/connmon-qualitymonthly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataQualityMonthly"
+
+	echo "Internet Uptime Monitoring generated on $(date +"%c")" > "/tmp/connstatstitle.txt"
+	WriteStats_ToJS "/tmp/connstatstitle.txt" "$SCRIPT_DIR/connstatstext.js" "SetConnmonStatsTitle" "statstitle"
 	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $pktloss %%" "$PASS"
 	
-	RDB="$SCRIPT_DIR/connmonstats_rrd.rrd"
-	rrdtool update "$RDB" N:"$ping":"$jitter":"$pktloss"
-	
-	COMMON="-c SHADEA#475A5F -c SHADEB#475A5F -c BACK#475A5F -c CANVAS#92A0A520 -c AXIS#92a0a520 -c FONT#ffffff -c ARROW#475A5F -n TITLE:9 -n AXIS:8 -n LEGEND:9 -w 650 -h 200"
-	
-	D_COMMON='--start -86400 --x-grid MINUTE:20:HOUR:2:HOUR:2:0:%H:%M'
-	W_COMMON='--start -604800 --x-grid HOUR:3:DAY:1:DAY:1:0:%Y-%m-%d'
-	
-	rm -f /www/ext/*-connmon-*
-	
-	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/ping.png" \
-		$COMMON $D_COMMON \
-		--title "Ping - $DATE" \
-		--vertical-label "Milliseconds" \
-		DEF:ping="$RDB":ping:LAST \
-		CDEF:nping=ping,1000,/ \
-		LINE1.5:ping#fc8500:"ping (ms)" \
-		GPRINT:ping:MIN:"Min\: %3.3lf" \
-		GPRINT:ping:MAX:"Max\: %3.3lf" \
-		GPRINT:ping:AVERAGE:"Avg\: %3.3lf" \
-		GPRINT:ping:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
-	
-	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/jitter.png" \
-		$COMMON $D_COMMON \
-		--title "Jitter - $DATE" \
-		--vertical-label "Milliseconds" \
-		DEF:jitter="$RDB":jitter:LAST \
-		CDEF:njitter=jitter,1000,/ \
-		LINE1.5:jitter#c4fd3d:"jitter (ms)" \
-		GPRINT:jitter:MIN:"Min\: %3.3lf" \
-		GPRINT:jitter:MAX:"Max\: %3.3lf" \
-		GPRINT:jitter:AVERAGE:"Avg\: %3.3lf" \
-		GPRINT:jitter:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
-	
-	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/pktloss.png" \
-		$COMMON $D_COMMON \
-		--title "Line Quality - $DATE" \
-		--vertical-label "%" \
-		DEF:pktloss="$RDB":pktloss:LAST \
-		CDEF:npktloss=pktloss,1000,/ \
-		AREA:pktloss#778787:"line quality (%)" \
-		GPRINT:pktloss:MIN:"Min\: %3.3lf" \
-		GPRINT:pktloss:MAX:"Max\: %3.3lf" \
-		GPRINT:pktloss:AVERAGE:"Avg\: %3.3lf" \
-		GPRINT:pktloss:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
-	
-	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/week-ping.png" \
-		$COMMON $W_COMMON \
-		--title "Ping - $DATE" \
-		--vertical-label "Milliseconds" \
-		DEF:ping="$RDB":ping:LAST \
-		CDEF:nping=ping,1000,/ \
-		LINE1.5:nping#fc8500:"ping (ms)" \
-		GPRINT:ping:MIN:"Min\: %3.3lf" \
-		GPRINT:ping:MAX:"Max\: %3.3lf" \
-		GPRINT:ping:AVERAGE:"Avg\: %3.3lf" \
-		GPRINT:ping:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
-	
-	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/week-jitter.png" \
-		$COMMON $W_COMMON \
-		--title "Jitter - $DATE" \
-		--vertical-label "Milliseconds" \
-		DEF:jitter="$RDB":jitter:LAST \
-		CDEF:njitter=jitter,1000,/ \
-		LINE1.5:njitter#c4fd3d:"ping (ms)" \
-		GPRINT:jitter:MIN:"Min\: %3.3lf" \
-		GPRINT:jitter:MAX:"Max\: %3.3lf" \
-		GPRINT:jitter:AVERAGE:"Avg\: %3.3lf" \
-		GPRINT:jitter:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
-	
-	#shellcheck disable=SC2086
-	rrdtool graph --imgformat PNG "$SCRIPT_WEB_DIR/week-pktloss.png" \
-		$COMMON $W_COMMON --alt-autoscale-max \
-		--title "Line Quality - $DATE" \
-		--vertical-label "%" \
-		DEF:pktloss="$RDB":pktloss:LAST \
-		CDEF:npktloss=pktloss,1000,/ \
-		AREA:pktloss#778787:"line quality (ms)" \
-		GPRINT:pktloss:MIN:"Min\: %3.3lf" \
-		GPRINT:pktloss:MAX:"Max\: %3.3lf" \
-		GPRINT:pktloss:AVERAGE:"Avg\: %3.3lf" \
-		GPRINT:pktloss:LAST:"Curr\: %3.3lf\n" >/dev/null 2>&1
-		
-	Clear_Lock
+	rm -f "$pingfile"
+	rm -f "/tmp/connmon-"*".csv"
+	rm -f "/tmp/connmon-stats.sql"
+	rm -f "/tmp/connstatstitle.txt"
 }
 
 Shortcut_connmon(){
@@ -734,8 +753,20 @@ Check_Requirements(){
 	if [ ! -f "/opt/bin/opkg" ]; then
 		Print_Output "true" "Entware not detected!" "$ERR"
 		CHECKSFAILED="true"
+		return 1
 	fi
 	
+	if [ "$(Firmware_Version_Check "$(nvram get buildno)")" -lt "$(Firmware_Version_Check 384.11)" ] && [ "$(Firmware_Version_Check "$(nvram get buildno)")" -ne "$(Firmware_Version_Check 374.43)" ]; then
+		Print_Output "true" "Older Merlin firmware detected - $SCRIPT_NAME requires 384.11 or later for sqlite3 support" "$WARN"
+		Print_Output "true" "Installing sqlite3-cli from Entware..." "$WARN"
+		opkg update
+		opkg install sqlite3-cli
+	elif [ "$(Firmware_Version_Check "$(nvram get buildno)")" -eq "$(Firmware_Version_Check 374.43)" ]; then
+		Print_Output "true" "John's fork detected - unsupported" "$ERR"
+		CHECKSFAILED="true"
+		return 1
+	fi
+		
 	if [ "$CHECKSFAILED" = "false" ]; then
 		return 0
 	else
@@ -758,10 +789,15 @@ Menu_Install(){
 	fi
 	
 	opkg update
-	opkg install rrdtool
 	
 	Create_Dirs
+	Create_Symlinks
 	Conf_Exists
+	
+	Update_File "chartjs-plugin-zoom.js"
+	Update_File "chartjs-plugin-annotation.js"
+	Update_File "hammerjs.js"
+	Update_File "moment.js"
 	
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
@@ -769,7 +805,6 @@ Menu_Install(){
 	Shortcut_connmon create
 	Mount_CONNMON_WebUI
 	Modify_WebUI_File
-	RRD_Initialise
 	Menu_GenerateStats
 	
 	Clear_Lock
@@ -781,9 +816,9 @@ Menu_Startup(){
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_connmon create
 	Create_Dirs
+	Create_Symlinks
 	Mount_CONNMON_WebUI
 	Modify_WebUI_File
-	RRD_Initialise
 	Clear_Lock
 }
 
@@ -817,7 +852,6 @@ Menu_Uninstall(){
 		case "$confirm" in
 			y|Y)
 				rm -f "/jffs/configs/connmon.config" 2> /dev/null
-				rm -f "$SCRIPT_DIR/connmonstats_rrd.rrd" 2>/dev/null
 				break
 			;;
 			*)
@@ -831,7 +865,6 @@ Menu_Uninstall(){
 	umount /www/require/modules/menuTree.js 2>/dev/null
 	
 	if [ ! -f "/jffs/scripts/ntpmerlin" ] && [ ! -f "/jffs/scripts/spdmerlin" ]; then
-		opkg remove --autoremove rrdtool
 		rm -f "$SHARED_DIR/custom_menuTree.js" 2>/dev/null
 	else
 		mount -o bind "$SHARED_DIR/custom_menuTree.js" "/www/require/modules/menuTree.js"
@@ -844,6 +877,7 @@ Menu_Uninstall(){
 
 if [ -z "$1" ]; then
 	Create_Dirs
+	Create_Symlinks
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
