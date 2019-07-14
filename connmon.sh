@@ -961,7 +961,9 @@ case "$1" in
 			Menu_GenerateStats
 		elif [ -n "$2" ] && [ -z "$3" ]; then
 			Check_Lock
-			Generate_Stats
+			if [ "$2" = "daily" ]; then
+				Generate_Stats
+			fi
 			Generate_Charts "$2"
 			Clear_Lock
 		elif [ -z "$2" ] && [ -z "$3" ]; then
