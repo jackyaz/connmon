@@ -576,6 +576,11 @@ Generate_Charts(){
 			WriteData_ToJS "/tmp/connmon-jittermonthly.csv" "$SCRIPT_DIR/connstatsdatamonthly.js" "DataJitterMonthly"
 			WriteData_ToJS "/tmp/connmon-qualitymonthly.csv" "$SCRIPT_DIR/connstatsdatamonthly.js" "DataQualityMonthly"
 		;;
+		all)
+			Generate_Charts daily
+			Generate_Charts weekly
+			Generate_Charts monthly
+		;;
 	esac
 	
 	rm -f "/tmp/connmon-"*".csv"
@@ -848,6 +853,7 @@ Menu_Startup(){
 
 Menu_GenerateStats(){
 	Generate_Stats
+	Generate_Charts all
 	Clear_Lock
 }
 
