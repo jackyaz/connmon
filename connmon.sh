@@ -368,17 +368,38 @@ Auto_Startup(){
 Auto_Cron(){
 	case $1 in
 		create)
-			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
+			STARTUPLINECOUNTDAILY=$(cru l | grep -c "$SCRIPT_NAME daily")
+			STARTUPLINECOUNTWEEKLY=$(cru l | grep -c "$SCRIPT_NAME weekly")
+			STARTUPLINECOUNTMONTHLY=$(cru l | grep -c "$SCRIPT_NAME monthly")
 			
-			if [ "$STARTUPLINECOUNT" -eq 0 ]; then
-				cru a "$SCRIPT_NAME" "*/5 * * * * /jffs/scripts/$SCRIPT_NAME generate"
+			if [ "$STARTUPLINECOUNTDAILY" -eq 0 ]; then
+				cru a "$SCRIPT_NAME""_daily" "*/5 * * * * /jffs/scripts/$SCRIPT_NAME generate daily"
+			fi
+			if [ "$STARTUPLINECOUNTWEEKLY" -eq 0 ]; then
+				cru a "$SCRIPT_NAME""_weekly" "2 * * * * /jffs/scripts/$SCRIPT_NAME generate weekly"
+			fi
+			if [ "$STARTUPLINECOUNTMONTHLY" -eq 0 ]; then
+				cru a "$SCRIPT_NAME""_monthly" "3 */3 * * * /jffs/scripts/$SCRIPT_NAME generate monthly"
 			fi
 		;;
 		delete)
 			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
-			
 			if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 				cru d "$SCRIPT_NAME"
+			fi
+			
+			STARTUPLINECOUNTDAILY=$(cru l | grep -c "$SCRIPT_NAME daily")
+			STARTUPLINECOUNTWEEKLY=$(cru l | grep -c "$SCRIPT_NAME weekly")
+			STARTUPLINECOUNTMONTHLY=$(cru l | grep -c "$SCRIPT_NAME monthly")
+			
+			if [ "$STARTUPLINECOUNTDAILY" -gt 0 ]; then
+				cru d "$SCRIPT_NAME""_daily"
+			fi
+			if [ "$STARTUPLINECOUNTWEEKLY" -gt 0 ]; then
+				cru d "$SCRIPT_NAME""_weekly"
+			fi
+			if [ "$STARTUPLINECOUNTMONTHLY" -gt 0 ]; then
+				cru d "$SCRIPT_NAME""_monthly"
 			fi
 		;;
 	esac
