@@ -47,7 +47,9 @@ font-weight: bolder;
 <script language="JavaScript" type="text/javascript" src="/tmmenu.js"></script>
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <script language="JavaScript" type="text/javascript" src="/validator.js"></script>
-<script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatsdata.js"></script>
+<script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatsdatadaily.js"></script>
+<script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatsdataweekly.js"></script>
+<script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatsdatamonthly.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatstext.js"></script>
 <script>
 var LineChartPingDaily,LineChartJitterDaily,LineChartQualityDaily,LineChartPingWeekly,LineChartJitterWeekly,LineChartQualityWeekly,LineChartPingMonthly,LineChartJitterMonthly,LineChartQualityMonthly;

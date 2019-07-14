@@ -220,7 +220,10 @@ Create_Dirs(){
 Create_Symlinks(){
 	rm -f "$SCRIPT_WEB_DIR/"* 2>/dev/null
 	
-	ln -s "$SCRIPT_DIR/connstatsdata.js" "$SCRIPT_WEB_DIR/connstatsdata.js" 2>/dev/null
+	ln -s "$SCRIPT_DIR/connstatsdatadaily.js" "$SCRIPT_WEB_DIR/connstatsdatadaily.js" 2>/dev/null
+	ln -s "$SCRIPT_DIR/connstatsdataweekly.js" "$SCRIPT_WEB_DIR/connstatsdataweekly.js" 2>/dev/null
+	ln -s "$SCRIPT_DIR/connstatsdatamonthly.js" "$SCRIPT_WEB_DIR/connstatsdatamonthly.js" 2>/dev/null
+	
 	ln -s "$SCRIPT_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
 	
 	ln -s "$SHARED_DIR/chartjs-plugin-zoom.js" "$SHARED_WEB_DIR/chartjs-plugin-zoom.js" 2>/dev/null
@@ -522,6 +525,63 @@ WriteSql_ToFile(){
 	done
 }
 
+Generate_Charts(){
+	Auto_Startup create 2>/dev/null
+	Auto_Cron create 2>/dev/null
+	Auto_ServiceEvent create 2>/dev/null
+	Conf_Exists
+	Create_Dirs
+	Create_Symlinks
+	
+	case $1 in
+		daily)
+			{
+				echo ".mode csv"
+				echo ".output /tmp/connmon-pingdaily.csv"
+				echo "select [Timestamp],[Ping] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
+				echo ".output /tmp/connmon-jitterdaily.csv"
+				echo "select [Timestamp],[Jitter] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
+				echo ".output /tmp/connmon-qualitydaily.csv"
+				echo "select [Timestamp],[Packet_Loss] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
+			} > /tmp/connmon-stats.sql
+			
+			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+			
+			rm -f "$SCRIPT_DIR/connstatsdatadaily.js"
+			WriteData_ToJS "/tmp/connmon-pingdaily.csv" "$SCRIPT_DIR/connstatsdatadaily.js" "DataPingDaily"
+			WriteData_ToJS "/tmp/connmon-jitterdaily.csv" "$SCRIPT_DIR/connstatsdatadaily.js" "DataJitterDaily"
+			WriteData_ToJS "/tmp/connmon-qualitydaily.csv" "$SCRIPT_DIR/connstatsdatadaily.js" "DataQualityDaily"
+		;;
+		weekly)
+			WriteSql_ToFile "Ping" "connstats" 1 7 "/tmp/connmon-pingweekly.csv" "/tmp/connmon-stats.sql"
+			WriteSql_ToFile "Jitter" "connstats" 1 7 "/tmp/connmon-jitterweekly.csv" "/tmp/connmon-stats.sql"
+			WriteSql_ToFile "Packet_Loss" "connstats" 1 7 "/tmp/connmon-qualityweekly.csv" "/tmp/connmon-stats.sql"
+			
+			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+			
+			rm -f "$SCRIPT_DIR/connstatsdataweekly.js"
+			WriteData_ToJS "/tmp/connmon-pingweekly.csv" "$SCRIPT_DIR/connstatsdataweekly.js" "DataPingWeekly"
+			WriteData_ToJS "/tmp/connmon-jitterweekly.csv" "$SCRIPT_DIR/connstatsdataweekly.js" "DataJitterWeekly"
+			WriteData_ToJS "/tmp/connmon-qualityweekly.csv" "$SCRIPT_DIR/connstatsdataweekly.js" "DataQualityWeekly"
+		;;
+		monthly)
+			WriteSql_ToFile "Ping" "connstats" 3 30 "/tmp/connmon-pingmonthly.csv" "/tmp/connmon-stats.sql"
+			WriteSql_ToFile "Jitter" "connstats" 3 30 "/tmp/connmon-jittermonthly.csv" "/tmp/connmon-stats.sql"
+			WriteSql_ToFile "Packet_Loss" "connstats" 3 30 "/tmp/connmon-qualitymonthly.csv" "/tmp/connmon-stats.sql"
+			
+			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+			
+			rm -f "$SCRIPT_DIR/connstatsdatamonthly.js"
+			WriteData_ToJS "/tmp/connmon-pingmonthly.csv" "$SCRIPT_DIR/connstatsdatamonthly.js" "DataPingMonthly"
+			WriteData_ToJS "/tmp/connmon-jittermonthly.csv" "$SCRIPT_DIR/connstatsdatamonthly.js" "DataJitterMonthly"
+			WriteData_ToJS "/tmp/connmon-qualitymonthly.csv" "$SCRIPT_DIR/connstatsdatamonthly.js" "DataQualityMonthly"
+		;;
+	esac
+	
+	rm -f "/tmp/connmon-"*".csv"
+	rm -f "/tmp/connmon-stats.sql"
+}
+
 Generate_Stats(){
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
@@ -575,48 +635,11 @@ Generate_Stats(){
 	
 	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
-	{
-		echo ".mode csv"
-		echo ".output /tmp/connmon-pingdaily.csv"
-		echo "select [Timestamp],[Ping] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
-		echo ".output /tmp/connmon-jitterdaily.csv"
-		echo "select [Timestamp],[Jitter] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
-		echo ".output /tmp/connmon-qualitydaily.csv"
-		echo "select [Timestamp],[Packet_Loss] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
-	} > /tmp/connmon-stats.sql
-	
-	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-	
-	rm -f /tmp/connmon-stats.sql
-	
-	WriteSql_ToFile "Ping" "connstats" 1 7 "/tmp/connmon-pingweekly.csv" "/tmp/connmon-stats.sql"
-	WriteSql_ToFile "Jitter" "connstats" 1 7 "/tmp/connmon-jitterweekly.csv" "/tmp/connmon-stats.sql"
-	WriteSql_ToFile "Packet_Loss" "connstats" 1 7 "/tmp/connmon-qualityweekly.csv" "/tmp/connmon-stats.sql"
-	WriteSql_ToFile "Ping" "connstats" 3 30 "/tmp/connmon-pingmonthly.csv" "/tmp/connmon-stats.sql"
-	WriteSql_ToFile "Jitter" "connstats" 3 30 "/tmp/connmon-jittermonthly.csv" "/tmp/connmon-stats.sql"
-	WriteSql_ToFile "Packet_Loss" "connstats" 3 30 "/tmp/connmon-qualitymonthly.csv" "/tmp/connmon-stats.sql"
-	
-	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-	
-	rm -f "$SCRIPT_DIR/connstatsdata.js"
-	WriteData_ToJS "/tmp/connmon-pingdaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataPingDaily"
-	WriteData_ToJS "/tmp/connmon-jitterdaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataJitterDaily"
-	WriteData_ToJS "/tmp/connmon-qualitydaily.csv" "$SCRIPT_DIR/connstatsdata.js" "DataQualityDaily"
-
-	WriteData_ToJS "/tmp/connmon-pingweekly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataPingWeekly"
-	WriteData_ToJS "/tmp/connmon-jitterweekly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataJitterWeekly"
-	WriteData_ToJS "/tmp/connmon-qualityweekly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataQualityWeekly"
-	
-	WriteData_ToJS "/tmp/connmon-pingmonthly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataPingMonthly"
-	WriteData_ToJS "/tmp/connmon-jittermonthly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataJitterMonthly"
-	WriteData_ToJS "/tmp/connmon-qualitymonthly.csv" "$SCRIPT_DIR/connstatsdata.js" "DataQualityMonthly"
-
 	echo "Internet Uptime Monitoring generated on $(date +"%c")" > "/tmp/connstatstitle.txt"
 	WriteStats_ToJS "/tmp/connstatstitle.txt" "$SCRIPT_DIR/connstatstext.js" "SetConnmonStatsTitle" "statstitle"
 	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $pktloss %%" "$PASS"
 	
 	rm -f "$pingfile"
-	rm -f "/tmp/connmon-"*".csv"
 	rm -f "/tmp/connmon-stats.sql"
 	rm -f "/tmp/connstatstitle.txt"
 }
