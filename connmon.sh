@@ -930,10 +930,15 @@ case "$1" in
 		exit 0
 	;;
 	generate)
-		if [ -z "$2" ] && [ -z "$3" ]; then
+		if [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME" ]; then
 			Check_Lock
 			Menu_GenerateStats
-		elif [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME" ]; then
+		elif [ -n "$2" ] && [ -z "$3" ]; then
+			Check_Lock
+			Generate_Stats
+			Generate_Charts "$2"
+			Clear_Lock
+		elif [ -z "$2" ] && [ -z "$3" ]; then
 			Check_Lock
 			Menu_GenerateStats
 		fi
