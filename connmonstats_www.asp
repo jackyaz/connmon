@@ -47,12 +47,14 @@ font-weight: bolder;
 <script language="JavaScript" type="text/javascript" src="/tmmenu.js"></script>
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <script language="JavaScript" type="text/javascript" src="/validator.js"></script>
-<script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatsdata.js"></script>
+<script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatsdatadaily.js"></script>
+<script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatsdataweekly.js"></script>
+<script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatsdatamonthly.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatstext.js"></script>
 <script>
 var LineChartPingDaily,LineChartJitterDaily,LineChartQualityDaily,LineChartPingWeekly,LineChartJitterWeekly,LineChartQualityWeekly,LineChartPingMonthly,LineChartJitterMonthly,LineChartQualityMonthly;
-var ShowLines="line";
-var ShowFill=false;
+var ShowLines=GetCookie("ShowLines");
+var ShowFill=GetCookie("ShowFill");
 Chart.defaults.global.defaultFontColor = "#CCC";
 Chart.Tooltip.positioners.cursor = function(chartElements, coordinates) {
   return coordinates;
@@ -254,9 +256,11 @@ function round(value, decimals) {
 function ToggleLines() {
 	if(ShowLines == ""){
 		ShowLines = "line";
+		SetCookie("ShowLines","line")
 	}
 	else {
 		ShowLines = "";
+		SetCookie("ShowLines","")
 	}
 	RedrawAllCharts();
 }
@@ -264,9 +268,11 @@ function ToggleLines() {
 function ToggleFill() {
 	if(ShowFill == false){
 		ShowFill = "origin";
+		SetCookie("ShowFill","origin")
 	}
 	else {
 		ShowFill = false;
+		SetCookie("ShowFill",false)
 	}
 	RedrawAllCharts();
 }
@@ -281,6 +287,20 @@ function RedrawAllCharts() {
 	Draw_Chart("LineChartPingMonthly",LineChartPingMonthly,"DataPingMonthly",DataPingMonthly,"Ping","ms","day",30,"#fc8500");
 	Draw_Chart("LineChartJitterMonthly",LineChartJitterMonthly,"DataJitterMonthly",DataJitterMonthly,"Jitter","ms","day",30,"#42ecf5");
 	Draw_Chart("LineChartQualityMonthly",LineChartQualityMonthly,"DataQualityMonthly",DataQualityMonthly,"Quality","%","day",30,"#ffffff");
+}
+
+function GetCookie(cookiename) {
+	var s;
+	if ((s = cookie.get(cookiename)) != null) {
+		return cookie.get(cookiename);
+	}
+	else {
+		return ""
+	}
+}
+
+function SetCookie(cookiename,cookievalue) {
+	cookie.set(cookiename, cookievalue, 31);
 }
 
 function initial(){
@@ -347,7 +367,7 @@ function applyRule() {
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
-<thead class="collapsible">
+<thead class="collapsible" id="last24">
 <tr>
 <td colspan="2">Last 24 Hours (click to expand/collapse)</td>
 </tr>
@@ -366,7 +386,7 @@ function applyRule() {
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
-<thead class="collapsible">
+<thead class="collapsible" id="last7">
 <tr>
 <td colspan="2">Last 7 days (click to expand/collapse)</td>
 </tr>
@@ -385,7 +405,7 @@ function applyRule() {
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
-<thead class="collapsible">
+<thead class="collapsible" id="last30">
 <tr>
 <td colspan="2">Last 30 days (click to expand/collapse)</td>
 </tr>
@@ -429,11 +449,15 @@ for (i = 0; i < coll.length; i++) {
     var content = this.nextElementSibling.firstElementChild.firstElementChild.firstElementChild;
     if (content.style.maxHeight){
       content.style.maxHeight = null;
+      SetCookie(this.id,"collapsed")
     } else {
       content.style.maxHeight = content.scrollHeight + "px";
+      SetCookie(this.id,"expanded")
     }
   });
-  coll[i].click();
+  if(GetCookie(coll[i].id) == "expanded"){
+      coll[i].click();
+  }
 }
 </script>
 </body>
