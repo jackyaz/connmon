@@ -368,7 +368,7 @@ Auto_Startup(){
 Auto_Cron(){
 	case $1 in
 		create)
-			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
+			STARTUPLINECOUNT=$(cru l | grep -cx "\*/5 \* \* \* \* /jffs/scripts/$SCRIPT_NAME generate #connmon#")
 			if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 				cru d "$SCRIPT_NAME"
 			fi
@@ -388,7 +388,7 @@ Auto_Cron(){
 			fi
 		;;
 		delete)
-			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
+			STARTUPLINECOUNT=$(cru l | grep -cx "\*/5 \* \* \* \* /jffs/scripts/$SCRIPT_NAME generate #connmon#")
 			if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 				cru d "$SCRIPT_NAME"
 			fi
