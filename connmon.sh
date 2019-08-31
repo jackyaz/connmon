@@ -13,9 +13,9 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.1.0"
-readonly CONNMON_VERSION="v2.1.0"
-readonly SCRIPT_BRANCH="master"
+readonly SCRIPT_VERSION="v2.1.1"
+readonly CONNMON_VERSION="v2.1.1"
+readonly SCRIPT_BRANCH="develop"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
 readonly SCRIPT_CONF="/jffs/configs/$SCRIPT_NAME.config"
 readonly SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME.d"
@@ -368,7 +368,7 @@ Auto_Startup(){
 Auto_Cron(){
 	case $1 in
 		create)
-			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
+			STARTUPLINECOUNT=$(cru l | grep -cx "\*/5 \* \* \* \* /jffs/scripts/$SCRIPT_NAME generate #connmon#")
 			if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 				cru d "$SCRIPT_NAME"
 			fi
@@ -388,7 +388,7 @@ Auto_Cron(){
 			fi
 		;;
 		delete)
-			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
+			STARTUPLINECOUNT=$(cru l | grep -cx "\*/5 \* \* \* \* /jffs/scripts/$SCRIPT_NAME generate #connmon#")
 			if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 				cru d "$SCRIPT_NAME"
 			fi
@@ -908,6 +908,7 @@ Menu_Uninstall(){
 		case "$confirm" in
 			y|Y)
 				rm -f "/jffs/configs/connmon.config" 2> /dev/null
+				rm -f "/jffs/scripts/connmon.d" 2> /dev/null
 				break
 			;;
 			*)
