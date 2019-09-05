@@ -642,7 +642,7 @@ Generate_Stats(){
 	TOTALDIFF=0
 	COUNTER=1
 	PINGLIST="$(grep seq= "$pingfile")"
-	PINGCOUNT="$(echo "$PINGLIST" | wc -l)"
+	PINGCOUNT="$(echo "$PINGLIST" | sed '/^\s*$/d' | wc -l)"
 	DIFFCOUNT="$((PINGCOUNT - 1))"
 	if [ "$PINGCOUNT" -gt 0 ]; then
 		until [ "$COUNTER" -gt "$PINGCOUNT" ]; do
