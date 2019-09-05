@@ -518,8 +518,12 @@ WriteData_ToJS(){
 	echo "$3 = [];"; } >> "$2"
 	contents="$3"'.unshift('
 	while IFS='' read -r line || [ -n "$line" ]; do
-		if echo "$line" | grep -q "NaN"; then continue; fi
-		datapoint="{ x: moment.unix(""$(echo "$line" | awk 'BEGIN{FS=","}{ print $1 }' | awk '{$1=$1};1')""), y: ""$(echo "$line" | awk 'BEGIN{FS=","}{ print $2 }' | awk '{$1=$1};1')"" }"
+		datapoint=""
+		if echo "$line" | grep -q "NaN"; then
+			datapoint="{ x: moment.unix(""$(echo "$line" | awk 'BEGIN{FS=","}{ print $1 }' | awk '{$1=$1};1')""), y: 0 }"
+		else
+			datapoint="{ x: moment.unix(""$(echo "$line" | awk 'BEGIN{FS=","}{ print $1 }' | awk '{$1=$1};1')""), y: ""$(echo "$line" | awk 'BEGIN{FS=","}{ print $2 }' | awk '{$1=$1};1')"" }"
+		fi
 		contents="$contents""$datapoint"","
 	done < "$1"
 	contents=$(echo "$contents" | sed 's/.$//')
