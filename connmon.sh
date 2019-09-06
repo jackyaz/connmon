@@ -648,12 +648,6 @@ Generate_Stats(){
 		until [ "$COUNTER" -gt "$PINGCOUNT" ]; do
 			CURPING=$(echo "$PINGLIST" | sed -n "$COUNTER"p | cut -f4 -d"=" | cut -f1 -d" ")
 			
-			if [ "$CURPING" -eq 0 ] || [ "$PREVPING" -eq 0 ]; then
-				PREVPING="$CURPING"
-				COUNTER=$((COUNTER + 1))
-				continue
-			fi
-			
 			if [ "$COUNTER" -gt 1 ]; then
 				DIFF="$(echo "$CURPING" "$PREVPING" | awk '{printf "%4.3f\n",$1-$2}')"
 				NEG="$(echo "$DIFF" 0 | awk '{ if ($1 < $2) print "neg"; else print "pos"}')"
