@@ -13,8 +13,8 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.1.0"
-readonly CONNMON_VERSION="v2.1.0"
+readonly SCRIPT_VERSION="v2.1.1"
+readonly CONNMON_VERSION="v2.1.1"
 readonly SCRIPT_BRANCH="master"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
 readonly SCRIPT_CONF="/jffs/configs/$SCRIPT_NAME.config"
@@ -518,8 +518,12 @@ WriteData_ToJS(){
 	echo "$3 = [];"; } >> "$2"
 	contents="$3"'.unshift('
 	while IFS='' read -r line || [ -n "$line" ]; do
-		if echo "$line" | grep -q "NaN"; then continue; fi
-		datapoint="{ x: moment.unix(""$(echo "$line" | awk 'BEGIN{FS=","}{ print $1 }' | awk '{$1=$1};1')""), y: ""$(echo "$line" | awk 'BEGIN{FS=","}{ print $2 }' | awk '{$1=$1};1')"" }"
+		datapoint=""
+		if echo "$line" | grep -q "NaN"; then
+			datapoint="{ x: moment.unix(""$(echo "$line" | awk 'BEGIN{FS=","}{ print $1 }' | awk '{$1=$1};1')""), y: 0 }"
+		else
+			datapoint="{ x: moment.unix(""$(echo "$line" | awk 'BEGIN{FS=","}{ print $1 }' | awk '{$1=$1};1')""), y: ""$(echo "$line" | awk 'BEGIN{FS=","}{ print $2 }' | awk '{$1=$1};1')"" }"
+		fi
 		contents="$contents""$datapoint"","
 	done < "$1"
 	contents=$(echo "$contents" | sed 's/.$//')
@@ -638,37 +642,46 @@ Generate_Stats(){
 	TOTALDIFF=0
 	COUNTER=1
 	PINGLIST="$(grep seq= "$pingfile")"
-	PINGCOUNT="$(echo "$PINGLIST" | wc -l)"
+	PINGCOUNT="$(echo "$PINGLIST" | sed '/^\s*$/d' | wc -l)"
 	DIFFCOUNT="$((PINGCOUNT - 1))"
-	until [ "$COUNTER" -gt "$PINGCOUNT" ]; do
-		CURPING=$(echo "$PINGLIST" | sed -n "$COUNTER"p | cut -f4 -d"=" | cut -f1 -d" ")
-		if [ "$COUNTER" -gt 1 ]; then
-			DIFF="$(echo "$CURPING" "$PREVPING" | awk '{printf "%4.3f\n",$1-$2}')"
-			NEG="$(echo "$DIFF" 0 | awk '{ if ($1 < $2) print "neg"; else print "pos"}')"
-			if [ "$NEG" = "neg" ]; then DIFF="$(echo "$DIFF" "-1" | awk '{printf "%4.3f\n",$1*$2}')"; fi
-			TOTALDIFF="$(echo "$TOTALDIFF" "$DIFF" | awk '{printf "%4.3f\n",$1+$2}')"
-		fi
-		PREVPING="$CURPING"
-		COUNTER=$((COUNTER + 1))
-	done
+	if [ "$PINGCOUNT" -gt 0 ]; then
+		until [ "$COUNTER" -gt "$PINGCOUNT" ]; do
+			CURPING=$(echo "$PINGLIST" | sed -n "$COUNTER"p | cut -f4 -d"=" | cut -f1 -d" ")
+			
+			if [ "$COUNTER" -gt 1 ]; then
+				DIFF="$(echo "$CURPING" "$PREVPING" | awk '{printf "%4.3f\n",$1-$2}')"
+				NEG="$(echo "$DIFF" 0 | awk '{ if ($1 < $2) print "neg"; else print "pos"}')"
+				if [ "$NEG" = "neg" ]; then DIFF="$(echo "$DIFF" "-1" | awk '{printf "%4.3f\n",$1*$2}')"; fi
+				TOTALDIFF="$(echo "$TOTALDIFF" "$DIFF" | awk '{printf "%4.3f\n",$1+$2}')"
+			fi
+			PREVPING="$CURPING"
+			COUNTER=$((COUNTER + 1))
+		done
+	fi
 	
 	TZ=$(cat /etc/TZ)
 	export TZ
 	
-	ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
-	jitter="$(echo "$TOTALDIFF" "$DIFFCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
-	pktloss="$(echo "100" "$(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" | awk '{printf "%4.3f\n",$1-$2}')"
+	ping="0"
+	jitter="0"
+	linequal="0"
+	
+	if [ "$PINGCOUNT" -gt 1 ]; then
+		ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
+		jitter="$(echo "$TOTALDIFF" "$DIFFCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
+		linequal="$(echo "100" "$(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" | awk '{printf "%4.3f\n",$1-$2}')"
+	fi
 	
 	{
 	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[Packet_Loss] REAL NOT NULL);"
-	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[Packet_Loss]) values($(date '+%s'),$ping,$jitter,$pktloss);"
+	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[Packet_Loss]) values($(date '+%s'),$ping,$jitter,$linequal);"
 	} > /tmp/connmon-stats.sql
 	
 	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
 	echo "Internet Uptime Monitoring generated on $(date +"%c")" > "/tmp/connstatstitle.txt"
 	WriteStats_ToJS "/tmp/connstatstitle.txt" "$SCRIPT_DIR/connstatstext.js" "SetConnmonStatsTitle" "statstitle"
-	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $pktloss %%" "$PASS"
+	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %%" "$PASS"
 	
 	rm -f "$pingfile"
 	rm -f "/tmp/connmon-stats.sql"
@@ -908,6 +921,7 @@ Menu_Uninstall(){
 		case "$confirm" in
 			y|Y)
 				rm -f "/jffs/configs/connmon.config" 2> /dev/null
+				rm -f "/jffs/scripts/connmon.d" 2> /dev/null
 				break
 			;;
 			*)
