@@ -921,7 +921,7 @@ Menu_Uninstall(){
 		case "$confirm" in
 			y|Y)
 				rm -f "/jffs/configs/connmon.config" 2> /dev/null
-				rm -f "/jffs/scripts/connmon.d" 2> /dev/null
+				rm -rf "/jffs/scripts/connmon.d" 2> /dev/null
 				break
 			;;
 			*)
@@ -939,7 +939,7 @@ Menu_Uninstall(){
 	else
 		mount -o bind "$SHARED_DIR/custom_menuTree.js" "/www/require/modules/menuTree.js"
 	fi
-	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null
+	
 	rm -f "/jffs/scripts/$SCRIPT_NAME" 2>/dev/null
 	Clear_Lock
 	Print_Output "true" "Uninstall completed" "$PASS"
