@@ -291,8 +291,8 @@ function RedrawAllCharts() {
 
 function GetCookie(cookiename) {
 	var s;
-	if ((s = cookie.get(cookiename)) != null) {
-		return cookie.get(cookiename);
+	if ((s = cookie.get("conn"+cookiename)) != null) {
+		return cookie.get("conn"+cookiename);
 	}
 	else {
 		return ""
@@ -300,7 +300,7 @@ function GetCookie(cookiename) {
 }
 
 function SetCookie(cookiename,cookievalue) {
-	cookie.set(cookiename, cookievalue, 31);
+	cookie.set("conn"+cookiename, cookievalue, 31);
 }
 
 function initial(){
