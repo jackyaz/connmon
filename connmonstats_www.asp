@@ -232,6 +232,7 @@ function Draw_Chart(txtchartname,objchartname,txtdataname,objdataname,txttitle,t
 		options: lineOptions,
 		data: lineDataset
 	});
+	window[txtchartname]=objchartname;
 }
 
 function getLimit(datasetname,axis,maxmin) {
