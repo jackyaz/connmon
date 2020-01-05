@@ -13,16 +13,20 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.1.1"
-readonly CONNMON_VERSION="v2.1.1"
+readonly SCRIPT_VERSION="v2.2.0"
+readonly CONNMON_VERSION="v2.2.0"
 readonly SCRIPT_BRANCH="master"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
-readonly SCRIPT_CONF="/jffs/configs/$SCRIPT_NAME.config"
-readonly SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME.d"
-readonly SCRIPT_WEB_DIR="$(readlink /www/ext)/$SCRIPT_NAME"
-readonly SHARED_DIR="/jffs/scripts/shared-jy"
+readonly OLD_SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME.d"
+readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
+readonly OLD_SCRIPT_CONF="/jffs/configs/$SCRIPT_NAME.config"
+readonly SCRIPT_CONF="$SCRIPT_DIR/config"
+readonly SCRIPT_PAGE_DIR="$(readlink /www/user)"
+readonly SCRIPT_WEB_DIR="$SCRIPT_PAGE_DIR/$SCRIPT_NAME"
+readonly OLD_SHARED_DIR="/jffs/scripts/shared-jy"
+readonly SHARED_DIR="/jffs/addons/shared-jy"
 readonly SHARED_REPO="https://raw.githubusercontent.com/jackyaz/shared-jy/master"
-readonly SHARED_WEB_DIR="$(readlink /www/ext)/shared-jy"
+readonly SHARED_WEB_DIR="$SCRIPT_PAGE_DIR/shared-jy"
 [ -z "$(nvram get odmpid)" ] && ROUTER_MODEL=$(nvram get productid) || ROUTER_MODEL=$(nvram get odmpid)
 [ -f /opt/bin/sqlite3 ] && SQLITE3_PATH=/opt/bin/sqlite3 || SQLITE3_PATH=/usr/sbin/sqlite3
 ### End of script variables ###
@@ -145,7 +149,7 @@ Update_File(){
 		if ! diff -q "$tmpfile" "$SCRIPT_DIR/$1" >/dev/null 2>&1; then
 			Print_Output "true" "New version of $1 downloaded" "$PASS"
 			mv "$SCRIPT_DIR/$1" "$SCRIPT_DIR/$1.old"
-			Mount_CONNMON_WebUI
+			Mount_WebUI
 		fi
 		rm -f "$tmpfile"
 	elif [ "$1" = "chartjs-plugin-zoom.js" ] || [ "$1" = "chartjs-plugin-annotation.js" ] || [ "$1" = "moment.js" ] || [ "$1" =  "hammerjs.js" ]; then
@@ -204,8 +208,26 @@ Create_Dirs(){
 		mkdir -p "$SCRIPT_DIR"
 	fi
 	
+	if [ -d "$OLD_SCRIPT_DIR" ]; then
+		mv "$OLD_SCRIPT_DIR" "$(dirname "$SCRIPT_DIR")"
+		rm -rf "$OLD_SCRIPT_DIR"
+	fi
+
+	if [ -f "$OLD_SCRIPT_CONF" ]; then
+		mv "$OLD_SCRIPT_CONF" "$SCRIPT_CONF"
+	fi
+		
 	if [ ! -d "$SHARED_DIR" ]; then
 		mkdir -p "$SHARED_DIR"
+	fi
+	
+	if [ -d "$OLD_SHARED_DIR" ]; then
+		mv "$OLD_SHARED_DIR" "$(dirname "$SHARED_DIR")"
+		rm -rf "$OLD_SHARED_DIR"
+	fi
+
+	if [ ! -d "$SCRIPT_PAGE_DIR" ]; then
+		mkdir -p "$SCRIPT_PAGE_DIR"
 	fi
 	
 	if [ ! -d "$SCRIPT_WEB_DIR" ]; then
@@ -422,7 +444,45 @@ Get_spdMerlin_UI(){
 	fi
 }
 
-Mount_CONNMON_WebUI(){
+Get_WebUI_Page () {
+	for i in 1 2 3 4 5 6 7 8 9 10; do
+		page="$SCRIPT_PAGE_DIR/user$i.asp"
+		if [ ! -f "$page" ] || [ "$(md5sum < "$1")" = "$(md5sum < "$page")" ]; then
+			echo "user$i.asp"
+			return
+		fi
+	done
+	echo "none"
+}
+
+Mount_WebUI(){
+	if [ "$(Firmware_Version_Check "$(nvram get buildno)")" -ge "$(Firmware_Version_Check 384.15)" ]; then
+		if [ ! -f "$SCRIPT_DIR/connmonstats_www.asp" ]; then
+			Download_File "$SCRIPT_REPO/connmonstats_www.asp" "$SCRIPT_DIR/connmonstats_www.asp"
+		fi
+		MyPage="$(Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp")"
+		if [ "$MyPage" = "none" ]; then
+			Print_Output "true" "Unable to mount $SCRIPT_NAME WebUI page, exiting" "$CRIT"
+			exit 1
+		fi
+		Print_Output "true" "Mounting $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
+		cp -f "$SCRIPT_DIR/connmonstats_www.asp" "$SCRIPT_PAGE_DIR/$MyPage"
+
+		if [ ! -f "/tmp/menuTree.js" ]; then
+			cp -f "/www/require/modules/menuTree.js" "/tmp/"
+		fi
+
+		sed -i "\\~$MyPage~d" /tmp/menuTree.js
+		sed -i "/url: \"Tools_OtherSettings.asp\", tabName:/a {url: \"$MyPage\", tabName: \"Uptime Monitoring\"}," /tmp/menuTree.js
+		umount /www/require/modules/menuTree.js 2>/dev/null
+		mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
+	else
+		Mount_CONNMON_WebUI_Old
+		Modify_WebUI_File
+	fi
+}
+
+Mount_CONNMON_WebUI_Old(){
 	umount /www/Advanced_Feedback.asp 2>/dev/null
 	
 	if [ ! -f "$SCRIPT_DIR/connmonstats_www.asp" ]; then
@@ -481,17 +541,17 @@ Modify_WebUI_File(){
 	cp "/www/start_apply.htm" "$tmpfile"
 	
 	if [ -f "/jffs/scripts/uiDivStats" ]; then
-		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Advanced_MultiSubnet_Content.asp") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect();}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
+		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Advanced_MultiSubnet_Content.asp") != -1){'"\\r\\n"'setTimeout(getXMLAndRedirect, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
 	fi
 	
-	sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Advanced_Feedback.asp") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect();}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
+	sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Advanced_Feedback.asp") != -1){'"\\r\\n"'setTimeout(getXMLAndRedirect, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
 	
 	if [ -f /jffs/scripts/spdmerlin ]; then
-		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("'"$(Get_spdMerlin_UI)"'") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect();}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
+		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("'"$(Get_spdMerlin_UI)"'") != -1){'"\\r\\n"'setTimeout(getXMLAndRedirect, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
 	fi
 	
 	if [ -f /jffs/scripts/ntpmerlin ]; then
-		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Feedback_Info.asp") != -1){'"\\r\\n"'parent.showLoading(restart_time, "waiting");'"\\r\\n"'setTimeout(function(){ getXMLAndRedirect();}, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
+		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Feedback_Info.asp") != -1){'"\\r\\n"'setTimeout(getXMLAndRedirect, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
 	fi
 	
 	if [ -f /jffs/scripts/custom_start_apply.htm ]; then
@@ -871,8 +931,7 @@ Menu_Install(){
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_connmon create
-	Mount_CONNMON_WebUI
-	Modify_WebUI_File
+	Mount_WebUI
 	Menu_GenerateStats
 	
 	Clear_Lock
@@ -885,8 +944,7 @@ Menu_Startup(){
 	Shortcut_connmon create
 	Create_Dirs
 	Create_Symlinks
-	Mount_CONNMON_WebUI
-	Modify_WebUI_File
+	Mount_WebUI
 	Clear_Lock
 }
 
@@ -930,16 +988,27 @@ Menu_Uninstall(){
 		esac
 	done
 	Shortcut_connmon delete
-	umount /www/Advanced_Feedback.asp 2>/dev/null
-	sed -i '/{url: "Advanced_Feedback.asp", tabName: "Uptime Monitoring"}/d' "$SHARED_DIR/custom_menuTree.js"
-	umount /www/require/modules/menuTree.js 2>/dev/null
-	
-	if [ ! -f "/jffs/scripts/ntpmerlin" ] && [ ! -f "/jffs/scripts/spdmerlin" ]; then
-		rm -f "$SHARED_DIR/custom_menuTree.js" 2>/dev/null
+	if [ "$(Firmware_Version_Check "$(nvram get buildno)")" -ge "$(Firmware_Version_Check 384.15)" ]; then
+		MyPage="$(Get_WebUI_Page "$SCRIPT_DIR/ntpdstats_www.asp")"
+		if [ -n "$MyPage" ] && [ "$MyPage" != "none" ] && [ -f "/tmp/menuTree.js" ]; then
+			sed -i "\\~$MyPage~d" /tmp/menuTree.js
+			umount /www/require/modules/menuTree.js
+			mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
+			rm -rf "{$SCRIPT_PAGE_DIR:?}/$MyPage"
+		fi
 	else
-		mount -o bind "$SHARED_DIR/custom_menuTree.js" "/www/require/modules/menuTree.js"
+		umount /www/Advanced_Feedback.asp 2>/dev/null
+		sed -i '/{url: "Advanced_Feedback.asp", tabName: "Uptime Monitoring"}/d' "$SHARED_DIR/custom_menuTree.js"
+		umount /www/require/modules/menuTree.js 2>/dev/null
+		
+		if [ ! -f "/jffs/scripts/ntpmerlin" ] && [ ! -f "/jffs/scripts/spdmerlin" ]; then
+			rm -f "$SHARED_DIR/custom_menuTree.js" 2>/dev/null
+		else
+			mount -o bind "$SHARED_DIR/custom_menuTree.js" "/www/require/modules/menuTree.js"
+		fi
 	fi
 	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null
+	rm -rf "$SCRIPT_WEB_DIR" 2>/dev/null
 	rm -f "/jffs/scripts/$SCRIPT_NAME" 2>/dev/null
 	Clear_Lock
 	Print_Output "true" "Uninstall completed" "$PASS"
