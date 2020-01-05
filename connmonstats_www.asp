@@ -326,7 +326,13 @@ function AddEventHandlers(){
 	}
 }
 
+function SetCurrentPage(){
+	document.form.next_page.value = window.location.pathname.substring(1);
+	document.form.current_page.value = window.location.pathname.substring(1);
+}
+
 function initial(){
+	SetCurrentPage();
 	show_menu();
 	RedrawAllCharts();
 	SetConnmonStatsTitle();
@@ -340,6 +346,8 @@ function reload() {
 function applyRule() {
 	var action_script_tmp = "start_connmon";
 	document.form.action_script.value = action_script_tmp;
+	var restart_time = document.form.action_wait.value*1;
+	parent.showLoading(restart_time, "waiting");
 	document.form.submit();
 }
 
@@ -350,8 +358,8 @@ function applyRule() {
 <div id="Loading" class="popup_bg"></div>
 <iframe name="hidden_frame" id="hidden_frame" src="about:blank" width="0" height="0" frameborder="0"></iframe>
 <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-<input type="hidden" name="current_page" value="Advanced_Feedback.asp">
-<input type="hidden" name="next_page" value="Advanced_Feedback.asp">
+<input type="hidden" name="current_page" value="">
+<input type="hidden" name="next_page" value="">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="apply">
 <input type="hidden" name="action_script" value="start_connmon">
