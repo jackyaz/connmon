@@ -110,7 +110,7 @@ Update_Version(){
 		Update_File "chartjs-plugin-annotation.js"
 		Update_File "hammerjs.js"
 		Update_File "moment.js"
-		Modify_WebUI_File
+		Mount_WebUI
 		
 		if [ "$doupdate" != "false" ]; then
 			/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output "true" "$SCRIPT_NAME successfully updated"
@@ -132,7 +132,7 @@ Update_Version(){
 			Update_File "chartjs-plugin-annotation.js"
 			Update_File "hammerjs.js"
 			Update_File "moment.js"
-			Modify_WebUI_File
+			Mount_WebUI
 			/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output "true" "$SCRIPT_NAME successfully updated"
 			chmod 0755 /jffs/scripts/"$SCRIPT_NAME"
 			Clear_Lock
