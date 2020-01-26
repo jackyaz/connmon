@@ -1021,7 +1021,6 @@ if [ -z "$1" ]; then
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_connmon create
-	Clear_Lock
 	ScriptHeader
 	MainMenu
 	exit 0
