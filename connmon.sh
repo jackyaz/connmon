@@ -21,12 +21,12 @@ readonly OLD_SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME.d"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
 readonly OLD_SCRIPT_CONF="/jffs/configs/$SCRIPT_NAME.config"
 readonly SCRIPT_CONF="$SCRIPT_DIR/config"
-readonly SCRIPT_PAGE_DIR="$(readlink /www/user)"
-readonly SCRIPT_WEB_DIR="$SCRIPT_PAGE_DIR/$SCRIPT_NAME"
+readonly SCRIPT_WEBPAGE_DIR="$(readlink /www/user)"
+readonly SCRIPT_WEB_DIR="$SCRIPT_WEBPAGE_DIR/$SCRIPT_NAME"
 readonly OLD_SHARED_DIR="/jffs/scripts/shared-jy"
 readonly SHARED_DIR="/jffs/addons/shared-jy"
 readonly SHARED_REPO="https://raw.githubusercontent.com/jackyaz/shared-jy/master"
-readonly SHARED_WEB_DIR="$SCRIPT_PAGE_DIR/shared-jy"
+readonly SHARED_WEB_DIR="$SCRIPT_WEBPAGE_DIR/shared-jy"
 [ -z "$(nvram get odmpid)" ] && ROUTER_MODEL=$(nvram get productid) || ROUTER_MODEL=$(nvram get odmpid)
 [ -f /opt/bin/sqlite3 ] && SQLITE3_PATH=/opt/bin/sqlite3 || SQLITE3_PATH=/usr/sbin/sqlite3
 ### End of script variables ###
@@ -48,11 +48,21 @@ Print_Output(){
 	fi
 }
 
-### Code for this function courtesy of https://github.com/decoderman- credit to @thelonelycoder ###
 Firmware_Version_Check(){
-	echo "$1" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'
+	if [ "$1" = "install" ]; then
+		if [ "$(uname -o)" = "ASUSWRT-Merlin" ] && [ "$(nvram get buildno | tr -d '.')" -ge "38400" ]; then
+			return 0
+		else
+			return 1
+		fi
+	elif [ "$1" = "webui" ]; then
+		if nvram get rc_support | grep -qF "am_addons"; then
+			return 0
+		else
+			return 1
+		fi
+	fi
 }
-############################################################################
 
 ### Code for these functions inspired by https://github.com/Adamm00 - credit to @Adamm ###
 Check_Lock(){
@@ -226,8 +236,8 @@ Create_Dirs(){
 		rm -rf "$OLD_SHARED_DIR"
 	fi
 
-	if [ ! -d "$SCRIPT_PAGE_DIR" ]; then
-		mkdir -p "$SCRIPT_PAGE_DIR"
+	if [ ! -d "$SCRIPT_WEBPAGE_DIR" ]; then
+		mkdir -p "$SCRIPT_WEBPAGE_DIR"
 	fi
 	
 	if [ ! -d "$SCRIPT_WEB_DIR" ]; then
@@ -446,32 +456,32 @@ Get_spdMerlin_UI(){
 
 Get_WebUI_Page () {
 	for i in 1 2 3 4 5 6 7 8 9 10; do
-		page="$SCRIPT_PAGE_DIR/user$i.asp"
+		page="$SCRIPT_WEBPAGE_DIR/user$i.asp"
 		if [ ! -f "$page" ] || [ "$(md5sum < "$1")" = "$(md5sum < "$page")" ]; then
-			echo "user$i.asp"
+			MyPage="user$i.asp"
 			return
 		fi
 	done
-	echo "none"
+	MyPage="none"
 }
 
 Mount_WebUI(){
-	if [ "$(Firmware_Version_Check "$(nvram get buildno)")" -ge "$(Firmware_Version_Check 384.15)" ]; then
+	if Firmware_Version_Check "webui" ; then
 		if [ ! -f "$SCRIPT_DIR/connmonstats_www.asp" ]; then
 			Download_File "$SCRIPT_REPO/connmonstats_www.asp" "$SCRIPT_DIR/connmonstats_www.asp"
 		fi
-		MyPage="$(Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp")"
+		Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp"
 		if [ "$MyPage" = "none" ]; then
 			Print_Output "true" "Unable to mount $SCRIPT_NAME WebUI page, exiting" "$CRIT"
 			exit 1
 		fi
 		Print_Output "true" "Mounting $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
-		cp -f "$SCRIPT_DIR/connmonstats_www.asp" "$SCRIPT_PAGE_DIR/$MyPage"
-
+		cp -f "$SCRIPT_DIR/connmonstats_www.asp" "$SCRIPT_WEBPAGE_DIR/$MyPage"
+		
 		if [ ! -f "/tmp/menuTree.js" ]; then
 			cp -f "/www/require/modules/menuTree.js" "/tmp/"
 		fi
-
+		
 		sed -i "\\~$MyPage~d" /tmp/menuTree.js
 		sed -i "/url: \"Tools_OtherSettings.asp\", tabName:/a {url: \"$MyPage\", tabName: \"Uptime Monitoring\"}," /tmp/menuTree.js
 		umount /www/require/modules/menuTree.js 2>/dev/null
@@ -881,21 +891,17 @@ Check_Requirements(){
 	if [ ! -f "/opt/bin/opkg" ]; then
 		Print_Output "true" "Entware not detected!" "$ERR"
 		CHECKSFAILED="true"
-		return 1
 	fi
 	
-	if [ "$(Firmware_Version_Check "$(nvram get buildno)")" -lt "$(Firmware_Version_Check 384.11)" ] && [ "$(Firmware_Version_Check "$(nvram get buildno)")" -ne "$(Firmware_Version_Check 374.43)" ]; then
-		Print_Output "true" "Older Merlin firmware detected - $SCRIPT_NAME requires 384.11 or later for sqlite3 support" "$WARN"
-		Print_Output "true" "Installing sqlite3-cli from Entware..." "$WARN"
+	if ! Firmware_Version_Check "install"; then
+		Print_Output "true" "Unsupported firmware version detected, 384.XX required" "$ERR"
+		CHECKSFAILED="true"
+	fi
+	
+	if [ "$CHECKSFAILED" = "false" ]; then
+		Print_Output "true" "Installing required packages from Entware" "$PASS"
 		opkg update
 		opkg install sqlite3-cli
-	elif [ "$(Firmware_Version_Check "$(nvram get buildno)")" -eq "$(Firmware_Version_Check 374.43)" ]; then
-		Print_Output "true" "John's fork detected - unsupported" "$ERR"
-		CHECKSFAILED="true"
-		return 1
-	fi
-		
-	if [ "$CHECKSFAILED" = "false" ]; then
 		return 0
 	else
 		return 1
@@ -988,13 +994,13 @@ Menu_Uninstall(){
 		esac
 	done
 	Shortcut_connmon delete
-	if [ "$(Firmware_Version_Check "$(nvram get buildno)")" -ge "$(Firmware_Version_Check 384.15)" ]; then
-		MyPage="$(Get_WebUI_Page "$SCRIPT_DIR/ntpdstats_www.asp")"
+	if Firmware_Version_Check "webui" ; then
+		Get_WebUI_Page "$SCRIPT_DIR/ntpdstats_www.asp"
 		if [ -n "$MyPage" ] && [ "$MyPage" != "none" ] && [ -f "/tmp/menuTree.js" ]; then
 			sed -i "\\~$MyPage~d" /tmp/menuTree.js
 			umount /www/require/modules/menuTree.js
 			mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
-			rm -rf "{$SCRIPT_PAGE_DIR:?}/$MyPage"
+			rm -rf "{$SCRIPT_WEBPAGE_DIR:?}/$MyPage"
 		fi
 	else
 		umount /www/Advanced_Feedback.asp 2>/dev/null
