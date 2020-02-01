@@ -251,6 +251,7 @@ Create_Dirs(){
 
 Create_Symlinks(){
 	rm -f "$SCRIPT_WEB_DIR/"* 2>/dev/null
+	rm -f "$SHARED_WEB_DIR/"* 2>/dev/null
 	
 	ln -s "$SCRIPT_DIR/connstatsdatadaily.js" "$SCRIPT_WEB_DIR/connstatsdatadaily.js" 2>/dev/null
 	ln -s "$SCRIPT_DIR/connstatsdataweekly.js" "$SCRIPT_WEB_DIR/connstatsdataweekly.js" 2>/dev/null
