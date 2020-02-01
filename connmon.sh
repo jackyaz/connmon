@@ -922,8 +922,6 @@ Menu_Install(){
 		exit 1
 	fi
 	
-	opkg update
-	
 	Create_Dirs
 	Create_Symlinks
 	Conf_Exists
