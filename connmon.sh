@@ -982,7 +982,6 @@ Menu_Uninstall(){
 		read -r "confirm"
 		case "$confirm" in
 			y|Y)
-				rm -f "/jffs/configs/connmon.config" 2> /dev/null
 				rm -rf "$SCRIPT_DIR" 2>/dev/null
 				break
 			;;
