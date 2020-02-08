@@ -122,7 +122,6 @@ Update_Version(){
 		Update_File "chartjs-plugin-datasource.js"
 		Update_File "hammerjs.js"
 		Update_File "moment.js"
-		Mount_WebUI
 		
 		if [ "$doupdate" != "false" ]; then
 			/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output "true" "$SCRIPT_NAME successfully updated"
@@ -146,7 +145,6 @@ Update_Version(){
 			Update_File "chartjs-plugin-datasource.js"
 			Update_File "hammerjs.js"
 			Update_File "moment.js"
-			Mount_WebUI
 			/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output "true" "$SCRIPT_NAME successfully updated"
 			chmod 0755 /jffs/scripts/"$SCRIPT_NAME"
 			Clear_Lock
@@ -938,7 +936,6 @@ Menu_Install(){
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_connmon create
-	Mount_WebUI
 	Menu_GenerateStats
 	
 	Clear_Lock
