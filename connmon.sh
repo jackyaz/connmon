@@ -1019,6 +1019,11 @@ Menu_Uninstall(){
 }
 
 if [ -z "$1" ]; then
+	if [ ! -f /opt/bin/sqlite3 ]; then
+		Print_Output "true" "Installing required version of sqlite3 from Entware" "$PASS"
+		opkg update
+		opkg install sqlite3-cli
+	fi
 	Create_Dirs
 	Create_Symlinks
 	Auto_Startup create 2>/dev/null
