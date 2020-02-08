@@ -11,7 +11,7 @@
 <link rel="stylesheet" type="text/css" href="index_style.css">
 <link rel="stylesheet" type="text/css" href="form_style.css">
 <style>
-p{
+p {
 font-weight: bolder;
 }
 
@@ -53,7 +53,52 @@ font-weight: bolder;
 <script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatsdatamonthly.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatstext.js"></script>
 <script>
-var LineChartPingDaily,LineChartJitterDaily,LineChartQualityDaily,LineChartPingWeekly,LineChartJitterWeekly,LineChartQualityWeekly,LineChartPingMonthly,LineChartJitterMonthly,LineChartQualityMonthly;
+// Keep the real data in a seperate object called allData
+// Put only that part of allData in the dataset to optimize zoom/pan performance
+// Author: Evert van der Weit - 2018
+
+function filterData(chartInstance) {
+	var datasets = chartInstance.data.datasets;
+	var originalDatasets = chartInstance.data.allData;
+	var chartOptions = chartInstance.options.scales.xAxes[0];
+	
+	var startX = chartOptions.time.min;
+	var endX = chartOptions.time.max;
+	if(typeof originalDatasets === 'undefined' || originalDatasets === null) { return; }
+	for(var i = 0; i < originalDatasets.length; i++) {
+		var dataset = datasets[i];
+		var originalData = originalDatasets[i];
+		
+		if (!originalData.length) break
+		
+		var s = startX;
+		var e = endX;
+		var sI = null;
+		var eI = null;
+		
+		for (var j = 0; j < originalData.length; j++) {
+			if ((sI==null) && originalData[j].x > s) {
+				sI = j;
+			}
+			if ((eI==null) && originalData[j].x > e) {
+				eI = j;
+			}
+		}
+		if (sI==null) sI = 0;
+		if (originalData[originalData.length - 1].x < s) eI = 0
+			else if (eI==null) eI = originalData.length
+		
+		dataset.data = originalData.slice(sI, eI);
+	}
+}
+
+var datafilterPlugin = {
+	beforeUpdate: function(chartInstance) {
+		filterData(chartInstance);
+	}
+}
+</script>
+<script>
 var ShowLines=GetCookie("ShowLines");
 var ShowFill=GetCookie("ShowFill");
 Chart.defaults.global.defaultFontColor = "#CCC";
@@ -61,7 +106,27 @@ Chart.Tooltip.positioners.cursor = function(chartElements, coordinates) {
   return coordinates;
 };
 
-function Draw_Chart(txtchartname,objchartname,txtdataname,objdataname,txttitle,txtunity,txtunitx,numunitx,colourname){
+function Draw_Chart_NoData(txtchartname){
+	document.getElementById("divLineChart"+txtchartname).width="730";
+	document.getElementById("divLineChart"+txtchartname).height="300";
+	document.getElementById("divLineChart"+txtchartname).style.width="730px";
+	document.getElementById("divLineChart"+txtchartname).style.height="300px";
+	var ctx = document.getElementById("divLineChart"+txtchartname).getContext("2d");
+	ctx.save();
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	ctx.font = "normal normal bolder 48px Arial";
+	ctx.fillStyle = 'white';
+	ctx.fillText('No data to display', 365, 150);
+	ctx.restore();
+}
+
+function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname){
+	var objchartname=window["LineChart"+txtchartname];
+	var txtdataname="Data"+txtchartname;
+	var objdataname=window["Data"+txtchartname];
+	if(typeof objdataname === 'undefined' || objdataname === null) { Draw_Chart_NoData(txtchartname); return; }
+	if (objdataname.length == 0) { Draw_Chart_NoData(txtchartname); return; }
 	factor=0;
 	if (txtunitx=="hour"){
 		factor=60*60*1000;
@@ -94,9 +159,10 @@ function Draw_Chart(txtchartname,objchartname,txtdataname,objdataname,txttitle,t
 				type: "time",
 				gridLines: { display: true, color: "#282828" },
 				ticks: {
+					min: moment().subtract(numunitx, txtunitx+"s"),
 					display: true
 				},
-				time: { min: moment().subtract(numunitx, txtunitx+"s"), unit: txtunitx, stepSize: 1 }
+				time: { unit: txtunitx, stepSize: 1 }
 			}],
 			yAxes: [{
 				gridLines: { display: false, color: "#282828" },
@@ -230,6 +296,7 @@ function Draw_Chart(txtchartname,objchartname,txtdataname,objdataname,txttitle,t
 	};
 	objchartname = new Chart(ctx, {
 		type: 'line',
+		plugins: [datafilterPlugin],
 		options: lineOptions,
 		data: lineDataset
 	});
@@ -258,11 +325,11 @@ function round(value, decimals) {
 function ToggleLines() {
 	if(ShowLines == ""){
 		ShowLines = "line";
-		SetCookie("ShowLines","line")
+		SetCookie("ShowLines","line");
 	}
 	else {
 		ShowLines = "";
-		SetCookie("ShowLines","")
+		SetCookie("ShowLines","");
 	}
 	RedrawAllCharts();
 }
@@ -270,25 +337,25 @@ function ToggleLines() {
 function ToggleFill() {
 	if(ShowFill == false){
 		ShowFill = "origin";
-		SetCookie("ShowFill","origin")
+		SetCookie("ShowFill","origin");
 	}
 	else {
 		ShowFill = false;
-		SetCookie("ShowFill",false)
+		SetCookie("ShowFill",false);
 	}
 	RedrawAllCharts();
 }
 
 function RedrawAllCharts() {
-	Draw_Chart("LineChartPingDaily",LineChartPingDaily,"DataPingDaily",DataPingDaily,"Ping","ms","hour",24,"#fc8500");
-	Draw_Chart("LineChartJitterDaily",LineChartJitterDaily,"DataJitterDaily",DataJitterDaily,"Jitter","ms","hour",24,"#42ecf5");
-	Draw_Chart("LineChartQualityDaily",LineChartQualityDaily,"DataQualityDaily",DataQualityDaily,"Quality","%","hour",24,"#ffffff");
-	Draw_Chart("LineChartPingWeekly",LineChartPingWeekly,"DataPingWeekly",DataPingWeekly,"Ping","ms","day",7,"#fc8500");
-	Draw_Chart("LineChartJitterWeekly",LineChartJitterWeekly,"DataJitterWeekly",DataJitterWeekly,"Jitter","ms","day",7,"#42ecf5");
-	Draw_Chart("LineChartQualityWeekly",LineChartQualityWeekly,"DataQualityWeekly",DataQualityWeekly,"Quality","%","day",7,"#ffffff");
-	Draw_Chart("LineChartPingMonthly",LineChartPingMonthly,"DataPingMonthly",DataPingMonthly,"Ping","ms","day",30,"#fc8500");
-	Draw_Chart("LineChartJitterMonthly",LineChartJitterMonthly,"DataJitterMonthly",DataJitterMonthly,"Jitter","ms","day",30,"#42ecf5");
-	Draw_Chart("LineChartQualityMonthly",LineChartQualityMonthly,"DataQualityMonthly",DataQualityMonthly,"Quality","%","day",30,"#ffffff");
+	Draw_Chart("PingDaily","Ping","ms","hour",24,"#fc8500");
+	Draw_Chart("JitterDaily","Jitter","ms","hour",24,"#42ecf5");
+	Draw_Chart("QualityDaily","Quality","%","hour",24,"#ffffff");
+	Draw_Chart("PingWeekly","Ping","ms","day",7,"#fc8500");
+	Draw_Chart("JitterWeekly","Jitter","ms","day",7,"#42ecf5");
+	Draw_Chart("QualityWeekly","Quality","%","day",7,"#ffffff");
+	Draw_Chart("PingMonthly","Ping","ms","day",30,"#fc8500");
+	Draw_Chart("JitterMonthly","Jitter","ms","day",30,"#42ecf5");
+	Draw_Chart("QualityMonthly","Quality","%","day",30,"#ffffff");
 }
 
 function GetCookie(cookiename) {
@@ -297,7 +364,7 @@ function GetCookie(cookiename) {
 		return cookie.get("conn_"+cookiename);
 	}
 	else {
-		return ""
+		return "";
 	}
 }
 
@@ -308,21 +375,21 @@ function SetCookie(cookiename,cookievalue) {
 function AddEventHandlers(){
 	var coll = document.getElementsByClassName("collapsible");
 	var i;
-
+	
 	for (i = 0; i < coll.length; i++) {
 		coll[i].addEventListener("click", function() {
 			this.classList.toggle("active");
 			var content = this.nextElementSibling.firstElementChild.firstElementChild.firstElementChild;
 			if (content.style.maxHeight){
 				content.style.maxHeight = null;
-				SetCookie(this.id,"collapsed")
+				SetCookie(this.id,"collapsed");
 			} else {
 				content.style.maxHeight = content.scrollHeight + "px";
-				SetCookie(this.id,"expanded")
+				SetCookie(this.id,"expanded");
 			}
 		});
 		if(GetCookie(coll[i].id) == "expanded"){
-				coll[i].click();
+			coll[i].click();
 		}
 	}
 }
