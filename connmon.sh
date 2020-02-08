@@ -13,20 +13,20 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.2.0"
-readonly CONNMON_VERSION="v2.2.0"
+readonly SCRIPT_VERSION="v2.2.1"
+readonly CONNMON_VERSION="v2.2.1"
 readonly SCRIPT_BRANCH="master"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
 readonly OLD_SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME.d"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
 readonly OLD_SCRIPT_CONF="/jffs/configs/$SCRIPT_NAME.config"
 readonly SCRIPT_CONF="$SCRIPT_DIR/config"
-readonly SCRIPT_PAGE_DIR="$(readlink /www/user)"
-readonly SCRIPT_WEB_DIR="$SCRIPT_PAGE_DIR/$SCRIPT_NAME"
+readonly SCRIPT_WEBPAGE_DIR="$(readlink /www/user)"
+readonly SCRIPT_WEB_DIR="$SCRIPT_WEBPAGE_DIR/$SCRIPT_NAME"
 readonly OLD_SHARED_DIR="/jffs/scripts/shared-jy"
 readonly SHARED_DIR="/jffs/addons/shared-jy"
 readonly SHARED_REPO="https://raw.githubusercontent.com/jackyaz/shared-jy/master"
-readonly SHARED_WEB_DIR="$SCRIPT_PAGE_DIR/shared-jy"
+readonly SHARED_WEB_DIR="$SCRIPT_WEBPAGE_DIR/shared-jy"
 [ -z "$(nvram get odmpid)" ] && ROUTER_MODEL=$(nvram get productid) || ROUTER_MODEL=$(nvram get odmpid)
 [ -f /opt/bin/sqlite3 ] && SQLITE3_PATH=/opt/bin/sqlite3 || SQLITE3_PATH=/usr/sbin/sqlite3
 ### End of script variables ###
@@ -48,11 +48,21 @@ Print_Output(){
 	fi
 }
 
-### Code for this function courtesy of https://github.com/decoderman- credit to @thelonelycoder ###
 Firmware_Version_Check(){
-	echo "$1" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'
+	if [ "$1" = "install" ]; then
+		if [ "$(uname -o)" = "ASUSWRT-Merlin" ] && [ "$(nvram get buildno | tr -d '.')" -ge "38400" ]; then
+			return 0
+		else
+			return 1
+		fi
+	elif [ "$1" = "webui" ]; then
+		if nvram get rc_support | grep -qF "am_addons"; then
+			return 0
+		else
+			return 1
+		fi
+	fi
 }
-############################################################################
 
 ### Code for these functions inspired by https://github.com/Adamm00 - credit to @Adamm ###
 Check_Lock(){
@@ -106,8 +116,10 @@ Update_Version(){
 		fi
 		
 		Update_File "connmonstats_www.asp"
+		Update_File "chart.js"
 		Update_File "chartjs-plugin-zoom.js"
 		Update_File "chartjs-plugin-annotation.js"
+		Update_File "chartjs-plugin-datasource.js"
 		Update_File "hammerjs.js"
 		Update_File "moment.js"
 		Mount_WebUI
@@ -128,8 +140,10 @@ Update_Version(){
 			serverver=$(/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 			Print_Output "true" "Downloading latest version ($serverver) of $SCRIPT_NAME" "$PASS"
 			Update_File "connmonstats_www.asp"
+			Update_File "chart.js"
 			Update_File "chartjs-plugin-zoom.js"
 			Update_File "chartjs-plugin-annotation.js"
+			Update_File "chartjs-plugin-datasource.js"
 			Update_File "hammerjs.js"
 			Update_File "moment.js"
 			Mount_WebUI
@@ -147,12 +161,12 @@ Update_File(){
 		tmpfile="/tmp/$1"
 		Download_File "$SCRIPT_REPO/$1" "$tmpfile"
 		if ! diff -q "$tmpfile" "$SCRIPT_DIR/$1" >/dev/null 2>&1; then
+			Download_File "$SCRIPT_REPO/$1" "$SCRIPT_DIR/$1"
 			Print_Output "true" "New version of $1 downloaded" "$PASS"
-			mv "$SCRIPT_DIR/$1" "$SCRIPT_DIR/$1.old"
 			Mount_WebUI
 		fi
 		rm -f "$tmpfile"
-	elif [ "$1" = "chartjs-plugin-zoom.js" ] || [ "$1" = "chartjs-plugin-annotation.js" ] || [ "$1" = "moment.js" ] || [ "$1" =  "hammerjs.js" ]; then
+	elif [ "$1" = "chart.js" ] || [ "$1" = "chartjs-plugin-zoom.js" ] || [ "$1" = "chartjs-plugin-annotation.js" ] || [ "$1" = "moment.js" ] || [ "$1" =  "hammerjs.js" ] || [ "$1" = "chartjs-plugin-datasource.js" ]; then
 		tmpfile="/tmp/$1"
 		Download_File "$SHARED_REPO/$1" "$tmpfile"
 		if [ ! -f "$SHARED_DIR/$1" ]; then
@@ -226,8 +240,8 @@ Create_Dirs(){
 		rm -rf "$OLD_SHARED_DIR"
 	fi
 
-	if [ ! -d "$SCRIPT_PAGE_DIR" ]; then
-		mkdir -p "$SCRIPT_PAGE_DIR"
+	if [ ! -d "$SCRIPT_WEBPAGE_DIR" ]; then
+		mkdir -p "$SCRIPT_WEBPAGE_DIR"
 	fi
 	
 	if [ ! -d "$SCRIPT_WEB_DIR" ]; then
@@ -241,6 +255,7 @@ Create_Dirs(){
 
 Create_Symlinks(){
 	rm -f "$SCRIPT_WEB_DIR/"* 2>/dev/null
+	rm -f "$SHARED_WEB_DIR/"* 2>/dev/null
 	
 	ln -s "$SCRIPT_DIR/connstatsdatadaily.js" "$SCRIPT_WEB_DIR/connstatsdatadaily.js" 2>/dev/null
 	ln -s "$SCRIPT_DIR/connstatsdataweekly.js" "$SCRIPT_WEB_DIR/connstatsdataweekly.js" 2>/dev/null
@@ -248,8 +263,10 @@ Create_Symlinks(){
 	
 	ln -s "$SCRIPT_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
 	
+	ln -s "$SHARED_DIR/chart.js" "$SHARED_WEB_DIR/chart.js" 2>/dev/null
 	ln -s "$SHARED_DIR/chartjs-plugin-zoom.js" "$SHARED_WEB_DIR/chartjs-plugin-zoom.js" 2>/dev/null
 	ln -s "$SHARED_DIR/chartjs-plugin-annotation.js" "$SHARED_WEB_DIR/chartjs-plugin-annotation.js" 2>/dev/null
+	ln -s "$SHARED_DIR/chartjs-plugin-datasource.js" "$SHARED_WEB_DIR/chartjs-plugin-datasource.js" 2>/dev/null
 	ln -s "$SHARED_DIR/hammerjs.js" "$SHARED_WEB_DIR/hammerjs.js" 2>/dev/null
 	ln -s "$SHARED_DIR/moment.js" "$SHARED_WEB_DIR/moment.js" 2>/dev/null
 }
@@ -446,32 +463,29 @@ Get_spdMerlin_UI(){
 
 Get_WebUI_Page () {
 	for i in 1 2 3 4 5 6 7 8 9 10; do
-		page="$SCRIPT_PAGE_DIR/user$i.asp"
+		page="$SCRIPT_WEBPAGE_DIR/user$i.asp"
 		if [ ! -f "$page" ] || [ "$(md5sum < "$1")" = "$(md5sum < "$page")" ]; then
-			echo "user$i.asp"
+			MyPage="user$i.asp"
 			return
 		fi
 	done
-	echo "none"
+	MyPage="none"
 }
 
 Mount_WebUI(){
-	if [ "$(Firmware_Version_Check "$(nvram get buildno)")" -ge "$(Firmware_Version_Check 384.15)" ]; then
-		if [ ! -f "$SCRIPT_DIR/connmonstats_www.asp" ]; then
-			Download_File "$SCRIPT_REPO/connmonstats_www.asp" "$SCRIPT_DIR/connmonstats_www.asp"
-		fi
-		MyPage="$(Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp")"
+	if Firmware_Version_Check "webui" ; then
+		Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp"
 		if [ "$MyPage" = "none" ]; then
 			Print_Output "true" "Unable to mount $SCRIPT_NAME WebUI page, exiting" "$CRIT"
 			exit 1
 		fi
 		Print_Output "true" "Mounting $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
-		cp -f "$SCRIPT_DIR/connmonstats_www.asp" "$SCRIPT_PAGE_DIR/$MyPage"
-
+		cp -f "$SCRIPT_DIR/connmonstats_www.asp" "$SCRIPT_WEBPAGE_DIR/$MyPage"
+		
 		if [ ! -f "/tmp/menuTree.js" ]; then
 			cp -f "/www/require/modules/menuTree.js" "/tmp/"
 		fi
-
+		
 		sed -i "\\~$MyPage~d" /tmp/menuTree.js
 		sed -i "/url: \"Tools_OtherSettings.asp\", tabName:/a {url: \"$MyPage\", tabName: \"Uptime Monitoring\"}," /tmp/menuTree.js
 		umount /www/require/modules/menuTree.js 2>/dev/null
@@ -484,10 +498,6 @@ Mount_WebUI(){
 
 Mount_CONNMON_WebUI_Old(){
 	umount /www/Advanced_Feedback.asp 2>/dev/null
-	
-	if [ ! -f "$SCRIPT_DIR/connmonstats_www.asp" ]; then
-		Download_File "$SCRIPT_REPO/connmonstats_www.asp" "$SCRIPT_DIR/connmonstats_www.asp"
-	fi
 	
 	mount -o bind "$SCRIPT_DIR/connmonstats_www.asp" "/www/Advanced_Feedback.asp"
 }
@@ -881,21 +891,17 @@ Check_Requirements(){
 	if [ ! -f "/opt/bin/opkg" ]; then
 		Print_Output "true" "Entware not detected!" "$ERR"
 		CHECKSFAILED="true"
-		return 1
 	fi
 	
-	if [ "$(Firmware_Version_Check "$(nvram get buildno)")" -lt "$(Firmware_Version_Check 384.11)" ] && [ "$(Firmware_Version_Check "$(nvram get buildno)")" -ne "$(Firmware_Version_Check 374.43)" ]; then
-		Print_Output "true" "Older Merlin firmware detected - $SCRIPT_NAME requires 384.11 or later for sqlite3 support" "$WARN"
-		Print_Output "true" "Installing sqlite3-cli from Entware..." "$WARN"
+	if ! Firmware_Version_Check "install"; then
+		Print_Output "true" "Unsupported firmware version detected, 384.XX required" "$ERR"
+		CHECKSFAILED="true"
+	fi
+	
+	if [ "$CHECKSFAILED" = "false" ]; then
+		Print_Output "true" "Installing required packages from Entware" "$PASS"
 		opkg update
 		opkg install sqlite3-cli
-	elif [ "$(Firmware_Version_Check "$(nvram get buildno)")" -eq "$(Firmware_Version_Check 374.43)" ]; then
-		Print_Output "true" "John's fork detected - unsupported" "$ERR"
-		CHECKSFAILED="true"
-		return 1
-	fi
-		
-	if [ "$CHECKSFAILED" = "false" ]; then
 		return 0
 	else
 		return 1
@@ -916,14 +922,15 @@ Menu_Install(){
 		exit 1
 	fi
 	
-	opkg update
-	
 	Create_Dirs
 	Create_Symlinks
 	Conf_Exists
 	
+	Update_File "connmonstats_www.asp"
+	Update_File "chart.js"
 	Update_File "chartjs-plugin-zoom.js"
 	Update_File "chartjs-plugin-annotation.js"
+	Update_File "chartjs-plugin-datasource.js"
 	Update_File "hammerjs.js"
 	Update_File "moment.js"
 	
@@ -978,7 +985,6 @@ Menu_Uninstall(){
 		read -r "confirm"
 		case "$confirm" in
 			y|Y)
-				rm -f "/jffs/configs/connmon.config" 2> /dev/null
 				rm -rf "$SCRIPT_DIR" 2>/dev/null
 				break
 			;;
@@ -988,13 +994,13 @@ Menu_Uninstall(){
 		esac
 	done
 	Shortcut_connmon delete
-	if [ "$(Firmware_Version_Check "$(nvram get buildno)")" -ge "$(Firmware_Version_Check 384.15)" ]; then
-		MyPage="$(Get_WebUI_Page "$SCRIPT_DIR/ntpdstats_www.asp")"
+	if Firmware_Version_Check "webui" ; then
+		Get_WebUI_Page "$SCRIPT_DIR/ntpdstats_www.asp"
 		if [ -n "$MyPage" ] && [ "$MyPage" != "none" ] && [ -f "/tmp/menuTree.js" ]; then
 			sed -i "\\~$MyPage~d" /tmp/menuTree.js
 			umount /www/require/modules/menuTree.js
 			mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
-			rm -rf "{$SCRIPT_PAGE_DIR:?}/$MyPage"
+			rm -rf "{$SCRIPT_WEBPAGE_DIR:?}/$MyPage"
 		fi
 	else
 		umount /www/Advanced_Feedback.asp 2>/dev/null
@@ -1015,6 +1021,11 @@ Menu_Uninstall(){
 }
 
 if [ -z "$1" ]; then
+	if [ ! -f /opt/bin/sqlite3 ]; then
+		Print_Output "true" "Installing required version of sqlite3 from Entware" "$PASS"
+		opkg update
+		opkg install sqlite3-cli
+	fi
 	Create_Dirs
 	Create_Symlinks
 	Auto_Startup create 2>/dev/null
