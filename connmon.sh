@@ -13,9 +13,9 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.2.1"
-readonly CONNMON_VERSION="v2.2.1"
-readonly SCRIPT_BRANCH="master"
+readonly SCRIPT_VERSION="v2.2.2"
+readonly CONNMON_VERSION="v2.2.2"
+readonly SCRIPT_BRANCH="develop"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
 readonly OLD_SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME.d"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -116,6 +116,7 @@ Update_Version(){
 		fi
 		
 		Update_File "connmonstats_www.asp"
+		Update_File "redirect.htm"
 		Update_File "chart.js"
 		Update_File "chartjs-plugin-zoom.js"
 		Update_File "chartjs-plugin-annotation.js"
@@ -139,6 +140,7 @@ Update_Version(){
 			serverver=$(/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 			Print_Output "true" "Downloading latest version ($serverver) of $SCRIPT_NAME" "$PASS"
 			Update_File "connmonstats_www.asp"
+			Update_File "redirect.htm"
 			Update_File "chart.js"
 			Update_File "chartjs-plugin-zoom.js"
 			Update_File "chartjs-plugin-annotation.js"
@@ -164,7 +166,7 @@ Update_File(){
 			Mount_WebUI
 		fi
 		rm -f "$tmpfile"
-	elif [ "$1" = "chart.js" ] || [ "$1" = "chartjs-plugin-zoom.js" ] || [ "$1" = "chartjs-plugin-annotation.js" ] || [ "$1" = "moment.js" ] || [ "$1" =  "hammerjs.js" ] || [ "$1" = "chartjs-plugin-datasource.js" ]; then
+	elif [ "$1" = "chart.js" ] || [ "$1" = "chartjs-plugin-zoom.js" ] || [ "$1" = "chartjs-plugin-annotation.js" ] || [ "$1" = "moment.js" ] || [ "$1" =  "hammerjs.js" ] || [ "$1" = "chartjs-plugin-datasource.js" ] || [ "$1" = "redirect.htm" ]; then
 		tmpfile="/tmp/$1"
 		Download_File "$SHARED_REPO/$1" "$tmpfile"
 		if [ ! -f "$SHARED_DIR/$1" ]; then
@@ -485,7 +487,14 @@ Mount_WebUI(){
 		fi
 		
 		sed -i "\\~$MyPage~d" /tmp/menuTree.js
-		sed -i "/url: \"Tools_OtherSettings.asp\", tabName:/a {url: \"$MyPage\", tabName: \"Uptime Monitoring\"}," /tmp/menuTree.js
+		
+		if ! grep -q 'menuName: "Addons"' /tmp/menuTree.js ; then
+			lineinsbefore="$(( $(grep -n "exclude:" /tmp/menuTree.js | cut -f1 -d':') - 1))"
+			sed -i "$lineinsbefore"'i,\n{\nmenuName: "Addons",\nindex: "menu_Addons",\ntab: [\n{url: "ext/shared-jy/redirect.htm", tabName: "Help & Support"},\n{url: "NULL", tabName: "__INHERIT__"}\n]\n}' /tmp/menuTree.js
+		fi
+		
+		sed -i "/url: \"ext\/shared-jy\/redirect.htm\", tabName:/i {url: \"$MyPage\", tabName: \"Uptime Monitoring\"}," /tmp/menuTree.js
+		
 		umount /www/require/modules/menuTree.js 2>/dev/null
 		mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
 	else
@@ -925,6 +934,7 @@ Menu_Install(){
 	Conf_Exists
 	
 	Update_File "connmonstats_www.asp"
+	Update_File "redirect.htm"
 	Update_File "chart.js"
 	Update_File "chartjs-plugin-zoom.js"
 	Update_File "chartjs-plugin-annotation.js"
