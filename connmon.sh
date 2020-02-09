@@ -13,8 +13,8 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.2.1"
-readonly CONNMON_VERSION="v2.2.1"
+readonly SCRIPT_VERSION="v2.2.2"
+readonly CONNMON_VERSION="v2.2.2"
 readonly SCRIPT_BRANCH="master"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
 readonly OLD_SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME.d"
@@ -116,6 +116,8 @@ Update_Version(){
 		fi
 		
 		Update_File "connmonstats_www.asp"
+		Update_File "redirect.htm"
+		Update_File "addons.png"
 		Update_File "chart.js"
 		Update_File "chartjs-plugin-zoom.js"
 		Update_File "chartjs-plugin-annotation.js"
@@ -139,6 +141,8 @@ Update_Version(){
 			serverver=$(/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 			Print_Output "true" "Downloading latest version ($serverver) of $SCRIPT_NAME" "$PASS"
 			Update_File "connmonstats_www.asp"
+			Update_File "redirect.htm"
+			Update_File "addons.png"
 			Update_File "chart.js"
 			Update_File "chartjs-plugin-zoom.js"
 			Update_File "chartjs-plugin-annotation.js"
@@ -159,12 +163,15 @@ Update_File(){
 		tmpfile="/tmp/$1"
 		Download_File "$SCRIPT_REPO/$1" "$tmpfile"
 		if ! diff -q "$tmpfile" "$SCRIPT_DIR/$1" >/dev/null 2>&1; then
+			Get_WebUI_Page "$SCRIPT_DIR/$1"
+			sed -i "\\~$MyPage~d" /tmp/menuTree.js
+			rm -f "$SCRIPT_WEBPAGE_DIR/$MyPage" 2>/dev/null
 			Download_File "$SCRIPT_REPO/$1" "$SCRIPT_DIR/$1"
 			Print_Output "true" "New version of $1 downloaded" "$PASS"
 			Mount_WebUI
 		fi
 		rm -f "$tmpfile"
-	elif [ "$1" = "chart.js" ] || [ "$1" = "chartjs-plugin-zoom.js" ] || [ "$1" = "chartjs-plugin-annotation.js" ] || [ "$1" = "moment.js" ] || [ "$1" =  "hammerjs.js" ] || [ "$1" = "chartjs-plugin-datasource.js" ]; then
+	elif [ "$1" = "chart.js" ] || [ "$1" = "chartjs-plugin-zoom.js" ] || [ "$1" = "chartjs-plugin-annotation.js" ] || [ "$1" = "moment.js" ] || [ "$1" =  "hammerjs.js" ] || [ "$1" = "chartjs-plugin-datasource.js" ] || [ "$1" = "redirect.htm" ] || [ "$1" = "addons.png" ]; then
 		tmpfile="/tmp/$1"
 		Download_File "$SHARED_REPO/$1" "$tmpfile"
 		if [ ! -f "$SHARED_DIR/$1" ]; then
@@ -267,6 +274,8 @@ Create_Symlinks(){
 	ln -s "$SHARED_DIR/chartjs-plugin-datasource.js" "$SHARED_WEB_DIR/chartjs-plugin-datasource.js" 2>/dev/null
 	ln -s "$SHARED_DIR/hammerjs.js" "$SHARED_WEB_DIR/hammerjs.js" 2>/dev/null
 	ln -s "$SHARED_DIR/moment.js" "$SHARED_WEB_DIR/moment.js" 2>/dev/null
+	ln -s "$SHARED_DIR/redirect.htm" "$SHARED_WEB_DIR/redirect.htm" 2>/dev/null
+	ln -s "$SHARED_DIR/addons.png" "$SHARED_WEB_DIR/addons.png" 2>/dev/null
 }
 
 Conf_Exists(){
@@ -480,12 +489,30 @@ Mount_WebUI(){
 		Print_Output "true" "Mounting $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
 		cp -f "$SCRIPT_DIR/connmonstats_www.asp" "$SCRIPT_WEBPAGE_DIR/$MyPage"
 		
+		if [ ! -f "/tmp/index_style.css" ]; then
+			cp -f "/www/index_style.css" "/tmp/"
+		fi
+		
+		if ! grep -q '.menu_Addons' /tmp/index_style.css ; then
+			echo ".menu_Addons { background: url(ext/shared-jy/addons.png); }" >> /tmp/index_style.css
+		fi
+		
+		umount /www/index_style.css 2>/dev/null
+		mount -o bind /tmp/index_style.css /www/index_style.css
+		
 		if [ ! -f "/tmp/menuTree.js" ]; then
 			cp -f "/www/require/modules/menuTree.js" "/tmp/"
 		fi
 		
 		sed -i "\\~$MyPage~d" /tmp/menuTree.js
-		sed -i "/url: \"Tools_OtherSettings.asp\", tabName:/a {url: \"$MyPage\", tabName: \"Uptime Monitoring\"}," /tmp/menuTree.js
+		
+		if ! grep -q 'menuName: "Addons"' /tmp/menuTree.js ; then
+			lineinsbefore="$(( $(grep -n "exclude:" /tmp/menuTree.js | cut -f1 -d':') - 1))"
+			sed -i "$lineinsbefore"'i,\n{\nmenuName: "Addons",\nindex: "menu_Addons",\ntab: [\n{url: "ext/shared-jy/redirect.htm", tabName: "Help & Support"},\n{url: "NULL", tabName: "__INHERIT__"}\n]\n}' /tmp/menuTree.js
+		fi
+		
+		sed -i "/url: \"ext\/shared-jy\/redirect.htm\", tabName:/i {url: \"$MyPage\", tabName: \"Uptime Monitoring\"}," /tmp/menuTree.js
+		
 		umount /www/require/modules/menuTree.js 2>/dev/null
 		mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
 	else
@@ -925,6 +952,8 @@ Menu_Install(){
 	Conf_Exists
 	
 	Update_File "connmonstats_www.asp"
+	Update_File "redirect.htm"
+	Update_File "addons.png"
 	Update_File "chart.js"
 	Update_File "chartjs-plugin-zoom.js"
 	Update_File "chartjs-plugin-annotation.js"
