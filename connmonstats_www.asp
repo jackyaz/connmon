@@ -177,7 +177,6 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 				scaleLabel: { display: false, labelString: txttitle },
 				ticks: {
 					display: true,
-					max: getLimit(txtchartname,"y","max",false) + getLimit(txtchartname,"y","max",false)*0.1,
 					callback: function (value, index, values) {
 						return round(value,3).toFixed(3) + ' ' + txtunity;
 					}
@@ -319,7 +318,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 		options: lineOptions,
 		data: lineDataset
 	});
-	window[txtchartname]=objchartname;
+	window["LineChart"+txtchartname]=objchartname;
 }
 
 function getLimit(datasetname,axis,maxmin,isannotation) {
