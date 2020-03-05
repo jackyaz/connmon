@@ -414,31 +414,6 @@ Auto_Startup(){
 Auto_Cron(){
 	case $1 in
 		create)
-			STARTUPLINECOUNT=$(cru l | grep -cx "\*/5 \* \* \* \* /jffs/scripts/$SCRIPT_NAME generate #connmon#")
-			if [ "$STARTUPLINECOUNT" -gt 0 ]; then
-				cru d "$SCRIPT_NAME"
-			fi
-			
-			STARTUPLINECOUNTDAILY=$(cru l | grep -c "$SCRIPT_NAME""_daily")
-			STARTUPLINECOUNTWEEKLY=$(cru l | grep -c "$SCRIPT_NAME""_weekly")
-			STARTUPLINECOUNTMONTHLY=$(cru l | grep -c "$SCRIPT_NAME""_monthly")
-			
-			if [ "$STARTUPLINECOUNTDAILY" -eq 0 ]; then
-				cru a "$SCRIPT_NAME""_daily" "*/5 * * * * /jffs/scripts/$SCRIPT_NAME generate daily"
-			fi
-			if [ "$STARTUPLINECOUNTWEEKLY" -eq 0 ]; then
-				cru a "$SCRIPT_NAME""_weekly" "2 * * * * /jffs/scripts/$SCRIPT_NAME generate weekly"
-			fi
-			if [ "$STARTUPLINECOUNTMONTHLY" -eq 0 ]; then
-				cru a "$SCRIPT_NAME""_monthly" "3 */3 * * * /jffs/scripts/$SCRIPT_NAME generate monthly"
-			fi
-		;;
-		delete)
-			STARTUPLINECOUNT=$(cru l | grep -cx "\*/5 \* \* \* \* /jffs/scripts/$SCRIPT_NAME generate #connmon#")
-			if [ "$STARTUPLINECOUNT" -gt 0 ]; then
-				cru d "$SCRIPT_NAME"
-			fi
-			
 			STARTUPLINECOUNTDAILY=$(cru l | grep -c "$SCRIPT_NAME""_daily")
 			STARTUPLINECOUNTWEEKLY=$(cru l | grep -c "$SCRIPT_NAME""_weekly")
 			STARTUPLINECOUNTMONTHLY=$(cru l | grep -c "$SCRIPT_NAME""_monthly")
@@ -451,6 +426,17 @@ Auto_Cron(){
 			fi
 			if [ "$STARTUPLINECOUNTMONTHLY" -gt 0 ]; then
 				cru d "$SCRIPT_NAME""_monthly"
+			fi
+			
+			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
+			if [ "$STARTUPLINECOUNT" -eq 0 ]; then
+				cru a "$SCRIPT_NAME" "*/5 * * * * /jffs/scripts/$SCRIPT_NAME generate"
+			fi
+		;;
+		delete)
+			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
+			if [ "$STARTUPLINECOUNT" -gt 0 ]; then
+				cru d "$SCRIPT_NAME"
 			fi
 		;;
 	esac
@@ -653,68 +639,6 @@ WriteSql_ToFile(){
 	done
 }
 
-Generate_Charts(){
-	Auto_Startup create 2>/dev/null
-	Auto_Cron create 2>/dev/null
-	Auto_ServiceEvent create 2>/dev/null
-	Conf_Exists
-	Create_Dirs
-	Create_Symlinks
-	
-	case $1 in
-		daily)
-			{
-				echo ".mode csv"
-				echo ".output /tmp/connmon-pingdaily.csv"
-				echo "select [Timestamp],[Ping] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
-				echo ".output /tmp/connmon-jitterdaily.csv"
-				echo "select [Timestamp],[Jitter] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
-				echo ".output /tmp/connmon-qualitydaily.csv"
-				echo "select [Timestamp],[Packet_Loss] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
-			} > /tmp/connmon-stats.sql
-			
-			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-			
-			rm -f "$SCRIPT_DIR/connstatsdatadaily.js"
-			WriteData_ToJS "/tmp/connmon-pingdaily.csv" "$SCRIPT_DIR/connstatsdatadaily.js" "DataPingDaily"
-			WriteData_ToJS "/tmp/connmon-jitterdaily.csv" "$SCRIPT_DIR/connstatsdatadaily.js" "DataJitterDaily"
-			WriteData_ToJS "/tmp/connmon-qualitydaily.csv" "$SCRIPT_DIR/connstatsdatadaily.js" "DataQualityDaily"
-		;;
-		weekly)
-			WriteSql_ToFile "Ping" "connstats" 1 7 "/tmp/connmon-pingweekly.csv" "/tmp/connmon-stats.sql"
-			WriteSql_ToFile "Jitter" "connstats" 1 7 "/tmp/connmon-jitterweekly.csv" "/tmp/connmon-stats.sql"
-			WriteSql_ToFile "Packet_Loss" "connstats" 1 7 "/tmp/connmon-qualityweekly.csv" "/tmp/connmon-stats.sql"
-			
-			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-			
-			rm -f "$SCRIPT_DIR/connstatsdataweekly.js"
-			WriteData_ToJS "/tmp/connmon-pingweekly.csv" "$SCRIPT_DIR/connstatsdataweekly.js" "DataPingWeekly"
-			WriteData_ToJS "/tmp/connmon-jitterweekly.csv" "$SCRIPT_DIR/connstatsdataweekly.js" "DataJitterWeekly"
-			WriteData_ToJS "/tmp/connmon-qualityweekly.csv" "$SCRIPT_DIR/connstatsdataweekly.js" "DataQualityWeekly"
-		;;
-		monthly)
-			WriteSql_ToFile "Ping" "connstats" 3 30 "/tmp/connmon-pingmonthly.csv" "/tmp/connmon-stats.sql"
-			WriteSql_ToFile "Jitter" "connstats" 3 30 "/tmp/connmon-jittermonthly.csv" "/tmp/connmon-stats.sql"
-			WriteSql_ToFile "Packet_Loss" "connstats" 3 30 "/tmp/connmon-qualitymonthly.csv" "/tmp/connmon-stats.sql"
-			
-			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-			
-			rm -f "$SCRIPT_DIR/connstatsdatamonthly.js"
-			WriteData_ToJS "/tmp/connmon-pingmonthly.csv" "$SCRIPT_DIR/connstatsdatamonthly.js" "DataPingMonthly"
-			WriteData_ToJS "/tmp/connmon-jittermonthly.csv" "$SCRIPT_DIR/connstatsdatamonthly.js" "DataJitterMonthly"
-			WriteData_ToJS "/tmp/connmon-qualitymonthly.csv" "$SCRIPT_DIR/connstatsdatamonthly.js" "DataQualityMonthly"
-		;;
-		all)
-			Generate_Charts daily
-			Generate_Charts weekly
-			Generate_Charts monthly
-		;;
-	esac
-	
-	rm -f "/tmp/connmon-"*".csv"
-	rm -f "/tmp/connmon-stats.sql"
-}
-
 Generate_Stats(){
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
@@ -777,11 +701,51 @@ Generate_Stats(){
 	
 	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
+	{
+		echo ".mode csv"
+		echo ".output /tmp/connmon-pingdaily.csv"
+		echo "select [Timestamp],[Ping] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
+		echo ".output /tmp/connmon-jitterdaily.csv"
+		echo "select [Timestamp],[Jitter] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
+		echo ".output /tmp/connmon-qualitydaily.csv"
+		echo "select [Timestamp],[Packet_Loss] from connstats WHERE [Timestamp] >= (strftime('%s','now') - 86400);"
+	} > /tmp/connmon-stats.sql
+	
+	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+	
+	rm -f "$SCRIPT_DIR/connstatsdatadaily.js"
+	WriteData_ToJS "/tmp/connmon-pingdaily.csv" "$SCRIPT_DIR/connstatsdatadaily.js" "DataPingDaily"
+	WriteData_ToJS "/tmp/connmon-jitterdaily.csv" "$SCRIPT_DIR/connstatsdatadaily.js" "DataJitterDaily"
+	WriteData_ToJS "/tmp/connmon-qualitydaily.csv" "$SCRIPT_DIR/connstatsdatadaily.js" "DataQualityDaily"
+
+	WriteSql_ToFile "Ping" "connstats" 1 7 "/tmp/connmon-pingweekly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Jitter" "connstats" 1 7 "/tmp/connmon-jitterweekly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Packet_Loss" "connstats" 1 7 "/tmp/connmon-qualityweekly.csv" "/tmp/connmon-stats.sql"
+	
+	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+	
+	rm -f "$SCRIPT_DIR/connstatsdataweekly.js"
+	WriteData_ToJS "/tmp/connmon-pingweekly.csv" "$SCRIPT_DIR/connstatsdataweekly.js" "DataPingWeekly"
+	WriteData_ToJS "/tmp/connmon-jitterweekly.csv" "$SCRIPT_DIR/connstatsdataweekly.js" "DataJitterWeekly"
+	WriteData_ToJS "/tmp/connmon-qualityweekly.csv" "$SCRIPT_DIR/connstatsdataweekly.js" "DataQualityWeekly"
+
+	WriteSql_ToFile "Ping" "connstats" 3 30 "/tmp/connmon-pingmonthly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Jitter" "connstats" 3 30 "/tmp/connmon-jittermonthly.csv" "/tmp/connmon-stats.sql"
+	WriteSql_ToFile "Packet_Loss" "connstats" 3 30 "/tmp/connmon-qualitymonthly.csv" "/tmp/connmon-stats.sql"
+	
+	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+	
+	rm -f "$SCRIPT_DIR/connstatsdatamonthly.js"
+	WriteData_ToJS "/tmp/connmon-pingmonthly.csv" "$SCRIPT_DIR/connstatsdatamonthly.js" "DataPingMonthly"
+	WriteData_ToJS "/tmp/connmon-jittermonthly.csv" "$SCRIPT_DIR/connstatsdatamonthly.js" "DataJitterMonthly"
+	WriteData_ToJS "/tmp/connmon-qualitymonthly.csv" "$SCRIPT_DIR/connstatsdatamonthly.js" "DataQualityMonthly"
+	
 	echo "Internet Uptime Monitoring generated on $(date +"%c")" > "/tmp/connstatstitle.txt"
 	WriteStats_ToJS "/tmp/connstatstitle.txt" "$SCRIPT_DIR/connstatstext.js" "SetConnmonStatsTitle" "statstitle"
 	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %%" "$PASS"
 	
 	rm -f "$pingfile"
+	rm -f "/tmp/connmon-"*".csv"
 	rm -f "/tmp/connmon-stats.sql"
 	rm -f "/tmp/connstatstitle.txt"
 }
@@ -986,7 +950,6 @@ Menu_Startup(){
 
 Menu_GenerateStats(){
 	Generate_Stats
-	Generate_Charts all
 	Clear_Lock
 }
 
@@ -1009,20 +972,8 @@ Menu_Uninstall(){
 	Auto_Startup delete 2>/dev/null
 	Auto_Cron delete 2>/dev/null
 	Auto_ServiceEvent delete 2>/dev/null
-	while true; do
-		printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
-		read -r "confirm"
-		case "$confirm" in
-			y|Y)
-				rm -rf "$SCRIPT_DIR" 2>/dev/null
-				break
-			;;
-			*)
-				break
-			;;
-		esac
-	done
 	Shortcut_connmon delete
+	
 	if Firmware_Version_Check "webui" ; then
 		Get_WebUI_Page "$SCRIPT_DIR/ntpdstats_www.asp"
 		if [ -n "$MyPage" ] && [ "$MyPage" != "none" ] && [ -f "/tmp/menuTree.js" ]; then
@@ -1042,6 +993,21 @@ Menu_Uninstall(){
 			mount -o bind "$SHARED_DIR/custom_menuTree.js" "/www/require/modules/menuTree.js"
 		fi
 	fi
+	
+	while true; do
+		printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
+		read -r "confirm"
+		case "$confirm" in
+			y|Y)
+				rm -rf "$SCRIPT_DIR" 2>/dev/null
+				break
+			;;
+			*)
+				break
+			;;
+		esac
+	done
+	
 	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null
 	rm -rf "$SCRIPT_WEB_DIR" 2>/dev/null
 	rm -f "/jffs/scripts/$SCRIPT_NAME" 2>/dev/null
@@ -1081,13 +1047,6 @@ case "$1" in
 		if [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME" ]; then
 			Check_Lock
 			Menu_GenerateStats
-		elif [ -n "$2" ] && [ -z "$3" ]; then
-			Check_Lock
-			if [ "$2" = "daily" ]; then
-				Generate_Stats
-			fi
-			Generate_Charts "$2"
-			Clear_Lock
 		elif [ -z "$2" ] && [ -z "$3" ]; then
 			Check_Lock
 			Menu_GenerateStats
