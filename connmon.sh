@@ -716,6 +716,8 @@ Generate_Stats(){
 	
 	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
+	rm -f "$SCRIPT_DIR/connstatsdata.js"
+	
 	rm -f "$CSV_OUTPUT_DIR/"*
 	rm -f /tmp/connmon-stats.sql
 	
