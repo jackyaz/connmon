@@ -106,7 +106,7 @@ Chart.Tooltip.positioners.cursor = function(chartElements, coordinates) {
   return coordinates;
 };
 
-var metriclist = ["Ping","Jitter","Quality"];
+var metriclist = ["Ping","Jitter","Packet_Loss"];
 var titlelist = ["Ping","Jitter","Quality"];
 var measureunitlist = ["ms","ms","%"];
 var chartlist = ["daily","weekly","monthly"];
@@ -525,7 +525,7 @@ function applyRule() {
 <div style="line-height:10px;">&nbsp;</div>
 <div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartJitterdaily" height="300" /></div>
 <div style="line-height:10px;">&nbsp;</div>
-<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartQualitydaily" height="300" /></div>
+<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartPacket_Lossdaily" height="300" /></div>
 </div>
 </td>
 </tr>
@@ -544,7 +544,7 @@ function applyRule() {
 <div style="line-height:10px;">&nbsp;</div>
 <div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartJitterweekly" height="300" /></div>
 <div style="line-height:10px;">&nbsp;</div>
-<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartQualityweekly" height="300" /></div>
+<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartPacket_Lossweekly" height="300" /></div>
 </div>
 </td>
 </tr>
@@ -563,7 +563,7 @@ function applyRule() {
 <div style="line-height:10px;">&nbsp;</div>
 <div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartJittermonthly" height="300" /></div>
 <div style="line-height:10px;">&nbsp;</div>
-<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartQualitymonthly" height="300" /></div>
+<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartPacket_Lossmonthly" height="300" /></div>
 </div>
 </td>
 </tr>
