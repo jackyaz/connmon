@@ -375,7 +375,7 @@ function ToggleFill() {
 	for(i = 0; i < metriclist.length; i++){
 		for (i2 = 0; i2 < chartlist.length; i2++) {
 			for (i3 = 0; i3 < 3; i3++) {
-				window["LineChart"+metriclist[i]+chartlist[i2]].options.annotation.annotations[i3].type=ShowFill;
+				window["LineChart"+metriclist[i]+chartlist[i2]].data.datasets[0].fill=ShowFill;
 			}
 			window["LineChart"+metriclist[i]+chartlist[i2]].update();
 		}
