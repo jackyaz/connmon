@@ -306,7 +306,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 		}
 	};
 	var lineDataset = {
-		datasets: [label: txttitle,
+		datasets: [{label: txttitle,
 			borderWidth: 1,
 			pointRadius: 1,
 			lineTension: 0,
