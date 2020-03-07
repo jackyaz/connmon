@@ -242,7 +242,7 @@ Create_Symlinks(){
 	ln -s "$SCRIPT_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
 	ln -s "$CSV_OUTPUT_DIR" "$SCRIPT_WEB_DIR/csv" 2>/dev/null
 	
-	ln -s "$SHARED_DIR" "$SCRIPT_WEBPAGE_DIR/shared-jy" 2>/dev/null
+	ln -s "$SHARED_DIR" "$SHARED_WEB_DIR" 2>/dev/null
 }
 
 Conf_Exists(){
