@@ -246,7 +246,7 @@ Create_Symlinks(){
 		ln -s "$CSV_OUTPUT_DIR" "$SCRIPT_WEB_DIR/csv" 2>/dev/null
 	fi
 	
-	if [ ! -d "$SHARED_WEB_DIR/csv" ]; then
+	if [ ! -d "$SHARED_WEB_DIR" ]; then
 		ln -s "$SHARED_DIR" "$SHARED_WEB_DIR" 2>/dev/null
 	fi
 }
