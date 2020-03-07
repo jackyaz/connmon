@@ -231,24 +231,10 @@ Create_Dirs(){
 		mkdir -p "$CSV_OUTPUT_DIR"
 	fi
 	
-	if [ -d "$OLD_SCRIPT_DIR" ]; then
-		mv "$OLD_SCRIPT_DIR" "$(dirname "$SCRIPT_DIR")"
-		rm -rf "$OLD_SCRIPT_DIR"
-	fi
-
-	if [ -f "$OLD_SCRIPT_CONF" ]; then
-		mv "$OLD_SCRIPT_CONF" "$SCRIPT_CONF"
-	fi
-		
 	if [ ! -d "$SHARED_DIR" ]; then
 		mkdir -p "$SHARED_DIR"
 	fi
 	
-	if [ -d "$OLD_SHARED_DIR" ]; then
-		mv "$OLD_SHARED_DIR" "$(dirname "$SHARED_DIR")"
-		rm -rf "$OLD_SHARED_DIR"
-	fi
-
 	if [ ! -d "$SCRIPT_WEBPAGE_DIR" ]; then
 		mkdir -p "$SCRIPT_WEBPAGE_DIR"
 	fi
@@ -256,28 +242,16 @@ Create_Dirs(){
 	if [ ! -d "$SCRIPT_WEB_DIR" ]; then
 		mkdir -p "$SCRIPT_WEB_DIR"
 	fi
-	
-	if [ ! -d "$SHARED_WEB_DIR" ]; then
-		mkdir -p "$SHARED_WEB_DIR"
-	fi
 }
 
 Create_Symlinks(){
 	rm -f "$SCRIPT_WEB_DIR/"* 2>/dev/null
-	rm -f "$SHARED_WEB_DIR/"* 2>/dev/null
 	
 	ln -s "$SCRIPT_DIR/connstatsdata.js" "$SCRIPT_WEB_DIR/connstatsdata.js" 2>/dev/null
 	ln -s "$SCRIPT_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
 	ln -s "$CSV_OUTPUT_DIR" "$SCRIPT_WEB_DIR/csv" 2>/dev/null
 	
-	ln -s "$SHARED_DIR/chart.js" "$SHARED_WEB_DIR/chart.js" 2>/dev/null
-	ln -s "$SHARED_DIR/chartjs-plugin-zoom.js" "$SHARED_WEB_DIR/chartjs-plugin-zoom.js" 2>/dev/null
-	ln -s "$SHARED_DIR/chartjs-plugin-annotation.js" "$SHARED_WEB_DIR/chartjs-plugin-annotation.js" 2>/dev/null
-	ln -s "$SHARED_DIR/chartjs-plugin-datasource.js" "$SHARED_WEB_DIR/chartjs-plugin-datasource.js" 2>/dev/null
-	ln -s "$SHARED_DIR/hammerjs.js" "$SHARED_WEB_DIR/hammerjs.js" 2>/dev/null
-	ln -s "$SHARED_DIR/moment.js" "$SHARED_WEB_DIR/moment.js" 2>/dev/null
-	ln -s "$SHARED_DIR/redirect.htm" "$SHARED_WEB_DIR/redirect.htm" 2>/dev/null
-	ln -s "$SHARED_DIR/addons.png" "$SHARED_WEB_DIR/addons.png" 2>/dev/null
+	ln -s "$SHARED_DIR" "$SHARED_WEB_DIR" 2>/dev/null
 }
 
 Conf_Exists(){
