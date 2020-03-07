@@ -158,14 +158,14 @@ Update_File(){
 		fi
 		rm -f "$tmpfile"
 	elif [ "$1" = "shared-jy.tar.gz" ]; then
-		if [ ! -f "$SCRIPT_DIR/$1.md5" ]; then
+		if [ ! -f "$SHARED_DIR/$1.md5" ]; then
 			Download_File "$SHARED_REPO/$1" "$SHARED_DIR/$1"
 			Download_File "$SHARED_REPO/$1.md5" "$SHARED_DIR/$1.md5"
 			tar -xzf "$SHARED_DIR/$1" -C "$SHARED_DIR"
 			rm -f "$SHARED_DIR/$1"
 			Print_Output "true" "New version of $1 downloaded" "$PASS"
 		else
-			localmd5="$(cat "$SCRIPT_DIR/$1.md5")"
+			localmd5="$(cat "$SHARED_DIR/$1.md5")"
 			remotemd5="$(curl -fsL --retry 3 "$SHARED_REPO/$1.md5")"
 			if [ "$localmd5" != "$remotemd5" ]; then
 				Download_File "$SHARED_REPO/$1" "$SHARED_DIR/$1"
