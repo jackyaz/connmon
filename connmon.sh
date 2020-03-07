@@ -163,6 +163,7 @@ Update_File(){
 			Download_File "$SHARED_REPO/$1.md5" "$SHARED_DIR/$1.md5"
 			tar -xzf "$SHARED_DIR/$1" -C "$SHARED_DIR"
 			rm -f "$SHARED_DIR/$1"
+			Print_Output "true" "New version of $1 downloaded" "$PASS"
 		else
 			localmd5="$(cat "$SCRIPT_DIR/$1.md5")"
 			remotemd5="$(curl -fsL --retry 3 "$SHARED_REPO/$1.md5")"
@@ -240,9 +241,14 @@ Create_Symlinks(){
 	
 	ln -s "$SCRIPT_DIR/connstatsdata.js" "$SCRIPT_WEB_DIR/connstatsdata.js" 2>/dev/null
 	ln -s "$SCRIPT_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
-	ln -s "$CSV_OUTPUT_DIR" "$SCRIPT_WEB_DIR/csv" 2>/dev/null
 	
-	ln -s "$SHARED_DIR" "$SHARED_WEB_DIR" 2>/dev/null
+	if [ ! -d "$SCRIPT_WEB_DIR/csv" ]; then
+		ln -s "$CSV_OUTPUT_DIR" "$SCRIPT_WEB_DIR/csv" 2>/dev/null
+	fi
+	
+	if [ ! -d "$SHARED_WEB_DIR/csv" ]; then
+		ln -s "$SHARED_DIR" "$SHARED_WEB_DIR" 2>/dev/null
+	fi
 }
 
 Conf_Exists(){
