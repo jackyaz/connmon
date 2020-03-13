@@ -673,6 +673,11 @@ function runPingTest() {
 <input autocorrect="off" autocapitalize="off" type="text" maxlength="255" class="input_32_table" name="connmon_domain" value="google.co.uk" onkeypress="return validator.isString(this, event);" onblur="Validate_Domain(this)" data-lpignore="true" />
 </td>
 </tr>
+<tr class="apply_gen" valign="top" height="35px">
+<td style="background-color:rgb(77, 89, 93);border:0px;">
+<input type="button" onclick="applyRule();" value="Save" class="button_gen" name="button">
+</td>
+</tr>
 </div>
 </table>
 <div style="line-height:10px;">&nbsp;</div>
