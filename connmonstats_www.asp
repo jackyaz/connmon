@@ -672,7 +672,7 @@ function runPingTest() {
 </td>
 </tr>
 <tr class="apply_gen" valign="top" height="35px">
-<td style="background-color:rgb(77, 89, 93);border:0px;">
+<td colspan="2" style="background-color:rgb(77, 89, 93);border:0px;">
 <input type="button" onclick="applyRule();" value="Save" class="button_gen" name="button">
 </td>
 </tr>
