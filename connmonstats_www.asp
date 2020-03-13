@@ -32,6 +32,10 @@ p {
   border: none;
   transition: max-height 0.2s ease-out;
 }
+
+.invalid {
+  background-color: darkred !important;
+}
 </style>
 <script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/moment.js"></script>
@@ -105,6 +109,19 @@ Chart.Tooltip.positioners.cursor = function(chartElements, coordinates) {
 	return coordinates;
 };
 
+var custom_settings;
+
+function LoadCustomSettings(){
+	custom_settings = <% get_custom_settings(); %>;
+	for (var prop in custom_settings) {
+		if (Object.prototype.hasOwnProperty.call(custom_settings, prop)) {
+			if(prop.indexOf("connmon") != -1){
+				eval("delete custom_settings."+prop)
+			}
+		}
+	}
+}
+
 var metriclist = ["Ping","Jitter","Packet_Loss"];
 var titlelist = ["Ping","Jitter","Quality"];
 var measureunitlist = ["ms","ms","%"];
@@ -126,6 +143,33 @@ $(document).keyup(function(e){
 		keyHandler(e);
 	});
 });
+
+function Validate_IP(forminput){
+	var inputvalue = forminput.value;
+	var inputname = forminput.name;
+	if(/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(inputvalue)){
+			$(forminput).removeClass("invalid");
+			return true;
+	}
+	else{
+		$(forminput).addClass("invalid");
+		return false;
+	}
+}
+
+function Validate_All(){
+	var validationfailed = false;
+	if(! Validate_IP(eval("document.form.connmon_ipaddr"))){validationfailed=true;}
+	if(! Validate_Domain(eval("document.form.connmon_domain"))){validationfailed=true;}
+	
+	if(validationfailed){
+		alert("Validation for some fields failed. Please correct invalid values and try again.");
+		return false;
+	}
+	else{
+		return true;
+	}
+}
 
 function Draw_Chart_NoData(txtchartname){
 	document.getElementById("divLineChart"+txtchartname).width="730";
@@ -454,6 +498,7 @@ function SetCurrentPage(){
 
 function initial(){
 	SetCurrentPage();
+	LoadCustomSettings();
 	show_menu();
 	RedrawAllCharts();
 	SetConnmonStatsTitle();
@@ -504,6 +549,20 @@ function DragZoom(button){
 }
 
 function applyRule() {
+	if(Validate_All()){
+		document.getElementById('amng_custom').value = JSON.stringify($('form').serializeObject())
+		var action_script_tmp = "start_yazfi";
+		document.form.action_script.value = action_script_tmp;
+		var restart_time = document.form.action_wait.value*1;
+		showLoading();
+		document.form.submit();
+	}
+	else{
+		return false;
+	}
+}
+
+function runPingTest() {
 	var action_script_tmp = "start_connmon";
 	document.form.action_script.value = action_script_tmp;
 	var restart_time = document.form.action_wait.value*1;
@@ -549,7 +608,7 @@ function applyRule() {
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;">
 <tr class="apply_gen" valign="top" height="35px">
 <td style="background-color:rgb(77, 89, 93);border:0px;">
-<input type="button" onclick="applyRule();" value="Update stats" class="button_gen" name="button">
+<input type="button" onclick="runPingTest();" value="Update stats" class="button_gen" name="button">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <input type="button" onclick="DragZoom(this);" value="Disable Drag Zoom" class="button_gen" name="button">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -558,6 +617,35 @@ function applyRule() {
 <input type="button" onclick="ToggleLines();" value="Toggle Lines" class="button_gen" name="button">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <input type="button" onclick="ToggleFill();" value="Toggle Fill" class="button_gen" name="button">
+</td>
+</tr>
+</table>
+<div style="line-height:10px;">&nbsp;</div>
+<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="TableConfig">
+<thead class="collapsible">
+<tr>
+<td colspan="2">Configuration (click to expand/collapse)</td>
+</tr>
+</thead>
+<tr class="even">
+<th width="40%">Ping destination type</th>
+<td>
+<select style="width:100px" class="input_option" onchange="changePingType(this)" id="pingtype">
+<option value="0">IP Address</option>
+<option value="1">Domain</option>
+</select>
+</td>
+</tr>
+<tr class="even" id="rowip">
+<th width="40%">IP Address</th>
+<td>
+<input autocomplete="off" autocapitalize="off" type="text" maxlength="15" class="input_20_table" name="connmon_ipaddr" value="8.8.8.8" onkeypress="return validator.isIPAddr(this, event)" onblur="Validate_IP(this)" data-lpignore="true" />
+</td>
+</tr>
+<tr class="even" id="rowdomain">
+<th width="40%">Domain</th>
+<td>
+<input autocorrect="off" autocapitalize="off" type="text" maxlength="255" class="input_32_table" name="connmon_domain" value="google.co.uk" onkeypress="return validator.isString(this, event);" onblur="Validate_Domain(this)" data-lpignore="true" />
 </td>
 </tr>
 </table>
