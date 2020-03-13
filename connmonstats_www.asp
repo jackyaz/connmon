@@ -558,16 +558,14 @@ function DragZoom(button){
 		buttonvalue = "Disable Drag Zoom";
 	}
 	
-	if(interfacelist != ""){
-		for(i = 0; i < metriclist.length; i++){
-			for (i2 = 0; i2 < chartlist.length; i2++) {
-				var chartobj = window["LineChart"+metriclist[i]+chartlist[i2]];
-				if(typeof chartobj === 'undefined' || chartobj === null) { continue; }
-				chartobj.options.plugins.zoom.zoom.drag = drag;
-				chartobj.options.plugins.zoom.pan.enabled = pan;
-				button.value = buttonvalue;
-				chartobj.update();
-			}
+	for(i = 0; i < metriclist.length; i++){
+		for (i2 = 0; i2 < chartlist.length; i2++) {
+			var chartobj = window["LineChart"+metriclist[i]+chartlist[i2]];
+			if(typeof chartobj === 'undefined' || chartobj === null) { continue; }
+			chartobj.options.plugins.zoom.zoom.drag = drag;
+			chartobj.options.plugins.zoom.pan.enabled = pan;
+			button.value = buttonvalue;
+			chartobj.update();
 		}
 	}
 }
@@ -575,7 +573,7 @@ function DragZoom(button){
 function applyRule() {
 	if(Validate_All()){
 		document.getElementById('amng_custom').value = JSON.stringify($('form').serializeObject())
-		var action_script_tmp = "start_yazfi";
+		var action_script_tmp = "start_connmonconfig";
 		document.form.action_script.value = action_script_tmp;
 		var restart_time = document.form.action_wait.value*1;
 		showLoading();
