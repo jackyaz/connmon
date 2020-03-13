@@ -481,8 +481,18 @@ function SetCookie(cookiename,cookievalue) {
 
 function AddEventHandlers(){
 	$(".collapsible-jquery").click(function(){
-		$(this).siblings().toggle("fast");
-	})
+		$(this).siblings().toggle("fast",function(){
+			if($(this).css("display") == "none"){
+				SetCookie($(this).siblings()[0].id,"collapsed");
+			} else {
+				SetCookie($(this).siblings()[0].id,"expanded");
+			}
+		})
+	});
+	
+	if(GetCookie($(".collapsible-jquery")[0].id) == "collapsed"){
+		$($(".collapsible-jquery")[0]).siblings().toggle(false);
+	}
 	
 	var coll = document.getElementsByClassName("collapsible");
 	var i;
@@ -636,7 +646,7 @@ function runPingTest() {
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="TableConfig">
-<thead class="collapsible-jquery">
+<thead class="collapsible-jquery" id="thconfig">
 <tr>
 <td colspan="2">Configuration (click to expand/collapse)</td>
 </tr>
