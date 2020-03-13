@@ -12,7 +12,7 @@
 <link rel="stylesheet" type="text/css" href="form_style.css">
 <style>
 p {
-font-weight: bolder;
+  font-weight: bolder;
 }
 
 .collapsible {
@@ -113,6 +113,20 @@ var timeunitlist = ["hour","day","day"];
 var intervallist = [24,7,30];
 var colourlist = ["#fc8500","#42ecf5","#ffffff"];
 
+function keyHandler(e) {
+	if (e.keyCode == 27){
+		$(document).off("keydown");
+		ResetZoom();
+	}
+}
+
+$(document).keydown(function(e){keyHandler(e);});
+$(document).keyup(function(e){
+	$(document).keydown(function(e){
+		keyHandler(e);
+	});
+});
+
 function Draw_Chart_NoData(txtchartname){
 	document.getElementById("divLineChart"+txtchartname).width="730";
 	document.getElementById("divLineChart"+txtchartname).height="300";
@@ -190,7 +204,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 		plugins: {
 			zoom: {
 				pan: {
-					enabled: true,
+					enabled: false,
 					mode: 'xy',
 					rangeMin: {
 						x: new Date().getTime() - (factor * numunitx),
@@ -203,6 +217,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 				},
 				zoom: {
 					enabled: true,
+					drag: true,
 					mode: 'xy',
 					rangeMin: {
 						x: new Date().getTime() - (factor * numunitx),
@@ -452,7 +467,38 @@ function reload() {
 function ResetZoom(){
 	for(i = 0; i < metriclist.length; i++){
 		for (i2 = 0; i2 < chartlist.length; i2++) {
-			window["LineChart"+metriclist[i]+chartlist[i2]].resetZoom();
+			var chartobj = window["LineChart"+metriclist[i]+chartlist[i2]];
+			if(typeof chartobj === 'undefined' || chartobj === null) { continue; }
+			chartobj.resetZoom();
+		}
+	}
+}
+
+function DragZoom(button){
+	var drag = true;
+	var pan = false;
+	var buttonvalue = "";
+	if(button.value.indexOf("Disable") != -1){
+		drag = false;
+		pan = true;
+		buttonvalue = "Enable Drag Zoom";
+	}
+	else {
+		drag = true;
+		pan = false;
+		buttonvalue = "Disable Drag Zoom";
+	}
+	
+	if(interfacelist != ""){
+		for(i = 0; i < metriclist.length; i++){
+			for (i2 = 0; i2 < chartlist.length; i2++) {
+				var chartobj = window["LineChart"+metriclist[i]+chartlist[i2]];
+				if(typeof chartobj === 'undefined' || chartobj === null) { continue; }
+				chartobj.options.plugins.zoom.zoom.drag = drag;
+				chartobj.options.plugins.zoom.pan.enabled = pan;
+				button.value = buttonvalue;
+				chartobj.update();
+			}
 		}
 	}
 }
@@ -504,6 +550,8 @@ function applyRule() {
 <tr class="apply_gen" valign="top" height="35px">
 <td style="background-color:rgb(77, 89, 93);border:0px;">
 <input type="button" onclick="applyRule();" value="Update stats" class="button_gen" name="button">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<input type="button" onclick="DragZoom(this);" value="Disable Drag Zoom" class="button_gen" name="button">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <input type="button" onclick="ResetZoom();" value="Reset Zoom" class="button_gen" name="button">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
