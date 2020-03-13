@@ -25,6 +25,16 @@ p {
   cursor: pointer;
 }
 
+.collapsible-jquery {
+  color: white;
+  padding: 0px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  cursor: pointer;
+}
+
 .collapsiblecontent {
   padding: 0px;
   max-height: 0;
@@ -470,6 +480,10 @@ function SetCookie(cookiename,cookievalue) {
 }
 
 function AddEventHandlers(){
+	$(".collapsible-jquery").click(function(){
+		$(this).siblings().toggle("fast");
+	})
+	
 	var coll = document.getElementsByClassName("collapsible");
 	var i;
 	
@@ -622,7 +636,7 @@ function runPingTest() {
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="TableConfig">
-<thead class="collapsible">
+<thead class="collapsible-jquery">
 <tr>
 <td colspan="2">Configuration (click to expand/collapse)</td>
 </tr>
