@@ -146,12 +146,12 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 	var lineOptions = {
 		segmentShowStroke : false,
 		segmentStrokeColor : "#000",
-		//animationEasing : "easeOutQuart",
-		//animationSteps : 100,
-		animation: {
+		animationEasing : "easeOutQuart",
+		animationSteps : 100,
+		/*animation: {
 			duration: 0 // general animation time
 		},
-		responsiveAnimationDuration: 0, // animation duration after a resize
+		responsiveAnimationDuration: 0, */ // animation duration after a resize
 		maintainAspectRatio: false,
 		animateScale : true,
 		hover: { mode: "point" },
