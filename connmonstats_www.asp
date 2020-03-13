@@ -627,6 +627,7 @@ function runPingTest() {
 <td colspan="2">Configuration (click to expand/collapse)</td>
 </tr>
 </thead>
+<div class="collapsiblecontent">
 <tr class="even">
 <th width="40%">Ping destination type</th>
 <td>
@@ -648,6 +649,7 @@ function runPingTest() {
 <input autocorrect="off" autocapitalize="off" type="text" maxlength="255" class="input_32_table" name="connmon_domain" value="google.co.uk" onkeypress="return validator.isString(this, event);" onblur="Validate_Domain(this)" data-lpignore="true" />
 </td>
 </tr>
+</div>
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
