@@ -229,7 +229,7 @@ Conf_FromSettings(){
 			while IFS='' read -r line || [ -n "$line" ]; do
 				SETTINGNAME="$(echo "$line" | cut -f1 -d'=' | awk 'BEGIN{FS="_"}{ print $1 "_" toupper($2) }')"
 				SETTINGVALUE="$(echo "$line" | cut -f2 -d'=')"
-				sed -i "s/$SETTINGNAME=.*/$SETTINGNAME=$SETTINGVALUE/" "$CONFIG"
+				sed -i "s/$SETTINGNAME=.*/$SETTINGNAME=$SETTINGVALUE/" "$SCRIPT_CONF"
 			done < "$TMPFILE"
 			sed -i "\\~connmon_~d" "$SETTINGSFILE"
 			rm -f "$TMPFILE"
