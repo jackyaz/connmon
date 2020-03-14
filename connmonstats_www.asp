@@ -194,6 +194,19 @@ function Validate_All(){
 	}
 }
 
+function changePingType(forminput){
+	var inputvalue = forminput.value;
+	var inputname = forminput.name;
+	console.log(inputvalue)
+	if(inputvalue == "0"){
+		document.getElementById("rowip").style.display = "";
+		document.getElementById("rowdomain").style.display = "none"
+	} else {
+		document.getElementById("rowip").style.display = "none"
+		document.getElementById("rowdomain").style.display = ""
+	}
+}
+
 function Draw_Chart_NoData(txtchartname){
 	document.getElementById("divLineChart"+txtchartname).width="730";
 	document.getElementById("divLineChart"+txtchartname).height="300";
@@ -553,6 +566,7 @@ function initial(){
 	SetCurrentPage();
 	LoadCustomSettings();
 	show_menu();
+	get_conf_file();
 	RedrawAllCharts();
 	SetConnmonStatsTitle();
 	AddEventHandlers();
@@ -606,11 +620,10 @@ function applyRule() {
 		} else if(document.form.pingtype.value == 0){
 			document.form.connmon_pingserver.value = document.form.connmon_ipaddr.value;
 		}
-		console.log(document.form.connmon_pingserver.value)
 		document.getElementById('amng_custom').value = JSON.stringify($('form').serializeObject())
 		var action_script_tmp = "start_connmonconfig";
 		document.form.action_script.value = action_script_tmp;
-		document.form.action_wait.value = 10;
+		document.form.action_wait.value = 5;
 		var restart_time = document.form.action_wait.value*1;
 		showLoading();
 		document.form.submit();
@@ -618,6 +631,20 @@ function applyRule() {
 	else{
 		return false;
 	}
+}
+
+function get_conf_file(){
+	$.ajax({
+		url: '/ext/connmon/config.htm',
+		dataType: 'text',
+		error: function(xhr){
+			setTimeout("get_conf_file();", 1000);
+		},
+		success: function(data){
+			var pingtype=data.split("\n")[1];
+			console.log(pingtype);
+		}
+	});
 }
 
 function runPingTest() {
