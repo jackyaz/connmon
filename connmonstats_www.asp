@@ -182,8 +182,8 @@ function Validate_Domain(forminput){
 
 function Validate_All(){
 	var validationfailed = false;
-	if(! Validate_IP(eval("document.form.connmon_ipaddr"))){validationfailed=true;}
-	if(! Validate_Domain(eval("document.form.connmon_domain"))){validationfailed=true;}
+	if(! Validate_IP(document.form.connmon_ipaddr)){validationfailed=true;}
+	if(! Validate_Domain(document.form.connmon_domain)){validationfailed=true;}
 	
 	if(validationfailed){
 		alert("Validation for some fields failed. Please correct invalid values and try again.");
@@ -197,13 +197,12 @@ function Validate_All(){
 function changePingType(forminput){
 	var inputvalue = forminput.value;
 	var inputname = forminput.name;
-	console.log(inputvalue)
 	if(inputvalue == "0"){
 		document.getElementById("rowip").style.display = "";
-		document.getElementById("rowdomain").style.display = "none"
+		document.getElementById("rowdomain").style.display = "none";
 	} else {
-		document.getElementById("rowip").style.display = "none"
-		document.getElementById("rowdomain").style.display = ""
+		document.getElementById("rowip").style.display = "none";
+		document.getElementById("rowdomain").style.display = "";
 	}
 }
 
@@ -615,10 +614,10 @@ function DragZoom(button){
 
 function applyRule() {
 	if(Validate_All()){
-		if(document.form.pingtype.value == 1){
-			document.form.connmon_pingserver.value = document.form.connmon_domain.value;
-		} else if(document.form.pingtype.value == 0){
+		if(document.form.pingtype.value == 0){
 			document.form.connmon_pingserver.value = document.form.connmon_ipaddr.value;
+		} else if(document.form.pingtype.value == 1) {
+			document.form.connmon_pingserver.value = document.form.connmon_domain.value;
 		}
 		document.getElementById('amng_custom').value = JSON.stringify($('form').serializeObject())
 		var action_script_tmp = "start_connmonconfig";
@@ -628,7 +627,7 @@ function applyRule() {
 		showLoading();
 		document.form.submit();
 	}
-	else{
+	else {
 		return false;
 	}
 }
@@ -641,8 +640,14 @@ function get_conf_file(){
 			setTimeout("get_conf_file();", 1000);
 		},
 		success: function(data){
-			var pingtype=data.split("\n")[1];
-			console.log(pingtype);
+			var pingtype=data.split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+			document.form.connmon_pingserver.value = pingtype;
+			if(Validate_IP(document.form.connmon_pingserver)) {
+				document.form.pingtype.value=0;
+			} else {
+				document.form.pingtype.value=1;
+			}
+			document.form.pingtype.onchange();
 		}
 	});
 }
