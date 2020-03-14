@@ -221,17 +221,17 @@ Conf_FromSettings(){
 	SETTINGSFILE="/jffs/addons/custom_settings.txt"
 	TMPFILE="/tmp/connmon_settings.txt"
 	if [ -f "$SETTINGSFILE" ]; then
-		if [ "$(grep -c "connmon" $SETTINGSFILE)" -gt 0 ]; then
+		if [ "$(grep -c "connmon_" $SETTINGSFILE)" -gt 0 ]; then
 			Print_Output "true" "Updated settings from WebUI found, merging into $SCRIPT_CONF" "$PASS"
 			cp -a "$SCRIPT_CONF" "$SCRIPT_CONF.bak"
-			grep "connmon" "$SETTINGSFILE" > "$TMPFILE"
-			sed -i "s/connmon//g;s/ /=/g" "$TMPFILE"
+			grep "connmon_" "$SETTINGSFILE" > "$TMPFILE"
+			sed -i "s/connmon_//g;s/ /=/g" "$TMPFILE"
 			while IFS='' read -r line || [ -n "$line" ]; do
 				SETTINGNAME="$(echo "$line" | cut -f1 -d'=' | awk 'BEGIN{FS="_"}{ print $1 "_" toupper($2) }')"
 				SETTINGVALUE="$(echo "$line" | cut -f2 -d'=')"
 				sed -i "s/$SETTINGNAME=.*/$SETTINGNAME=$SETTINGVALUE/" "$CONFIG"
 			done < "$TMPFILE"
-			sed -i "\\~connmon~d" "$SETTINGSFILE"
+			sed -i "\\~connmon_~d" "$SETTINGSFILE"
 			rm -f "$TMPFILE"
 			Print_Output "true" "Merge of updated settings from WebUI completed successfully" "$PASS"
 		else
