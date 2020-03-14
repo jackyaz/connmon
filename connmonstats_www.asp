@@ -12,10 +12,20 @@
 <link rel="stylesheet" type="text/css" href="form_style.css">
 <style>
 p {
-font-weight: bolder;
+  font-weight: bolder;
 }
 
 .collapsible {
+  color: white;
+  padding: 0px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  cursor: pointer;
+}
+
+.collapsible-jquery {
   color: white;
   padding: 0px;
   width: 100%;
@@ -32,6 +42,10 @@ font-weight: bolder;
   border: none;
   transition: max-height 0.2s ease-out;
 }
+
+.invalid {
+  background-color: darkred !important;
+}
 </style>
 <script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/moment.js"></script>
@@ -40,6 +54,7 @@ font-weight: bolder;
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/chartjs-plugin-zoom.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/chartjs-plugin-annotation.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/chartjs-plugin-datasource.js"></script>
+<script language="JavaScript" type="text/javascript" src="/ext/shared-jy/chartjs-plugin-deferred.js"></script>
 <script language="JavaScript" type="text/javascript" src="/state.js"></script>
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
@@ -104,6 +119,19 @@ Chart.Tooltip.positioners.cursor = function(chartElements, coordinates) {
 	return coordinates;
 };
 
+var custom_settings;
+
+function LoadCustomSettings(){
+	custom_settings = <% get_custom_settings(); %>;
+	for (var prop in custom_settings) {
+		if (Object.prototype.hasOwnProperty.call(custom_settings, prop)) {
+			if(prop.indexOf("connmon") != -1){
+				eval("delete custom_settings."+prop)
+			}
+		}
+	}
+}
+
 var metriclist = ["Ping","Jitter","Packet_Loss"];
 var titlelist = ["Ping","Jitter","Quality"];
 var measureunitlist = ["ms","ms","%"];
@@ -111,6 +139,72 @@ var chartlist = ["daily","weekly","monthly"];
 var timeunitlist = ["hour","day","day"];
 var intervallist = [24,7,30];
 var colourlist = ["#fc8500","#42ecf5","#ffffff"];
+
+function keyHandler(e) {
+	if (e.keyCode == 27){
+		$(document).off("keydown");
+		ResetZoom();
+	}
+}
+
+$(document).keydown(function(e){keyHandler(e);});
+$(document).keyup(function(e){
+	$(document).keydown(function(e){
+		keyHandler(e);
+	});
+});
+
+function Validate_IP(forminput){
+	var inputvalue = forminput.value;
+	var inputname = forminput.name;
+	if(/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(inputvalue)){
+			$(forminput).removeClass("invalid");
+			return true;
+	}
+	else{
+		$(forminput).addClass("invalid");
+		return false;
+	}
+}
+
+function Validate_Domain(forminput){
+	var inputvalue = forminput.value;
+	var inputname = forminput.name;
+	if(/^(([a-zA-Z]{1})|([a-zA-Z]{1}[a-zA-Z]{1})|([a-zA-Z]{1}[0-9]{1})|([0-9]{1}[a-zA-Z]{1})|([a-zA-Z0-9][a-zA-Z0-9-_]{1,61}[a-zA-Z0-9]))\.([a-zA-Z]{2,6}|[a-zA-Z0-9-]{2,30}\.[a-zA-Z]{2,3})$/.test(inputvalue)){
+		$(forminput).removeClass("invalid");
+		return true;
+	}
+	else{
+		$(forminput).addClass("invalid");
+		return false;
+	}
+}
+
+function Validate_All(){
+	var validationfailed = false;
+	if(! Validate_IP(document.form.connmon_ipaddr)){validationfailed=true;}
+	if(! Validate_Domain(document.form.connmon_domain)){validationfailed=true;}
+	
+	if(validationfailed){
+		alert("Validation for some fields failed. Please correct invalid values and try again.");
+		return false;
+	}
+	else{
+		return true;
+	}
+}
+
+function changePingType(forminput){
+	var inputvalue = forminput.value;
+	var inputname = forminput.name;
+	if(inputvalue == "0"){
+		document.getElementById("rowip").style.display = "";
+		document.getElementById("rowdomain").style.display = "none";
+	} else {
+		document.getElementById("rowip").style.display = "none";
+		document.getElementById("rowdomain").style.display = "";
+	}
+}
 
 function Draw_Chart_NoData(txtchartname){
 	document.getElementById("divLineChart"+txtchartname).width="730";
@@ -145,12 +239,12 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 	var lineOptions = {
 		segmentShowStroke : false,
 		segmentStrokeColor : "#000",
-		//animationEasing : "easeOutQuart",
-		//animationSteps : 100,
-		animation: {
+		animationEasing : "easeOutQuart",
+		animationSteps : 100,
+		/*animation: {
 			duration: 0 // general animation time
 		},
-		responsiveAnimationDuration: 0, // animation duration after a resize
+		responsiveAnimationDuration: 0, */ // animation duration after a resize
 		maintainAspectRatio: false,
 		animateScale : true,
 		hover: { mode: "point" },
@@ -189,7 +283,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 		plugins: {
 			zoom: {
 				pan: {
-					enabled: true,
+					enabled: false,
 					mode: 'xy',
 					rangeMin: {
 						x: new Date().getTime() - (factor * numunitx),
@@ -202,6 +296,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 				},
 				zoom: {
 					enabled: true,
+					drag: true,
 					mode: 'xy',
 					rangeMin: {
 						x: new Date().getTime() - (factor * numunitx),
@@ -224,6 +319,9 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 					x: 'Time',
 					y: 'Value'
 				}
+			},
+			deferred: {
+				delay: 250
 			},
 		},
 		annotation: {
@@ -407,6 +505,20 @@ function SetCookie(cookiename,cookievalue) {
 }
 
 function AddEventHandlers(){
+	$(".collapsible-jquery").click(function(){
+		$(this).siblings().toggle("fast",function(){
+			if($(this).css("display") == "none"){
+				SetCookie($(this).siblings()[0].id,"collapsed");
+			} else {
+				SetCookie($(this).siblings()[0].id,"expanded");
+			}
+		})
+	});
+	
+	if(GetCookie($(".collapsible-jquery")[0].id) == "collapsed"){
+		$($(".collapsible-jquery")[0]).siblings().toggle(false);
+	}
+	
 	var coll = document.getElementsByClassName("collapsible");
 	var i;
 	
@@ -428,6 +540,22 @@ function AddEventHandlers(){
 	}
 }
 
+$.fn.serializeObject = function(){
+	var o = custom_settings;
+	var a = this.serializeArray();
+	$.each(a, function() {
+		if (o[this.name] !== undefined && this.name.indexOf("connmon_pingserver") != -1) {
+			if (!o[this.name].push) {
+				o[this.name] = [o[this.name]];
+			}
+			o[this.name].push(this.value || '');
+		} else if (this.name.indexOf("connmon_pingserver") != -1){
+			o[this.name] = this.value || '';
+		}
+	});
+	return o;
+};
+
 function SetCurrentPage(){
 	document.form.next_page.value = window.location.pathname.substring(1);
 	document.form.current_page.value = window.location.pathname.substring(1);
@@ -435,7 +563,9 @@ function SetCurrentPage(){
 
 function initial(){
 	SetCurrentPage();
+	LoadCustomSettings();
 	show_menu();
+	get_conf_file();
 	RedrawAllCharts();
 	SetConnmonStatsTitle();
 	AddEventHandlers();
@@ -448,12 +578,83 @@ function reload() {
 function ResetZoom(){
 	for(i = 0; i < metriclist.length; i++){
 		for (i2 = 0; i2 < chartlist.length; i2++) {
-			window["LineChart"+metriclist[i]+chartlist[i2]].resetZoom();
+			var chartobj = window["LineChart"+metriclist[i]+chartlist[i2]];
+			if(typeof chartobj === 'undefined' || chartobj === null) { continue; }
+			chartobj.resetZoom();
+		}
+	}
+}
+
+function DragZoom(button){
+	var drag = true;
+	var pan = false;
+	var buttonvalue = "";
+	if(button.value.indexOf("Disable") != -1){
+		drag = false;
+		pan = true;
+		buttonvalue = "Enable Drag Zoom";
+	}
+	else {
+		drag = true;
+		pan = false;
+		buttonvalue = "Disable Drag Zoom";
+	}
+	
+	for(i = 0; i < metriclist.length; i++){
+		for (i2 = 0; i2 < chartlist.length; i2++) {
+			var chartobj = window["LineChart"+metriclist[i]+chartlist[i2]];
+			if(typeof chartobj === 'undefined' || chartobj === null) { continue; }
+			chartobj.options.plugins.zoom.zoom.drag = drag;
+			chartobj.options.plugins.zoom.pan.enabled = pan;
+			button.value = buttonvalue;
+			chartobj.update();
 		}
 	}
 }
 
 function applyRule() {
+	if(Validate_All()){
+		if(document.form.pingtype.value == 0){
+			document.form.connmon_pingserver.value = document.form.connmon_ipaddr.value;
+		} else if(document.form.pingtype.value == 1) {
+			document.form.connmon_pingserver.value = document.form.connmon_domain.value;
+		}
+		document.getElementById('amng_custom').value = JSON.stringify($('form').serializeObject())
+		var action_script_tmp = "start_connmonconfig";
+		document.form.action_script.value = action_script_tmp;
+		document.form.action_wait.value = 5;
+		var restart_time = document.form.action_wait.value*1;
+		showLoading();
+		document.form.submit();
+	}
+	else {
+		return false;
+	}
+}
+
+function get_conf_file(){
+	$.ajax({
+		url: '/ext/connmon/config.htm',
+		dataType: 'text',
+		error: function(xhr){
+			setTimeout("get_conf_file();", 1000);
+		},
+		success: function(data){
+			var pingserver=data.split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+			document.form.connmon_pingserver.value = pingserver;
+			if(Validate_IP(document.form.connmon_pingserver)) {
+				document.form.pingtype.value=0;
+				document.form.connmon_ipaddr.value=pingserver;
+			} else {
+				document.form.pingtype.value=1;
+				document.form.connmon_domain.value=pingserver;
+			}
+			document.form.pingtype.onchange();
+		}
+	});
+}
+
+function runPingTest() {
 	var action_script_tmp = "start_connmon";
 	document.form.action_script.value = action_script_tmp;
 	var restart_time = document.form.action_wait.value*1;
@@ -473,12 +674,13 @@ function applyRule() {
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="apply">
 <input type="hidden" name="action_script" value="start_connmon">
-<input type="hidden" name="action_wait" value="60">
+<input type="hidden" name="action_wait" value="45">
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="SystemCmd" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
 <input type="hidden" name="amng_custom" id="amng_custom" value="">
+<input type="hidden" name="connmon_pingserver" id="connmon_pingserver" value="">
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 <tr>
 <td width="17">&nbsp;</td>
@@ -499,7 +701,9 @@ function applyRule() {
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;">
 <tr class="apply_gen" valign="top" height="35px">
 <td style="background-color:rgb(77, 89, 93);border:0px;">
-<input type="button" onclick="applyRule();" value="Update stats" class="button_gen" name="button">
+<input type="button" onclick="runPingTest();" value="Update stats" class="button_gen" name="button">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<input type="button" onclick="DragZoom(this);" value="Disable Drag Zoom" class="button_gen" name="button">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <input type="button" onclick="ResetZoom();" value="Reset Zoom" class="button_gen" name="button">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -508,6 +712,42 @@ function applyRule() {
 <input type="button" onclick="ToggleFill();" value="Toggle Fill" class="button_gen" name="button">
 </td>
 </tr>
+</table>
+<div style="line-height:10px;">&nbsp;</div>
+<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="TableConfig">
+<thead class="collapsible-jquery" id="thconfig">
+<tr>
+<td colspan="2">Configuration (click to expand/collapse)</td>
+</tr>
+</thead>
+<div class="collapsiblecontent">
+<tr class="even">
+<th width="40%">Ping destination type</th>
+<td>
+<select style="width:100px" class="input_option" onchange="changePingType(this)" id="pingtype">
+<option value="0">IP Address</option>
+<option value="1">Domain</option>
+</select>
+</td>
+</tr>
+<tr class="even" id="rowip">
+<th width="40%">IP Address</th>
+<td>
+<input autocomplete="off" autocapitalize="off" type="text" maxlength="15" class="input_20_table" name="connmon_ipaddr" value="8.8.8.8" onkeypress="return validator.isIPAddr(this, event)" onblur="Validate_IP(this)" data-lpignore="true" />
+</td>
+</tr>
+<tr class="even" id="rowdomain">
+<th width="40%">Domain</th>
+<td>
+<input autocorrect="off" autocapitalize="off" type="text" maxlength="255" class="input_32_table" name="connmon_domain" value="google.co.uk" onkeypress="return validator.isString(this, event);" onblur="Validate_Domain(this)" data-lpignore="true" />
+</td>
+</tr>
+<tr class="apply_gen" valign="top" height="35px">
+<td colspan="2" style="background-color:rgb(77, 89, 93);border:0px;">
+<input type="button" onclick="applyRule();" value="Save" class="button_gen" name="button">
+</td>
+</tr>
+</div>
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">

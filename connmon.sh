@@ -13,7 +13,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.3.1"
+readonly SCRIPT_VERSION="v2.3.2"
 readonly SCRIPT_BRANCH="master"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
 readonly OLD_SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME.d"
@@ -217,6 +217,29 @@ Validate_Domain(){
 	fi
 }
 
+Conf_FromSettings(){
+	SETTINGSFILE="/jffs/addons/custom_settings.txt"
+	TMPFILE="/tmp/connmon_settings.txt"
+	if [ -f "$SETTINGSFILE" ]; then
+		if [ "$(grep -c "connmon_" $SETTINGSFILE)" -gt 0 ]; then
+			Print_Output "true" "Updated settings from WebUI found, merging into $SCRIPT_CONF" "$PASS"
+			cp -a "$SCRIPT_CONF" "$SCRIPT_CONF.bak"
+			grep "connmon_" "$SETTINGSFILE" > "$TMPFILE"
+			sed -i "s/connmon_//g;s/ /=/g" "$TMPFILE"
+			while IFS='' read -r line || [ -n "$line" ]; do
+				SETTINGNAME="$(echo "$line" | cut -f1 -d'=' | awk '{ print toupper($1) }')"
+				SETTINGVALUE="$(echo "$line" | cut -f2 -d'=')"
+				sed -i "s/$SETTINGNAME=.*/$SETTINGNAME=$SETTINGVALUE/" "$SCRIPT_CONF"
+			done < "$TMPFILE"
+			sed -i "\\~connmon_~d" "$SETTINGSFILE"
+			rm -f "$TMPFILE"
+			Print_Output "true" "Merge of updated settings from WebUI completed successfully" "$PASS"
+		else
+			Print_Output "false" "No updated settings from WebUI found, no merge into $SCRIPT_CONF necessary" "$PASS"
+		fi
+	fi
+}
+
 Create_Dirs(){
 	if [ ! -d "$SCRIPT_DIR" ]; then
 		mkdir -p "$SCRIPT_DIR"
@@ -244,6 +267,8 @@ Create_Symlinks(){
 	
 	ln -s "$SCRIPT_DIR/connstatsdata.js" "$SCRIPT_WEB_DIR/connstatsdata.js" 2>/dev/null
 	ln -s "$SCRIPT_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
+	
+	ln -s "$SCRIPT_CONF"  "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
 	
 	if [ ! -d "$SCRIPT_WEB_DIR/csv" ]; then
 		ln -s "$CSV_OUTPUT_DIR" "$SCRIPT_WEB_DIR/csv" 2>/dev/null
@@ -324,7 +349,7 @@ Auto_ServiceEvent(){
 			if [ -f /jffs/scripts/service-event ]; then
 				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/service-event)
 				# shellcheck disable=SC2016
-				STARTUPLINECOUNTEX=$(grep -cx "/jffs/scripts/$SCRIPT_NAME generate"' "$1" "$2" &'' # '"$SCRIPT_NAME" /jffs/scripts/service-event)
+				STARTUPLINECOUNTEX=$(grep -cx "/jffs/scripts/$SCRIPT_NAME service_event"' "$1" "$2" &'' # '"$SCRIPT_NAME" /jffs/scripts/service-event)
 				
 				if [ "$STARTUPLINECOUNT" -gt 1 ] || { [ "$STARTUPLINECOUNTEX" -eq 0 ] && [ "$STARTUPLINECOUNT" -gt 0 ]; }; then
 					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/service-event
@@ -332,13 +357,13 @@ Auto_ServiceEvent(){
 				
 				if [ "$STARTUPLINECOUNTEX" -eq 0 ]; then
 					# shellcheck disable=SC2016
-					echo "/jffs/scripts/$SCRIPT_NAME generate"' "$1" "$2" &'' # '"$SCRIPT_NAME" >> /jffs/scripts/service-event
+					echo "/jffs/scripts/$SCRIPT_NAME service_event"' "$1" "$2" &'' # '"$SCRIPT_NAME" >> /jffs/scripts/service-event
 				fi
 			else
 				echo "#!/bin/sh" > /jffs/scripts/service-event
 				echo "" >> /jffs/scripts/service-event
 				# shellcheck disable=SC2016
-				echo "/jffs/scripts/$SCRIPT_NAME generate"' "$1" "$2" &'' # '"$SCRIPT_NAME" >> /jffs/scripts/service-event
+				echo "/jffs/scripts/$SCRIPT_NAME service_event"' "$1" "$2" &'' # '"$SCRIPT_NAME" >> /jffs/scripts/service-event
 				chmod 0755 /jffs/scripts/service-event
 			fi
 		;;
@@ -622,8 +647,8 @@ Generate_Stats(){
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
-	Conf_Exists
 	Create_Dirs
+	Conf_Exists
 	Create_Symlinks
 	
 	pingfile=/tmp/pingresult.txt
@@ -897,8 +922,8 @@ Menu_Install(){
 	fi
 	
 	Create_Dirs
-	Create_Symlinks
 	Conf_Exists
+	Create_Symlinks
 	
 	Update_File "connmonstats_www.asp"
 	Update_File "shared-jy.tar.gz"
@@ -1019,12 +1044,20 @@ case "$1" in
 		exit 0
 	;;
 	generate)
-		if [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME" ]; then
+		Check_Lock
+		Menu_GenerateStats
+		exit 0
+	;;
+	service_event)
+		if [ "$2" = "start" ] && [ "$3" = "connmon" ]; then
 			Check_Lock
 			Menu_GenerateStats
-		elif [ -z "$2" ] && [ -z "$3" ]; then
+			exit 0
+		elif [ "$2" = "start" ] && [ "$3" = "connmonconfig" ]; then
 			Check_Lock
-			Menu_GenerateStats
+			Conf_FromSettings
+			Clear_Lock
+			exit 0
 		fi
 		exit 0
 	;;
