@@ -532,12 +532,12 @@ $.fn.serializeObject = function(){
 	var o = custom_settings;
 	var a = this.serializeArray();
 	$.each(a, function() {
-		if (o[this.name] !== undefined && this.name.indexOf("connmon") != -1) {
+		if (o[this.name] !== undefined && this.name.indexOf("connmon_pingserver") != -1) {
 			if (!o[this.name].push) {
 				o[this.name] = [o[this.name]];
 			}
 			o[this.name].push(this.value || '');
-		} else if (this.name.indexOf("connmon") != -1){
+		} else if (this.name.indexOf("connmon_pingserver") != -1){
 			o[this.name] = this.value || '';
 		}
 	});
@@ -601,9 +601,16 @@ function DragZoom(button){
 
 function applyRule() {
 	if(Validate_All()){
+		if(document.form.pingtype.value == 1){
+			document.form.connmon_pingserver.value = document.form.connmon_domain.value;
+		} else if(document.form.pingtype.value == 0){
+			document.form.connmon_pingserver.value = document.form.connmon_ipaddr.value;
+		}
+		console.log(document.form.connmon_pingserver.value)
 		document.getElementById('amng_custom').value = JSON.stringify($('form').serializeObject())
 		var action_script_tmp = "start_connmonconfig";
 		document.form.action_script.value = action_script_tmp;
+		document.form.action_wait.value = 10;
 		var restart_time = document.form.action_wait.value*1;
 		showLoading();
 		document.form.submit();
@@ -633,12 +640,13 @@ function runPingTest() {
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="apply">
 <input type="hidden" name="action_script" value="start_connmon">
-<input type="hidden" name="action_wait" value="60">
+<input type="hidden" name="action_wait" value="45">
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="SystemCmd" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get("preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get("firmver"); %>">
 <input type="hidden" name="amng_custom" id="amng_custom" value="">
+<input type="hidden" name="connmon_pingserver" id="connmon_pingserver" value="">
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 <tr>
 <td width="17">&nbsp;</td>
