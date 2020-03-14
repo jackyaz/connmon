@@ -528,6 +528,22 @@ function AddEventHandlers(){
 	}
 }
 
+$.fn.serializeObject = function(){
+	var o = custom_settings;
+	var a = this.serializeArray();
+	$.each(a, function() {
+		if (o[this.name] !== undefined && this.name.indexOf("connmon") != -1) {
+			if (!o[this.name].push) {
+				o[this.name] = [o[this.name]];
+			}
+			o[this.name].push(this.value || '');
+		} else if (this.name.indexOf("connmon") != -1){
+			o[this.name] = this.value || '';
+		}
+	});
+	return o;
+};
+
 function SetCurrentPage(){
 	document.form.next_page.value = window.location.pathname.substring(1);
 	document.form.current_page.value = window.location.pathname.substring(1);
