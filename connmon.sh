@@ -1056,7 +1056,6 @@ case "$1" in
 		elif [ "$2" = "start" ] && [ "$3" = "connmonconfig" ]; then
 			Check_Lock
 			Conf_FromSettings
-			Print_Output "true" "WebUI config updated" "$PASS"
 			Clear_Lock
 			exit 0
 		fi
