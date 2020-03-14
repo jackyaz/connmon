@@ -640,12 +640,14 @@ function get_conf_file(){
 			setTimeout("get_conf_file();", 1000);
 		},
 		success: function(data){
-			var pingtype=data.split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
-			document.form.connmon_pingserver.value = pingtype;
+			var pingserver=data.split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+			document.form.connmon_pingserver.value = pingserver;
 			if(Validate_IP(document.form.connmon_pingserver)) {
 				document.form.pingtype.value=0;
+				document.form.connmon_ipaddr.value=pingserver;
 			} else {
 				document.form.pingtype.value=1;
+				document.form.connmon_domain.value=pingserver;
 			}
 			document.form.pingtype.onchange();
 		}
