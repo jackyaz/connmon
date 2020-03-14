@@ -222,8 +222,8 @@ Conf_FromSettings(){
 	TMPFILE="/tmp/connmon_settings.txt"
 	if [ -f "$SETTINGSFILE" ]; then
 		if [ "$(grep -c "connmon" $SETTINGSFILE)" -gt 0 ]; then
-			Print_Output "true" "Updated settings from WebUI found, merging into $CONFIG" "$PASS"
-			cp -a "$CONFIG" "$CONFIG.bak"
+			Print_Output "true" "Updated settings from WebUI found, merging into $SCRIPT_CONF" "$PASS"
+			cp -a "$SCRIPT_CONF" "$SCRIPT_CONF.bak"
 			grep "connmon" "$SETTINGSFILE" > "$TMPFILE"
 			sed -i "s/connmon//g;s/ /=/g" "$TMPFILE"
 			while IFS='' read -r line || [ -n "$line" ]; do
@@ -235,7 +235,7 @@ Conf_FromSettings(){
 			rm -f "$TMPFILE"
 			Print_Output "true" "Merge of updated settings from WebUI completed successfully" "$PASS"
 		else
-			Print_Output "false" "No updated settings from WebUI found, no merge into $CONFIG necessary" "$PASS"
+			Print_Output "false" "No updated settings from WebUI found, no merge into $SCRIPT_CONF necessary" "$PASS"
 		fi
 	fi
 }
