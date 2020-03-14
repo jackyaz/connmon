@@ -167,6 +167,19 @@ function Validate_IP(forminput){
 	}
 }
 
+function Validate_Domain(forminput){
+	var inputvalue = forminput.value;
+	var inputname = forminput.name;
+	if(/^(([a-zA-Z]{1})|([a-zA-Z]{1}[a-zA-Z]{1})|([a-zA-Z]{1}[0-9]{1})|([0-9]{1}[a-zA-Z]{1})|([a-zA-Z0-9][a-zA-Z0-9-_]{1,61}[a-zA-Z0-9]))\.([a-zA-Z]{2,6}|[a-zA-Z0-9-]{2,30}\.[a-zA-Z]{2,3})$/.test(inputvalue)){
+		$(forminput).removeClass("invalid");
+		return true;
+	}
+	else{
+		$(forminput).addClass("invalid");
+		return false;
+	}
+}
+
 function Validate_All(){
 	var validationfailed = false;
 	if(! Validate_IP(eval("document.form.connmon_ipaddr"))){validationfailed=true;}
