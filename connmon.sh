@@ -245,6 +245,8 @@ Create_Symlinks(){
 	ln -s "$SCRIPT_DIR/connstatsdata.js" "$SCRIPT_WEB_DIR/connstatsdata.js" 2>/dev/null
 	ln -s "$SCRIPT_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
 	
+	ln -s "$SCRIPT_CONF"  "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
+	
 	if [ ! -d "$SCRIPT_WEB_DIR/csv" ]; then
 		ln -s "$CSV_OUTPUT_DIR" "$SCRIPT_WEB_DIR/csv" 2>/dev/null
 	fi
@@ -622,8 +624,8 @@ Generate_Stats(){
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
-	Conf_Exists
 	Create_Dirs
+	Conf_Exists
 	Create_Symlinks
 	
 	pingfile=/tmp/pingresult.txt
@@ -897,8 +899,8 @@ Menu_Install(){
 	fi
 	
 	Create_Dirs
-	Create_Symlinks
 	Conf_Exists
+	Create_Symlinks
 	
 	Update_File "connmonstats_www.asp"
 	Update_File "shared-jy.tar.gz"
