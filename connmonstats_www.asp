@@ -59,6 +59,7 @@ p {
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script language="JavaScript" type="text/javascript" src="/help.js"></script>
+<script language="JavaScript" type="text/javascript" src="/ext/shared-jy/detect.js"></script>
 <script language="JavaScript" type="text/javascript" src="/tmhist.js"></script>
 <script language="JavaScript" type="text/javascript" src="/tmmenu.js"></script>
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
@@ -111,6 +112,8 @@ var datafilterPlugin = {
 }
 </script>
 <script>
+var $j = jQuery.noConflict(); //avoid conflicts on John's fork (state.js)
+
 var ShowLines=GetCookie("ShowLines");
 var ShowFill=GetCookie("ShowFill");
 Chart.defaults.global.defaultFontColor = "#CCC";
@@ -141,14 +144,14 @@ var colourlist = ["#fc8500","#42ecf5","#ffffff"];
 
 function keyHandler(e) {
 	if (e.keyCode == 27){
-		$(document).off("keydown");
+		$j(document).off("keydown");
 		ResetZoom();
 	}
 }
 
-$(document).keydown(function(e){keyHandler(e);});
-$(document).keyup(function(e){
-	$(document).keydown(function(e){
+$j(document).keydown(function(e){keyHandler(e);});
+$j(document).keyup(function(e){
+	$j(document).keydown(function(e){
 		keyHandler(e);
 	});
 });
@@ -157,11 +160,11 @@ function Validate_IP(forminput){
 	var inputvalue = forminput.value;
 	var inputname = forminput.name;
 	if(/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(inputvalue)){
-			$(forminput).removeClass("invalid");
+			$j(forminput).removeClass("invalid");
 			return true;
 	}
 	else{
-		$(forminput).addClass("invalid");
+		$j(forminput).addClass("invalid");
 		return false;
 	}
 }
@@ -170,11 +173,11 @@ function Validate_Domain(forminput){
 	var inputvalue = forminput.value;
 	var inputname = forminput.name;
 	if(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/.test(inputvalue)){
-		$(forminput).removeClass("invalid");
+		$j(forminput).removeClass("invalid");
 		return true;
 	}
 	else{
-		$(forminput).addClass("invalid");
+		$j(forminput).addClass("invalid");
 		return false;
 	}
 }
@@ -504,18 +507,18 @@ function SetCookie(cookiename,cookievalue) {
 }
 
 function AddEventHandlers(){
-	$(".collapsible-jquery").click(function(){
-		$(this).siblings().toggle("fast",function(){
-			if($(this).css("display") == "none"){
-				SetCookie($(this).siblings()[0].id,"collapsed");
+	$j(".collapsible-jquery").click(function(){
+		$j(this).siblings().toggle("fast",function(){
+			if($j(this).css("display") == "none"){
+				SetCookie($j(this).siblings()[0].id,"collapsed");
 			} else {
-				SetCookie($(this).siblings()[0].id,"expanded");
+				SetCookie($j(this).siblings()[0].id,"expanded");
 			}
 		})
 	});
 	
-	if(GetCookie($(".collapsible-jquery")[0].id) == "collapsed"){
-		$($(".collapsible-jquery")[0]).siblings().toggle(false);
+	if(GetCookie($j(".collapsible-jquery")[0].id) == "collapsed"){
+		$j($j(".collapsible-jquery")[0]).siblings().toggle(false);
 	}
 	
 	var coll = document.getElementsByClassName("collapsible");
@@ -618,7 +621,7 @@ function applyRule() {
 		} else if(document.form.pingtype.value == 1) {
 			document.form.connmon_pingserver.value = document.form.connmon_domain.value;
 		}
-		document.getElementById('amng_custom').value = JSON.stringify($('form').serializeObject())
+		document.getElementById('amng_custom').value = JSON.stringify($j('form').serializeObject())
 		var action_script_tmp = "start_connmonconfig";
 		document.form.action_script.value = action_script_tmp;
 		document.form.action_wait.value = 5;
