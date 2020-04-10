@@ -359,7 +359,6 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname,
 	};
 	objchartname = new Chart(ctx, {
 		type: 'line',
-		plugins: datafilterPlugin,
 		options: lineOptions,
 		data: lineDataset
 	});
