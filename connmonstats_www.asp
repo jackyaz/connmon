@@ -47,14 +47,14 @@ p {
   background-color: darkred !important;
 }
 </style>
-<script language="JavaScript" type="text/javascript" src="/js/jquery.js"></script>
+<script language="JavaScript" type="text/javascript" src="/ext/shared-jy/jquery.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/moment.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/chart.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/hammerjs.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/chartjs-plugin-zoom.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/chartjs-plugin-annotation.js"></script>
-<script language="JavaScript" type="text/javascript" src="/ext/shared-jy/chartjs-plugin-datasource.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/chartjs-plugin-deferred.js"></script>
+<script language="JavaScript" type="text/javascript" src="/ext/shared-jy/d3.js"></script>
 <script language="JavaScript" type="text/javascript" src="/state.js"></script>
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
@@ -62,8 +62,7 @@ p {
 <script language="JavaScript" type="text/javascript" src="/tmhist.js"></script>
 <script language="JavaScript" type="text/javascript" src="/tmmenu.js"></script>
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
-<script language="JavaScript" type="text/javascript" src="/validator.js"></script>
-<script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatsdata.js"></script>
+<script language="JavaScript" type="text/javascript" src="/ext/shared-jy/validator.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatstext.js"></script>
 <script>
 // Keep the real data in a seperate object called allData
@@ -221,11 +220,13 @@ function Draw_Chart_NoData(txtchartname){
 	ctx.restore();
 }
 
-function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname){
+function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname,dataobject){
+	if(typeof dataobject === 'undefined' || dataobject === null) { Draw_Chart_NoData(txtchartname); return; }
+	if (dataobject.length == 0) { Draw_Chart_NoData(txtchartname); return; }
+	
+	var chartLabels = dataobject.map(function(d) {return d.Metric});
+	var chartData = dataobject.map(function(d) {return {x: d.Time, y: d.Value}});
 	var objchartname=window["LineChart"+txtchartname];
-	var objdataname=window[txtchartname+"size"];
-	if(typeof objdataname === 'undefined' || objdataname === null) { Draw_Chart_NoData(txtchartname); return; }
-	if (objdataname == 0) { Draw_Chart_NoData(txtchartname); return; }
 	
 	factor=0;
 	if (txtunitx=="hour"){
@@ -241,10 +242,6 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 		segmentStrokeColor : "#000",
 		animationEasing : "easeOutQuart",
 		animationSteps : 100,
-		/*animation: {
-			duration: 0 // general animation time
-		},
-		responsiveAnimationDuration: 0, */ // animation duration after a resize
 		maintainAspectRatio: false,
 		animateScale : true,
 		hover: { mode: "point" },
@@ -253,7 +250,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 		tooltips: {
 			callbacks: {
 					title: function (tooltipItem, data) { return (moment(tooltipItem[0].xLabel,"X").format('YYYY-MM-DD HH:mm:ss')); },
-					label: function (tooltipItem, data) { return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y.toString() + ' ' + txtunity;}
+					label: function (tooltipItem, data) { return round(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y,3).toFixed(3) + ' ' + txtunity;}
 				},
 				mode: 'point',
 				position: 'cursor',
@@ -287,11 +284,11 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 					mode: 'xy',
 					rangeMin: {
 						x: new Date().getTime() - (factor * numunitx),
-						y: getLimit(txtchartname,"y","min",false) - Math.sqrt(Math.pow(getLimit(txtchartname,"y","min",false),2))*0.1,
+						y: getLimit(chartData,"y","min",false) - Math.sqrt(Math.pow(getLimit(chartData,"y","min",false),2))*0.1,
 					},
 					rangeMax: {
 						x: new Date().getTime(),
-						y: getLimit(txtchartname,"y","max",false) + getLimit(txtchartname,"y","max",false)*0.1,
+						y: getLimit(chartData,"y","max",false) + getLimit(chartData,"y","max",false)*0.1,
 					},
 				},
 				zoom: {
@@ -300,25 +297,14 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 					mode: 'xy',
 					rangeMin: {
 						x: new Date().getTime() - (factor * numunitx),
-						y: getLimit(txtchartname,"y","min",false) - Math.sqrt(Math.pow(getLimit(txtchartname,"y","min",false),2))*0.1,
+						y: getLimit(chartData,"y","min",false) - Math.sqrt(Math.pow(getLimit(chartData,"y","min",false),2))*0.1,
 					},
 					rangeMax: {
 						x: new Date().getTime(),
-						y: getLimit(txtchartname,"y","max",false) + getLimit(txtchartname,"y","max",false)*0.1,
+						y: getLimit(chartData,"y","max",false) + getLimit(chartData,"y","max",false)*0.1,
 					},
 					speed: 0.1
 				},
-			},
-			datasource: {
-				type: 'csv',
-				url: '/ext/connmon/csv/'+txtchartname+'.htm',
-				delimiter: ',',
-				rowMapping: 'datapoint',
-				datapointLabelMapping: {
-					_dataset: 'Metric',
-					x: 'Time',
-					y: 'Value'
-				}
 			},
 			deferred: {
 				delay: 250
@@ -331,7 +317,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 				type: ShowLines,
 				mode: 'horizontal',
 				scaleID: 'y-axis-0',
-				value: getAverage(txtchartname),
+				value: getAverage(chartData),
 				borderColor: colourname,
 				borderWidth: 1,
 				borderDash: [5, 5],
@@ -348,7 +334,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 					enabled: true,
 					xAdjust: 0,
 					yAdjust: 0,
-					content: "Avg=" + round(getAverage(txtchartname),3).toFixed(3)+txtunity,
+					content: "Avg=" + round(getAverage(chartData),3).toFixed(3)+txtunity,
 				}
 			},
 			{
@@ -356,7 +342,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 				type: ShowLines,
 				mode: 'horizontal',
 				scaleID: 'y-axis-0',
-				value: getLimit(txtchartname,"y","max",true),
+				value: getLimit(chartData,"y","max",true),
 				borderColor: colourname,
 				borderWidth: 1,
 				borderDash: [5, 5],
@@ -373,7 +359,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 					enabled: true,
 					xAdjust: 0,
 					yAdjust: 0,
-					content: "Max=" + round(getLimit(txtchartname,"y","max",true),3).toFixed(3)+txtunity,
+					content: "Max=" + round(getLimit(chartData,"y","max",true),3).toFixed(3)+txtunity,
 				}
 			},
 			{
@@ -381,7 +367,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 				type: ShowLines,
 				mode: 'horizontal',
 				scaleID: 'y-axis-0',
-				value: getLimit(txtchartname,"y","min",true),
+				value: getLimit(chartData,"y","min",true),
 				borderColor: colourname,
 				borderWidth: 1,
 				borderDash: [5, 5],
@@ -398,13 +384,14 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 					enabled: true,
 					xAdjust: 0,
 					yAdjust: 0,
-					content: "Min=" + round(getLimit(txtchartname,"y","min",true),3).toFixed(3)+txtunity,
+					content: "Min=" + round(getLimit(chartData,"y","min",true),3).toFixed(3)+txtunity,
 				}
 			}]
 		}
 	};
 	var lineDataset = {
-		datasets: [{label: txttitle,
+		labels: chartLabels,
+		datasets: [{data: chartData,
 			borderWidth: 1,
 			pointRadius: 1,
 			lineTension: 0,
@@ -415,7 +402,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 	};
 	objchartname = new Chart(ctx, {
 		type: 'line',
-		plugins: [ChartDataSource,datafilterPlugin],
+		plugins: datafilterPlugin,
 		options: lineOptions,
 		data: lineDataset
 	});
@@ -423,10 +410,21 @@ function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,colourname)
 }
 
 function getLimit(datasetname,axis,maxmin,isannotation) {
-	var limit = 0;
-	var objdataname=window[datasetname+maxmin];
-	if(typeof objdataname === 'undefined' || objdataname === null) { limit = 0; }
-	else {limit = objdataname;}
+	var limit=0;
+	var values;
+	if(axis == "x"){
+		values = datasetname.map(function(o) { return o.x } );
+	}
+	else{
+		values = datasetname.map(function(o) { return o.y } );
+	}
+	
+	if(maxmin == "max"){
+		limit=Math.max.apply(Math, values);
+	}
+	else{
+		limit=Math.min.apply(Math, values);
+	}
 	if(maxmin == "max" && limit == 0 && isannotation == false){
 		limit = 1;
 	}
@@ -434,10 +432,11 @@ function getLimit(datasetname,axis,maxmin,isannotation) {
 }
 
 function getAverage(datasetname) {
-	var avg = 0;
-	var objdataname=window[datasetname+"avg"];
-	if(typeof objdataname === 'undefined' || objdataname === null) { avg = 0; }
-	else {avg = objdataname;}
+	var total = 0;
+	for(var i = 0; i < datasetname.length; i++) {
+		total += (datasetname[i].y*1);
+	}
+	var avg = total / datasetname.length;
 	return avg;
 }
 
@@ -484,7 +483,7 @@ function ToggleFill() {
 function RedrawAllCharts() {
 	for(i = 0; i < metriclist.length; i++){
 		for (i2 = 0; i2 < chartlist.length; i2++) {
-			Draw_Chart(metriclist[i]+chartlist[i2],titlelist[i],measureunitlist[i],timeunitlist[i2],intervallist[i2],colourlist[i]);
+			d3.csv('/ext/connmon/csv/'+metriclist[i]+chartlist[i2]+'.htm').then(Draw_Chart.bind(null,metriclist[i]+chartlist[i2],titlelist[i],measureunitlist[i],timeunitlist[i2],intervallist[i2],colourlist[i]));
 		}
 	}
 	ResetZoom();
@@ -589,15 +588,15 @@ function DragZoom(button){
 	var drag = true;
 	var pan = false;
 	var buttonvalue = "";
-	if(button.value.indexOf("Disable") != -1){
+	if(button.value.indexOf("On") != -1){
 		drag = false;
 		pan = true;
-		buttonvalue = "Enable Drag Zoom";
+		buttonvalue = "Drag Zoom Off";
 	}
 	else {
 		drag = true;
 		pan = false;
-		buttonvalue = "Disable Drag Zoom";
+		buttonvalue = "Drag Zoom On";
 	}
 	
 	for(i = 0; i < metriclist.length; i++){
@@ -703,7 +702,7 @@ function runPingTest() {
 <td style="background-color:rgb(77, 89, 93);border:0px;">
 <input type="button" onclick="runPingTest();" value="Update stats" class="button_gen" name="button">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<input type="button" onclick="DragZoom(this);" value="Disable Drag Zoom" class="button_gen" name="button">
+<input type="button" onclick="DragZoom(this);" value="Drag Zoom On" class="button_gen" name="button">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <input type="button" onclick="ResetZoom();" value="Reset Zoom" class="button_gen" name="button">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
