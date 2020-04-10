@@ -542,10 +542,10 @@ function AddEventHandlers(){
 	}
 }
 
-$.fn.serializeObject = function(){
+$j.fn.serializeObject = function(){
 	var o = custom_settings;
 	var a = this.serializeArray();
-	$.each(a, function() {
+	$j.each(a, function() {
 		if (o[this.name] !== undefined && this.name.indexOf("connmon_pingserver") != -1) {
 			if (!o[this.name].push) {
 				o[this.name] = [o[this.name]];
@@ -635,7 +635,7 @@ function applyRule() {
 }
 
 function get_conf_file(){
-	$.ajax({
+	$j.ajax({
 		url: '/ext/connmon/config.htm',
 		dataType: 'text',
 		error: function(xhr){
