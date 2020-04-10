@@ -257,7 +257,6 @@ Create_Dirs(){
 Create_Symlinks(){
 	rm -f "$SCRIPT_WEB_DIR/"* 2>/dev/null
 	
-	ln -s "$SCRIPT_DIR/connstatsdata.js" "$SCRIPT_WEB_DIR/connstatsdata.js" 2>/dev/null
 	ln -s "$SCRIPT_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
 	
 	ln -s "$SCRIPT_CONF"  "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
@@ -506,37 +505,16 @@ WriteStats_ToJS(){
 #$1 fieldname $2 tablename $3 frequency (hours) $4 length (days) $5 outputfile $6 outputfrequency $7 sqlfile $8 timestamp
 WriteSql_ToFile(){
 	timenow="$8"
-	earliest="$((24*$4/$3))"
-	{
-		echo ".mode csv"
-		echo ".output $5$6.tmp"
-	} >> "$7"
+	maxcount="$(echo "$3" "$4" | awk '{printf ((24*$2)/$1)}')"
+	multiplier="$(echo "$3" | awk '{printf (60*60*$1)}')"
 	
 	{
-		echo "SELECT '$1',Min([Timestamp]) ChunkStart, IFNULL(Avg([$1]),'NaN') Value FROM"
-		echo "( SELECT NTILE($((24*$4/$3))) OVER (ORDER BY [Timestamp]) Chunk, * FROM $2 WHERE [Timestamp] >= ($timenow - ((60*60*$3)*$earliest))) AS T"
-		echo "GROUP BY Chunk"
-		echo "ORDER BY ChunkStart;"
+		echo ".mode csv"
+		echo ".headers on"
+		echo ".output $5$6.htm"
 	} >> "$7"
-	echo "var $1$6""size = 1;" >> "$SCRIPT_DIR/connstatsdata.js"
-}
-
-Aggregate_Stats(){
-	metricname="$1"
-	period="$2"
-	sed -i '1iMetric,Time,Value' "$CSV_OUTPUT_DIR/$metricname$period.tmp"
-	head -c -2 "$CSV_OUTPUT_DIR/$metricname$period.tmp" > "$CSV_OUTPUT_DIR/$metricname$period.htm"
-	dos2unix "$CSV_OUTPUT_DIR/$metricname$period.htm"
-	cp "$CSV_OUTPUT_DIR/$metricname$period.htm" "$CSV_OUTPUT_DIR/$metricname$period.tmp"
-	sed -i '1d' "$CSV_OUTPUT_DIR/$metricname$period.tmp"
-	min="$(cut -f3 -d"," "$CSV_OUTPUT_DIR/$metricname$period.tmp" | sort -n | head -1)"
-	max="$(cut -f3 -d"," "$CSV_OUTPUT_DIR/$metricname$period.tmp" | sort -n | tail -1)"
-	avg="$(cut -f3 -d"," "$CSV_OUTPUT_DIR/$metricname$period.tmp" | sort -n | awk '{ total += $1; count++ } END { print total/count }')"
-	{
-	echo "var $metricname$period""min = $min;"
-	echo "var $metricname$period""max = $max;"
-	echo "var $metricname$period""avg = $avg;"
-	} >> "$SCRIPT_DIR/connstatsdata.js"
+	
+	echo "SELECT '$1' Metric, Min([Timestamp]) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= $timenow - ($multiplier*$maxcount)) GROUP BY ([Timestamp]/($multiplier));" >> "$8"
 }
 
 Generate_Stats(){
@@ -610,9 +588,6 @@ Generate_Stats(){
 	
 	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
-	rm -f "$SCRIPT_DIR/connstatsdata.js"
-	
-	rm -f "$CSV_OUTPUT_DIR/"*
 	rm -f /tmp/connmon-stats.sql
 	
 	metriclist="Ping Jitter Packet_Loss"
@@ -620,26 +595,31 @@ Generate_Stats(){
 	for metric in $metriclist; do
 		{
 			echo ".mode csv"
-			echo ".output $CSV_OUTPUT_DIR/$metric""daily.tmp"
-			echo "select '$metric',[Timestamp],[$metric] from connstats WHERE [Timestamp] >= ($timenow - 86400);"
+			echo ".headers on"
+			echo ".output $CSV_OUTPUT_DIR/$metric""daily"".htm"
+			echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400);"
 		} > /tmp/connmon-stats.sql
-
 		"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-		echo "var $metric""dailysize = 1;" >> "$SCRIPT_DIR/connstatsdata.js"
-		Aggregate_Stats "$metric" "daily"
-		rm -f "$CSV_OUTPUT_DIR/$metric""daily.tmp"*
 		rm -f /tmp/connmon-stats.sql
-
-		WriteSql_ToFile "$metric" "connstats" 1 7 "$CSV_OUTPUT_DIR/$metric" "weekly" "/tmp/connmon-stats.sql" "$timenow"
+		
+		{
+			echo ".mode csv"
+			echo ".headers on"
+			echo ".output $CSV_OUTPUT_DIR/$metric""weekly"".htm"
+			echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400*7);"
+		} > /tmp/connmon-stats.sql
+		#WriteSql_ToFile "$metric" "connstats" 1 7 "$CSV_OUTPUT_DIR/$metric" "weekly" "/tmp/connmon-stats.sql" "$timenow"
 		"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-		Aggregate_Stats "$metric" "weekly"
-		rm -f "$CSV_OUTPUT_DIR/$metric""weekly.tmp"
 		rm -f /tmp/connmon-stats.sql
-
-		WriteSql_ToFile "$metric" "connstats" 3 30 "$CSV_OUTPUT_DIR/$metric" "monthly" "/tmp/connmon-stats.sql" "$timenow"
+		
+		{
+			echo ".mode csv"
+			echo ".headers on"
+			echo ".output $CSV_OUTPUT_DIR/$metric""monthly"".htm"
+			echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400*30);"
+		} > /tmp/connmon-stats.sql
+		#WriteSql_ToFile "$metric" "connstats" 3 30 "$CSV_OUTPUT_DIR/$metric" "monthly" "/tmp/connmon-stats.sql" "$timenow"
 		"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-		Aggregate_Stats "$metric" "monthly"
-		rm -f "$CSV_OUTPUT_DIR/$metric""monthly.tmp"
 		rm -f /tmp/connmon-stats.sql
 	done
 	
@@ -648,7 +628,6 @@ Generate_Stats(){
 	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %%" "$PASS"
 	
 	rm -f "$pingfile"
-	rm -f "/tmp/connmon-"*".csv"
 	rm -f "/tmp/connmon-stats.sql"
 	rm -f "/tmp/connstatstitle.txt"
 }
