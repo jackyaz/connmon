@@ -828,7 +828,7 @@ Check_Requirements(){
 	
 	if ! Firmware_Version_Check; then
 		Print_Output "true" "Unsupported firmware version detected" "$ERR"
-		Print_Output "true" "$SCRIPT_NAME requires at least Merlin 384.15/384.13_4 or Fork 43E5" "$ERR"
+		Print_Output "true" "$SCRIPT_NAME requires Merlin 384.15/384.13_4 or Fork 43E5 (or later)" "$ERR"
 		CHECKSFAILED="true"
 	fi
 	
@@ -952,6 +952,7 @@ if [ -z "$1" ]; then
 		Print_Output "true" "Installing required version of sqlite3 from Entware" "$PASS"
 		opkg update
 		opkg install sqlite3-cli
+		opkg install p7zip
 	fi
 	Create_Dirs
 	Create_Symlinks
