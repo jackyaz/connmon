@@ -600,7 +600,7 @@ function get_conf_file(){
 			setTimeout("get_conf_file();", 1000);
 		},
 		success: function(data){
-			var pingserver=data.split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+			var pingserver=data.split("\n")[0].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
 			document.form.connmon_pingserver.value = pingserver;
 			if(Validate_IP(document.form.connmon_pingserver)) {
 				document.form.pingtype.value=0;
