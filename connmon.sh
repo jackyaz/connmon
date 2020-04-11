@@ -275,9 +275,15 @@ Conf_Exists(){
 		dos2unix "$SCRIPT_CONF"
 		chmod 0644 "$SCRIPT_CONF"
 		sed -i -e 's/"//g' "$SCRIPT_CONF"
+		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 1 ]; then
+			{ echo "OUTPUTDATAMODE=raw"; } >> "$SCRIPT_CONF"
+		fi
 		return 0
 	else
-		echo "PINGSERVER=8.8.8.8" > "$SCRIPT_CONF"
+		{
+		echo "PINGSERVER=8.8.8.8"
+		echo "OUTPUTDATAMODE=raw"
+		} > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -492,6 +498,23 @@ Mount_WebUI(){
 	fi
 }
 
+OutputDataMode(){
+	case "$1" in
+		raw)
+			sed -i 's/^OUTPUTDATAMODE.*$/OUTPUTDATAMODE=raw/' "$SCRIPT_CONF"
+			Generate_CSVs
+		;;
+		average)
+			sed -i 's/^OUTPUTDATAMODE.*$/OUTPUTDATAMODE=average/' "$SCRIPT_CONF"
+			Generate_CSVs
+		;;
+		check)
+			OUTPUTDATAMODE=$(grep "OUTPUTDATAMODE" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$OUTPUTDATAMODE"
+			;;
+	esac
+}
+
 WriteStats_ToJS(){
 	echo "function $3(){" > "$2"
 	html='document.getElementById("'"$4"'").innerHTML="'
@@ -517,7 +540,7 @@ WriteSql_ToFile(){
 	echo "SELECT '$1' Metric, Min([Timestamp]) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= $timenow - ($multiplier*$maxcount)) GROUP BY ([Timestamp]/($multiplier));" >> "$8"
 }
 
-Generate_Stats(){
+Run_PingTest(){
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
@@ -579,16 +602,29 @@ Generate_Stats(){
 	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[Packet_Loss] REAL NOT NULL);"
 	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[Packet_Loss]) values($timenow,$ping,$jitter,$linequal);"
 	} > /tmp/connmon-stats.sql
-	
 	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
-	{
-		echo "DELETE FROM [connstats] WHERE [Timestamp] < ($timenow - (86400*30));"
-	} > /tmp/connmon-stats.sql
-	
+	echo "DELETE FROM [connstats] WHERE [Timestamp] < ($timenow - (86400*30));" > /tmp/connmon-stats.sql
 	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-	
 	rm -f /tmp/connmon-stats.sql
+	
+	Generate_CSVs
+	
+	echo "Internet Uptime Monitoring generated on $timenowfriendly" > "/tmp/connstatstitle.txt"
+	WriteStats_ToJS "/tmp/connstatstitle.txt" "$SCRIPT_DIR/connstatstext.js" "SetConnmonStatsTitle" "statstitle"
+	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %%" "$PASS"
+	
+	rm -f "$pingfile"
+	rm -f "/tmp/connstatstitle.txt"
+}
+
+Generate_CSVs(){
+	OUTPUTDATAMODE="$(OutputDataMode "check")"
+	TZ=$(cat /etc/TZ)
+	export TZ
+	
+	timenow=$(date +"%s")
+	timenowfriendly=$(date +"%c")
 	
 	metriclist="Ping Jitter Packet_Loss"
 	
@@ -602,34 +638,48 @@ Generate_Stats(){
 		"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 		rm -f /tmp/connmon-stats.sql
 		
-		{
-			echo ".mode csv"
-			echo ".headers on"
-			echo ".output $CSV_OUTPUT_DIR/$metric""weekly"".htm"
-			echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400*7);"
-		} > /tmp/connmon-stats.sql
-		#WriteSql_ToFile "$metric" "connstats" 1 7 "$CSV_OUTPUT_DIR/$metric" "weekly" "/tmp/connmon-stats.sql" "$timenow"
-		"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-		rm -f /tmp/connmon-stats.sql
-		
-		{
-			echo ".mode csv"
-			echo ".headers on"
-			echo ".output $CSV_OUTPUT_DIR/$metric""monthly"".htm"
-			echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400*30);"
-		} > /tmp/connmon-stats.sql
-		#WriteSql_ToFile "$metric" "connstats" 3 30 "$CSV_OUTPUT_DIR/$metric" "monthly" "/tmp/connmon-stats.sql" "$timenow"
-		"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-		rm -f /tmp/connmon-stats.sql
+		if [ "$OUTPUTDATAMODE" = "raw" ]; then
+			{
+				echo ".mode csv"
+				echo ".headers on"
+				echo ".output $CSV_OUTPUT_DIR/$metric""weekly"".htm"
+				echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400*7);"
+			} > /tmp/connmon-stats.sql
+			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+			rm -f /tmp/connmon-stats.sql
+			
+			{
+				echo ".mode csv"
+				echo ".headers on"
+				echo ".output $CSV_OUTPUT_DIR/$metric""monthly"".htm"
+				echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400*30);"
+			} > /tmp/connmon-stats.sql
+			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+			rm -f /tmp/connmon-stats.sql
+		elif [ "$OUTPUTDATAMODE" = "average" ]; then
+			WriteSql_ToFile "$metric" "connstats" 1 7 "$CSV_OUTPUT_DIR/$metric" "weekly" "/tmp/connmon-stats.sql" "$timenow"
+			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+			rm -f /tmp/connmon-stats.sql
+			
+			WriteSql_ToFile "$metric" "connstats" 3 30 "$CSV_OUTPUT_DIR/$metric" "monthly" "/tmp/connmon-stats.sql" "$timenow"
+			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+			rm -f /tmp/connmon-stats.sql
+		fi
 	done
 	
-	echo "Internet Uptime Monitoring generated on $timenowfriendly" > "/tmp/connstatstitle.txt"
-	WriteStats_ToJS "/tmp/connstatstitle.txt" "$SCRIPT_DIR/connstatstext.js" "SetConnmonStatsTitle" "statstitle"
-	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %%" "$PASS"
-	
-	rm -f "$pingfile"
 	rm -f "/tmp/connmon-stats.sql"
-	rm -f "/tmp/connstatstitle.txt"
+	
+	tmpoutputdir="/tmp/""$SCRIPT_NAME""results"
+		mkdir -p "$tmpoutputdir"
+		cp "$CSV_OUTPUT_DIR/"*.htm "$tmpoutputdir/."
+		find "$tmpoutputdir/" -name '*.htm' -exec sh -c 'i="$1"; mv -- "$i" "${i%.htm}.csv"' _ {} \;
+		if [ ! -f /opt/bin/7z ]; then
+			opkg update
+			opkg install p7zip
+		fi
+		/opt/bin/7z a -y -bsp0 -bso0 -tzip "/tmp/""$SCRIPT_NAME"".zip" "$tmpoutputdir/*"
+		mv "/tmp/""$SCRIPT_NAME""data.zip" "$CSV_OUTPUT_DIR"
+		rm -rf "$tmpoutputdir"
 }
 
 Shortcut_connmon(){
@@ -679,8 +729,10 @@ ScriptHeader(){
 }
 
 MainMenu(){
+	OUTPUTDATAMODE_MENU="$(OutputDataMode "check")"
 	printf "1.    Check connection now\\n\\n"
 	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(ShowPingServer)"
+	printf "3.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$OUTPUTDATAMODE_MENU"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
 	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
@@ -705,6 +757,13 @@ MainMenu(){
 				printf "\\n"
 				Menu_SetPingServer
 				PressEnter
+				break
+			;;
+			3)
+				printf "\\n"
+				if Check_Lock "menu"; then
+					Menu_ToggleOutputDataMode
+				fi
 				break
 			;;
 			u)
@@ -769,7 +828,7 @@ Check_Requirements(){
 	
 	if ! Firmware_Version_Check; then
 		Print_Output "true" "Unsupported firmware version detected" "$ERR"
-		Print_Output "true" "$SCRIPT_NAME requires at least Merlin 384.15/384.13_4 or Fork 42E7" "$ERR"
+		Print_Output "true" "$SCRIPT_NAME requires at least Merlin 384.15/384.13_4 or Fork 43E5" "$ERR"
 		CHECKSFAILED="true"
 	fi
 	
@@ -825,7 +884,16 @@ Menu_Startup(){
 }
 
 Menu_GenerateStats(){
-	Generate_Stats
+	Run_PingTest
+	Clear_Lock
+}
+
+Menu_ToggleOutputDataMode(){
+	if [ "$(OutputDataMode "check")" = "raw" ]; then
+		OutputDataMode "average"
+	elif [ "$(OutputDataMode "check")" = "average" ]; then
+		OutputDataMode "raw"
+	fi
 	Clear_Lock
 }
 
@@ -910,6 +978,12 @@ case "$1" in
 	generate)
 		Check_Lock
 		Menu_GenerateStats
+		exit 0
+	;;
+	outputcsv)
+		Check_Lock
+		Generate_CSVs
+		Clear_Lock
 		exit 0
 	;;
 	service_event)

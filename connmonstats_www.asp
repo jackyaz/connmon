@@ -567,6 +567,11 @@ function DragZoom(button){
 	}
 }
 
+function ExportCSV() {
+	location.href = "ext/connmon/csv/connmondata.zip";
+	return 0;
+}
+
 function applyRule() {
 	if(Validate_All()){
 		if(document.form.pingtype.value == 0){
@@ -653,11 +658,9 @@ function runPingTest() {
 <td valign="top">
 <div>&nbsp;</div>
 <div class="formfonttitle" id="statstitle">Internet Uptime Monitoring</div>
-<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;">
+<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;" id="table_buttons">
 <tr class="apply_gen" valign="top" height="35px">
 <td style="background-color:rgb(77, 89, 93);border:0px;">
-<input type="button" onclick="runPingTest();" value="Update stats" class="button_gen" name="button">
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <input type="button" onclick="DragZoom(this);" value="Drag Zoom On" class="button_gen" name="button">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <input type="button" onclick="ResetZoom();" value="Reset Zoom" class="button_gen" name="button">
@@ -665,6 +668,15 @@ function runPingTest() {
 <input type="button" onclick="ToggleLines();" value="Toggle Lines" class="button_gen" name="button">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <input type="button" onclick="ToggleFill();" value="Toggle Fill" class="button_gen" name="button">
+</td>
+</tr>
+</table>
+<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;" id="table_buttons2">
+<tr class="apply_gen" valign="top" height="35px">
+<td style="background-color:rgb(77, 89, 93);border:0px;">
+<input type="button" onclick="runPingTest();" value="Update stats" class="button_gen" name="button">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<input type="button" onclick="ExportCSV();" value="Export to CSV" class="button_gen" name="button">
 </td>
 </tr>
 </table>
