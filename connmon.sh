@@ -955,6 +955,7 @@ if [ -z "$1" ]; then
 	fi
 	Create_Dirs
 	Create_Symlinks
+	Conf_Exists
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
