@@ -670,16 +670,16 @@ Generate_CSVs(){
 	rm -f "/tmp/connmon-stats.sql"
 	
 	tmpoutputdir="/tmp/""$SCRIPT_NAME""results"
-		mkdir -p "$tmpoutputdir"
-		cp "$CSV_OUTPUT_DIR/"*.htm "$tmpoutputdir/."
-		find "$tmpoutputdir/" -name '*.htm' -exec sh -c 'i="$1"; mv -- "$i" "${i%.htm}.csv"' _ {} \;
-		if [ ! -f /opt/bin/7z ]; then
-			opkg update
-			opkg install p7zip
-		fi
-		/opt/bin/7z a -y -bsp0 -bso0 -tzip "/tmp/""$SCRIPT_NAME"".zip" "$tmpoutputdir/*"
-		mv "/tmp/""$SCRIPT_NAME""data.zip" "$CSV_OUTPUT_DIR"
-		rm -rf "$tmpoutputdir"
+	mkdir -p "$tmpoutputdir"
+	cp "$CSV_OUTPUT_DIR/"*.htm "$tmpoutputdir/."
+	find "$tmpoutputdir/" -name '*.htm' -exec sh -c 'i="$1"; mv -- "$i" "${i%.htm}.csv"' _ {} \;
+	if [ ! -f /opt/bin/7z ]; then
+		opkg update
+		opkg install p7zip
+	fi
+	/opt/bin/7z a -y -bsp0 -bso0 -tzip "/tmp/""$SCRIPT_NAME""data.zip" "$tmpoutputdir/*"
+	mv "/tmp/""$SCRIPT_NAME""data.zip" "$CSV_OUTPUT_DIR"
+	rm -rf "$tmpoutputdir"
 }
 
 Shortcut_connmon(){
