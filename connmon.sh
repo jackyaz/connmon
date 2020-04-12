@@ -13,7 +13,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.3.2"
+readonly SCRIPT_VERSION="v2.4.0"
 readonly SCRIPT_BRANCH="master"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
 readonly OLD_SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME.d"
@@ -49,18 +49,10 @@ Print_Output(){
 }
 
 Firmware_Version_Check(){
-	if [ "$1" = "install" ]; then
-		if [ "$(uname -o)" = "ASUSWRT-Merlin" ] && [ "$(nvram get buildno | cut -f1 -d'.')" -ge "384" ]; then
-			return 0
-		else
-			return 1
-		fi
-	elif [ "$1" = "webui" ]; then
-		if nvram get rc_support | grep -qF "am_addons"; then
-			return 0
-		else
-			return 1
-		fi
+	if nvram get rc_support | grep -qF "am_addons"; then
+		return 0
+	else
+		return 1
 	fi
 }
 
@@ -265,7 +257,6 @@ Create_Dirs(){
 Create_Symlinks(){
 	rm -f "$SCRIPT_WEB_DIR/"* 2>/dev/null
 	
-	ln -s "$SCRIPT_DIR/connstatsdata.js" "$SCRIPT_WEB_DIR/connstatsdata.js" 2>/dev/null
 	ln -s "$SCRIPT_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
 	
 	ln -s "$SCRIPT_CONF"  "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
@@ -284,9 +275,15 @@ Conf_Exists(){
 		dos2unix "$SCRIPT_CONF"
 		chmod 0644 "$SCRIPT_CONF"
 		sed -i -e 's/"//g' "$SCRIPT_CONF"
+		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 1 ]; then
+			{ echo "OUTPUTDATAMODE=raw"; } >> "$SCRIPT_CONF"
+		fi
 		return 0
 	else
-		echo "PINGSERVER=8.8.8.8" > "$SCRIPT_CONF"
+		{
+		echo "PINGSERVER=8.8.8.8"
+		echo "OUTPUTDATAMODE=raw"
+		} > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -447,14 +444,6 @@ Download_File(){
 	/usr/sbin/curl -fsL --retry 3 "$1" -o "$2"
 }
 
-Get_spdMerlin_UI(){
-	if [ -f /www/AdaptiveQoS_ROG.asp ]; then
-		echo "AdaptiveQoS_ROG.asp"
-	else
-		echo "AiMesh_Node_FirmwareUpgrade.asp"
-	fi
-}
-
 Get_WebUI_Page () {
 	for i in 1 2 3 4 5 6 7 8 9 10; do
 		page="$SCRIPT_WEBPAGE_DIR/user$i.asp"
@@ -467,15 +456,16 @@ Get_WebUI_Page () {
 }
 
 Mount_WebUI(){
-	if Firmware_Version_Check "webui" ; then
-		Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp"
-		if [ "$MyPage" = "none" ]; then
-			Print_Output "true" "Unable to mount $SCRIPT_NAME WebUI page, exiting" "$CRIT"
-			exit 1
-		fi
-		Print_Output "true" "Mounting $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
-		cp -f "$SCRIPT_DIR/connmonstats_www.asp" "$SCRIPT_WEBPAGE_DIR/$MyPage"
-		
+	Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp"
+	if [ "$MyPage" = "none" ]; then
+		Print_Output "true" "Unable to mount $SCRIPT_NAME WebUI page, exiting" "$CRIT"
+		exit 1
+	fi
+	Print_Output "true" "Mounting $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
+	cp -f "$SCRIPT_DIR/connmonstats_www.asp" "$SCRIPT_WEBPAGE_DIR/$MyPage"
+	echo "Uptime Monitoring" > "$SCRIPT_WEBPAGE_DIR/$(echo $MyPage | cut -f1 -d'.').title"
+	
+	if [ "$(uname -o)" = "ASUSWRT-Merlin" ]; then
 		if [ ! -f "/tmp/index_style.css" ]; then
 			cp -f "/www/index_style.css" "/tmp/"
 		fi
@@ -505,96 +495,24 @@ Mount_WebUI(){
 		
 		umount /www/require/modules/menuTree.js 2>/dev/null
 		mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
-	else
-		Mount_CONNMON_WebUI_Old
-		Modify_WebUI_File
 	fi
 }
 
-Mount_CONNMON_WebUI_Old(){
-	umount /www/Advanced_Feedback.asp 2>/dev/null
-	
-	mount -o bind "$SCRIPT_DIR/connmonstats_www.asp" "/www/Advanced_Feedback.asp"
-}
-
-Modify_WebUI_File(){
-	### menuTree.js ###
-	umount /www/require/modules/menuTree.js 2>/dev/null
-	tmpfile=/tmp/menuTree.js
-	cp "/www/require/modules/menuTree.js" "$tmpfile"
-	
-	if [ -f "/jffs/scripts/uiDivStats" ]; then
-		sed -i '/{url: "Advanced_MultiSubnet_Content.asp", tabName: /d' "$tmpfile"
-		sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "Advanced_MultiSubnet_Content.asp", tabName: "Diversion Statistics"},' "$tmpfile"
-		sed -i '/retArray.push("Advanced_MultiSubnet_Content.asp");/d' "$tmpfile"
-	fi
-	
-	sed -i '/{url: "Advanced_Feedback.asp", tabName: /d' "$tmpfile"
-	sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "Advanced_Feedback.asp", tabName: "Uptime Monitoring"},' "$tmpfile"
-	sed -i '/retArray.push("Advanced_Feedback.asp");/d' "$tmpfile"
-	
-	if [ -f "/jffs/scripts/spdmerlin" ]; then
-		sed -i '/{url: "'"$(Get_spdMerlin_UI)"'", tabName: /d' "$tmpfile"
-		sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "'"$(Get_spdMerlin_UI)"'", tabName: "SpeedTest"},' "$tmpfile"
-		sed -i '/retArray.push("'"$(Get_spdMerlin_UI)"'");/d' "$tmpfile"
-	fi
-	
-	if [ -f "/jffs/scripts/ntpmerlin" ]; then
-		sed -i '/"Tools_OtherSettings.asp", tabName: "Other Settings"/a {url: "Feedback_Info.asp", tabName: "NTP Daemon"},' "$tmpfile"
-	fi
-	
-	if [ -f /jffs/scripts/custom_menuTree.js ]; then
-		mv /jffs/scripts/custom_menuTree.js "$SHARED_DIR/custom_menuTree.js"
-	fi
-	
-	if [ ! -f "$SHARED_DIR/custom_menuTree.js" ]; then
-		cp "$tmpfile" "$SHARED_DIR/custom_menuTree.js"
-	fi
-	
-	if ! diff -q "$tmpfile" "$SHARED_DIR/custom_menuTree.js" >/dev/null 2>&1; then
-		cp "$tmpfile" "$SHARED_DIR/custom_menuTree.js"
-	fi
-	
-	rm -f "$tmpfile"
-	
-	mount -o bind "$SHARED_DIR/custom_menuTree.js" "/www/require/modules/menuTree.js"
-	### ###
-	
-	### start_apply.htm ###
-	umount /www/start_apply.htm 2>/dev/null
-	tmpfile=/tmp/start_apply.htm
-	cp "/www/start_apply.htm" "$tmpfile"
-	
-	if [ -f "/jffs/scripts/uiDivStats" ]; then
-		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Advanced_MultiSubnet_Content.asp") != -1){'"\\r\\n"'setTimeout(getXMLAndRedirect, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
-	fi
-	
-	sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Advanced_Feedback.asp") != -1){'"\\r\\n"'setTimeout(getXMLAndRedirect, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
-	
-	if [ -f /jffs/scripts/spdmerlin ]; then
-		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("'"$(Get_spdMerlin_UI)"'") != -1){'"\\r\\n"'setTimeout(getXMLAndRedirect, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
-	fi
-	
-	if [ -f /jffs/scripts/ntpmerlin ]; then
-		sed -i -e '/else if(current_page.indexOf("Feedback") != -1){/i else if(current_page.indexOf("Feedback_Info.asp") != -1){'"\\r\\n"'setTimeout(getXMLAndRedirect, restart_time*1000);'"\\r\\n"'}' "$tmpfile"
-	fi
-	
-	if [ -f /jffs/scripts/custom_start_apply.htm ]; then
-		mv /jffs/scripts/custom_start_apply.htm "$SHARED_DIR/custom_start_apply.htm"
-	fi
-	
-	if [ ! -f "$SHARED_DIR/custom_start_apply.htm" ]; then
-		cp "/www/start_apply.htm" "$SHARED_DIR/custom_start_apply.htm"
-	fi
-	
-	if ! diff -q "$tmpfile" "$SHARED_DIR/custom_start_apply.htm" >/dev/null 2>&1; then
-		cp "$tmpfile" "$SHARED_DIR/custom_start_apply.htm"
-	fi
-	
-	rm -f "$tmpfile"
-	
-	mount -o bind "$SHARED_DIR/custom_start_apply.htm" /www/start_apply.htm
-	### ###
+OutputDataMode(){
+	case "$1" in
+		raw)
+			sed -i 's/^OUTPUTDATAMODE.*$/OUTPUTDATAMODE=raw/' "$SCRIPT_CONF"
+			Generate_CSVs
+		;;
+		average)
+			sed -i 's/^OUTPUTDATAMODE.*$/OUTPUTDATAMODE=average/' "$SCRIPT_CONF"
+			Generate_CSVs
+		;;
+		check)
+			OUTPUTDATAMODE=$(grep "OUTPUTDATAMODE" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$OUTPUTDATAMODE"
+			;;
+	esac
 }
 
 WriteStats_ToJS(){
@@ -610,40 +528,19 @@ WriteStats_ToJS(){
 #$1 fieldname $2 tablename $3 frequency (hours) $4 length (days) $5 outputfile $6 outputfrequency $7 sqlfile $8 timestamp
 WriteSql_ToFile(){
 	timenow="$8"
-	earliest="$((24*$4/$3))"
-	{
-		echo ".mode csv"
-		echo ".output $5$6.tmp"
-	} >> "$7"
+	maxcount="$(echo "$3" "$4" | awk '{printf ((24*$2)/$1)}')"
+	multiplier="$(echo "$3" | awk '{printf (60*60*$1)}')"
 	
 	{
-		echo "SELECT '$1',Min([Timestamp]) ChunkStart, IFNULL(Avg([$1]),'NaN') Value FROM"
-		echo "( SELECT NTILE($((24*$4/$3))) OVER (ORDER BY [Timestamp]) Chunk, * FROM $2 WHERE [Timestamp] >= ($timenow - ((60*60*$3)*$earliest))) AS T"
-		echo "GROUP BY Chunk"
-		echo "ORDER BY ChunkStart;"
+		echo ".mode csv"
+		echo ".headers on"
+		echo ".output $5$6.htm"
 	} >> "$7"
-	echo "var $1$6""size = 1;" >> "$SCRIPT_DIR/connstatsdata.js"
+	
+	echo "SELECT '$1' Metric, Min([Timestamp]) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= $timenow - ($multiplier*$maxcount)) GROUP BY ([Timestamp]/($multiplier));" >> "$8"
 }
 
-Aggregate_Stats(){
-	metricname="$1"
-	period="$2"
-	sed -i '1iMetric,Time,Value' "$CSV_OUTPUT_DIR/$metricname$period.tmp"
-	head -c -2 "$CSV_OUTPUT_DIR/$metricname$period.tmp" > "$CSV_OUTPUT_DIR/$metricname$period.htm"
-	dos2unix "$CSV_OUTPUT_DIR/$metricname$period.htm"
-	cp "$CSV_OUTPUT_DIR/$metricname$period.htm" "$CSV_OUTPUT_DIR/$metricname$period.tmp"
-	sed -i '1d' "$CSV_OUTPUT_DIR/$metricname$period.tmp"
-	min="$(cut -f3 -d"," "$CSV_OUTPUT_DIR/$metricname$period.tmp" | sort -n | head -1)"
-	max="$(cut -f3 -d"," "$CSV_OUTPUT_DIR/$metricname$period.tmp" | sort -n | tail -1)"
-	avg="$(cut -f3 -d"," "$CSV_OUTPUT_DIR/$metricname$period.tmp" | sort -n | awk '{ total += $1; count++ } END { print total/count }')"
-	{
-	echo "var $metricname$period""min = $min;"
-	echo "var $metricname$period""max = $max;"
-	echo "var $metricname$period""avg = $avg;"
-	} >> "$SCRIPT_DIR/connstatsdata.js"
-}
-
-Generate_Stats(){
+Run_PingTest(){
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
@@ -705,56 +602,84 @@ Generate_Stats(){
 	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[Packet_Loss] REAL NOT NULL);"
 	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[Packet_Loss]) values($timenow,$ping,$jitter,$linequal);"
 	} > /tmp/connmon-stats.sql
-	
 	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
-	{
-		echo "DELETE FROM [connstats] WHERE [Timestamp] < ($timenow - (86400*30));"
-	} > /tmp/connmon-stats.sql
-	
+	echo "DELETE FROM [connstats] WHERE [Timestamp] < ($timenow - (86400*30));" > /tmp/connmon-stats.sql
 	"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-	
-	rm -f "$SCRIPT_DIR/connstatsdata.js"
-	
-	rm -f "$CSV_OUTPUT_DIR/"*
 	rm -f /tmp/connmon-stats.sql
 	
-	metriclist="Ping Jitter Packet_Loss"
-	
-	for metric in $metriclist; do
-		{
-			echo ".mode csv"
-			echo ".output $CSV_OUTPUT_DIR/$metric""daily.tmp"
-			echo "select '$metric',[Timestamp],[$metric] from connstats WHERE [Timestamp] >= ($timenow - 86400);"
-		} > /tmp/connmon-stats.sql
-
-		"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-		echo "var $metric""dailysize = 1;" >> "$SCRIPT_DIR/connstatsdata.js"
-		Aggregate_Stats "$metric" "daily"
-		rm -f "$CSV_OUTPUT_DIR/$metric""daily.tmp"*
-		rm -f /tmp/connmon-stats.sql
-
-		WriteSql_ToFile "$metric" "connstats" 1 7 "$CSV_OUTPUT_DIR/$metric" "weekly" "/tmp/connmon-stats.sql" "$timenow"
-		"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-		Aggregate_Stats "$metric" "weekly"
-		rm -f "$CSV_OUTPUT_DIR/$metric""weekly.tmp"
-		rm -f /tmp/connmon-stats.sql
-
-		WriteSql_ToFile "$metric" "connstats" 3 30 "$CSV_OUTPUT_DIR/$metric" "monthly" "/tmp/connmon-stats.sql" "$timenow"
-		"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
-		Aggregate_Stats "$metric" "monthly"
-		rm -f "$CSV_OUTPUT_DIR/$metric""monthly.tmp"
-		rm -f /tmp/connmon-stats.sql
-	done
+	Generate_CSVs
 	
 	echo "Internet Uptime Monitoring generated on $timenowfriendly" > "/tmp/connstatstitle.txt"
 	WriteStats_ToJS "/tmp/connstatstitle.txt" "$SCRIPT_DIR/connstatstext.js" "SetConnmonStatsTitle" "statstitle"
 	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %%" "$PASS"
 	
 	rm -f "$pingfile"
-	rm -f "/tmp/connmon-"*".csv"
-	rm -f "/tmp/connmon-stats.sql"
 	rm -f "/tmp/connstatstitle.txt"
+}
+
+Generate_CSVs(){
+	OUTPUTDATAMODE="$(OutputDataMode "check")"
+	TZ=$(cat /etc/TZ)
+	export TZ
+	
+	timenow=$(date +"%s")
+	timenowfriendly=$(date +"%c")
+	
+	metriclist="Ping Jitter Packet_Loss"
+	
+	for metric in $metriclist; do
+		{
+			echo ".mode csv"
+			echo ".headers on"
+			echo ".output $CSV_OUTPUT_DIR/$metric""daily"".htm"
+			echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400);"
+		} > /tmp/connmon-stats.sql
+		"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+		rm -f /tmp/connmon-stats.sql
+		
+		if [ "$OUTPUTDATAMODE" = "raw" ]; then
+			{
+				echo ".mode csv"
+				echo ".headers on"
+				echo ".output $CSV_OUTPUT_DIR/$metric""weekly"".htm"
+				echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400*7);"
+			} > /tmp/connmon-stats.sql
+			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+			rm -f /tmp/connmon-stats.sql
+			
+			{
+				echo ".mode csv"
+				echo ".headers on"
+				echo ".output $CSV_OUTPUT_DIR/$metric""monthly"".htm"
+				echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400*30);"
+			} > /tmp/connmon-stats.sql
+			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+			rm -f /tmp/connmon-stats.sql
+		elif [ "$OUTPUTDATAMODE" = "average" ]; then
+			WriteSql_ToFile "$metric" "connstats" 1 7 "$CSV_OUTPUT_DIR/$metric" "weekly" "/tmp/connmon-stats.sql" "$timenow"
+			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+			rm -f /tmp/connmon-stats.sql
+			
+			WriteSql_ToFile "$metric" "connstats" 3 30 "$CSV_OUTPUT_DIR/$metric" "monthly" "/tmp/connmon-stats.sql" "$timenow"
+			"$SQLITE3_PATH" "$SCRIPT_DIR/connstats.db" < /tmp/connmon-stats.sql
+			rm -f /tmp/connmon-stats.sql
+		fi
+	done
+	
+	rm -f "/tmp/connmon-stats.sql"
+	
+	tmpoutputdir="/tmp/""$SCRIPT_NAME""results"
+	mkdir -p "$tmpoutputdir"
+	cp "$CSV_OUTPUT_DIR/"*.htm "$tmpoutputdir/."
+	find "$tmpoutputdir/" -name '*.htm' -exec sh -c 'i="$1"; mv -- "$i" "${i%.htm}.csv"' _ {} \;
+	if [ ! -f /opt/bin/7z ]; then
+		opkg update
+		opkg install p7zip
+	fi
+	/opt/bin/7z a -y -bsp0 -bso0 -tzip "/tmp/""$SCRIPT_NAME""data.zip" "$tmpoutputdir/*"
+	mv "/tmp/""$SCRIPT_NAME""data.zip" "$CSV_OUTPUT_DIR"
+	rm -rf "$tmpoutputdir"
 }
 
 Shortcut_connmon(){
@@ -804,8 +729,10 @@ ScriptHeader(){
 }
 
 MainMenu(){
+	OUTPUTDATAMODE_MENU="$(OutputDataMode "check")"
 	printf "1.    Check connection now\\n\\n"
 	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(ShowPingServer)"
+	printf "3.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$OUTPUTDATAMODE_MENU"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
 	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
@@ -830,6 +757,13 @@ MainMenu(){
 				printf "\\n"
 				Menu_SetPingServer
 				PressEnter
+				break
+			;;
+			3)
+				printf "\\n"
+				if Check_Lock "menu"; then
+					Menu_ToggleOutputDataMode
+				fi
 				break
 			;;
 			u)
@@ -892,8 +826,9 @@ Check_Requirements(){
 		CHECKSFAILED="true"
 	fi
 	
-	if ! Firmware_Version_Check "install"; then
-		Print_Output "true" "Unsupported firmware version detected, 384.XX required" "$ERR"
+	if ! Firmware_Version_Check; then
+		Print_Output "true" "Unsupported firmware version detected" "$ERR"
+		Print_Output "true" "$SCRIPT_NAME requires Merlin 384.15/384.13_4 or Fork 43E5 (or later)" "$ERR"
 		CHECKSFAILED="true"
 	fi
 	
@@ -949,7 +884,16 @@ Menu_Startup(){
 }
 
 Menu_GenerateStats(){
-	Generate_Stats
+	Run_PingTest
+	Clear_Lock
+}
+
+Menu_ToggleOutputDataMode(){
+	if [ "$(OutputDataMode "check")" = "raw" ]; then
+		OutputDataMode "average"
+	elif [ "$(OutputDataMode "check")" = "average" ]; then
+		OutputDataMode "raw"
+	fi
 	Clear_Lock
 }
 
@@ -974,24 +918,12 @@ Menu_Uninstall(){
 	Auto_ServiceEvent delete 2>/dev/null
 	Shortcut_connmon delete
 	
-	if Firmware_Version_Check "webui" ; then
-		Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp"
-		if [ -n "$MyPage" ] && [ "$MyPage" != "none" ] && [ -f "/tmp/menuTree.js" ]; then
-			sed -i "\\~$MyPage~d" /tmp/menuTree.js
-			umount /www/require/modules/menuTree.js
-			mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
-			rm -rf "{$SCRIPT_WEBPAGE_DIR:?}/$MyPage"
-		fi
-	else
-		umount /www/Advanced_Feedback.asp 2>/dev/null
-		sed -i '/{url: "Advanced_Feedback.asp", tabName: "Uptime Monitoring"}/d' "$SHARED_DIR/custom_menuTree.js"
-		umount /www/require/modules/menuTree.js 2>/dev/null
-		
-		if [ ! -f "/jffs/scripts/ntpmerlin" ] && [ ! -f "/jffs/scripts/spdmerlin" ]; then
-			rm -f "$SHARED_DIR/custom_menuTree.js" 2>/dev/null
-		else
-			mount -o bind "$SHARED_DIR/custom_menuTree.js" "/www/require/modules/menuTree.js"
-		fi
+	Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp"
+	if [ -n "$MyPage" ] && [ "$MyPage" != "none" ] && [ -f "/tmp/menuTree.js" ]; then
+		sed -i "\\~$MyPage~d" /tmp/menuTree.js
+		umount /www/require/modules/menuTree.js
+		mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
+		rm -rf "{$SCRIPT_WEBPAGE_DIR:?}/$MyPage"
 	fi
 	
 	while true; do
@@ -1020,9 +952,11 @@ if [ -z "$1" ]; then
 		Print_Output "true" "Installing required version of sqlite3 from Entware" "$PASS"
 		opkg update
 		opkg install sqlite3-cli
+		opkg install p7zip
 	fi
 	Create_Dirs
 	Create_Symlinks
+	Conf_Exists
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
@@ -1046,6 +980,12 @@ case "$1" in
 	generate)
 		Check_Lock
 		Menu_GenerateStats
+		exit 0
+	;;
+	outputcsv)
+		Check_Lock
+		Generate_CSVs
+		Clear_Lock
 		exit 0
 	;;
 	service_event)
@@ -1074,6 +1014,18 @@ case "$1" in
 	uninstall)
 		Check_Lock
 		Menu_Uninstall
+		exit 0
+	;;
+	develop)
+		Check_Lock
+		sed -i 's/^readonly SCRIPT_BRANCH.*$/readonly SCRIPT_BRANCH="develop"/' "/jffs/scripts/$SCRIPT_NAME"
+		Menu_Update
+		exit 0
+	;;
+	stable)
+		Check_Lock
+		sed -i 's/^readonly SCRIPT_BRANCH.*$/readonly SCRIPT_BRANCH="master"/' "/jffs/scripts/$SCRIPT_NAME"
+		Menu_Update
 		exit 0
 	;;
 	*)

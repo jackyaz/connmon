@@ -2,8 +2,8 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/91af8db9cd354643a8ef6a7117be90fb)](https://www.codacy.com/app/jackyaz/connmon?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jackyaz/connmon&amp;utm_campaign=Badge_Grade)
 [![Build Status](https://travis-ci.com/jackyaz/connmon.svg?branch=master)](https://travis-ci.com/jackyaz/connmon)
 
-## v2.3.2
-### Updated on 2020-03-15
+## v2.4.0
+### Updated on 2020-04-12
 ## About
 Track your Internet uptime, on your router. Graphs available for on the Addons page of the WebUI.
 
@@ -25,7 +25,7 @@ All models supported by [Asuswrt-Merlin](https://asuswrt.lostrealm.ca/about). Mo
 *   RT-AC3100
 
 ### Firmware versions
-You must be running firmware no earlier than 384.XX [Asuswrt-Merlin](https://asuswrt.lostrealm.ca/)
+You must be running firmware Merlin 384.15/384.13_4 or Fork 43E5 (or later) [Asuswrt-Merlin](https://asuswrt.lostrealm.ca/)
 
 ## Installation
 Using your preferred SSH client/terminal, copy and paste the following command, then press Enter:
