@@ -836,6 +836,7 @@ Check_Requirements(){
 		Print_Output "true" "Installing required packages from Entware" "$PASS"
 		opkg update
 		opkg install sqlite3-cli
+		opkg install p7zip
 		return 0
 	else
 		return 1
@@ -952,7 +953,6 @@ if [ -z "$1" ]; then
 		Print_Output "true" "Installing required version of sqlite3 from Entware" "$PASS"
 		opkg update
 		opkg install sqlite3-cli
-		opkg install p7zip
 	fi
 	Create_Dirs
 	Create_Symlinks
