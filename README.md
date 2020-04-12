@@ -17,14 +17,7 @@ connmon is free to use under the [GNU General Public License version 3](https://
 Love the script and want to support future development? Any and all donations gratefully received!
 [**PayPal donation**](https://paypal.me/jackyaz21)
 
-## Supported Models
-### Models
-All models supported by [Asuswrt-Merlin](https://asuswrt.lostrealm.ca/about). Models confirmed to work are below:
-*   RT-AC68U
-*   RT-AC86U
-*   RT-AC3100
-
-### Firmware versions
+## Supported firmware versions
 You must be running firmware Merlin 384.15/384.13_4 or Fork 43E5 (or later) [Asuswrt-Merlin](https://asuswrt.lostrealm.ca/)
 
 ## Installation
