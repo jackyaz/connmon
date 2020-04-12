@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/jackyaz/connmon.svg?branch=master)](https://travis-ci.com/jackyaz/connmon)
 
 ## v2.4.0
-### Updated on 2020-04-11
+### Updated on 2020-04-12
 ## About
 Track your Internet uptime, on your router. Graphs available for on the Addons page of the WebUI.
 
