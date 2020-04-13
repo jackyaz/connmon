@@ -703,7 +703,7 @@ Generate_CSVs(){
 		done
 		
 		find "$tmpoutputdir/" -name '*.htm.out' -exec sh -c 'i="$1"; mv -- "$i" "${i%.htm.out}.csv"' _ {} \;
-		rm -f *.htm
+		rm -f "$tmpoutputdir/"*.htm
 	fi
 	
 	if [ ! -f /opt/bin/7z ]; then
