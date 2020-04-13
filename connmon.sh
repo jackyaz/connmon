@@ -13,7 +13,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.4.0"
+readonly SCRIPT_VERSION="v2.4.1"
 readonly SCRIPT_BRANCH="master"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
 readonly OLD_SCRIPT_DIR="/jffs/scripts/$SCRIPT_NAME.d"
@@ -276,13 +276,17 @@ Conf_Exists(){
 		chmod 0644 "$SCRIPT_CONF"
 		sed -i -e 's/"//g' "$SCRIPT_CONF"
 		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 1 ]; then
-			{ echo "OUTPUTDATAMODE=raw"; } >> "$SCRIPT_CONF"
+			echo "OUTPUTDATAMODE=raw" >> "$SCRIPT_CONF"
+		fi
+		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 2 ]; then
+			echo "OUTPUTTIMEMODE=unix" >> "$SCRIPT_CONF"
 		fi
 		return 0
 	else
 		{
 		echo "PINGSERVER=8.8.8.8"
 		echo "OUTPUTDATAMODE=raw"
+		echo "OUTPUTTIMEMODE=unix"
 		} > "$SCRIPT_CONF"
 		return 1
 	fi
@@ -515,6 +519,23 @@ OutputDataMode(){
 	esac
 }
 
+OutputTimeMode(){
+	case "$1" in
+		unix)
+			sed -i 's/^OUTPUTTIMEMODE.*$/OUTPUTTIMEMODE=unix/' "$SCRIPT_CONF"
+			Generate_CSVs
+		;;
+		non-unix)
+			sed -i 's/^OUTPUTTIMEMODE.*$/OUTPUTTIMEMODE=non-unix/' "$SCRIPT_CONF"
+			Generate_CSVs
+		;;
+		check)
+			OUTPUTTIMEMODE=$(grep "OUTPUTTIMEMODE" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$OUTPUTTIMEMODE"
+			;;
+	esac
+}
+
 WriteStats_ToJS(){
 	echo "function $3(){" > "$2"
 	html='document.getElementById("'"$4"'").innerHTML="'
@@ -620,6 +641,7 @@ Run_PingTest(){
 
 Generate_CSVs(){
 	OUTPUTDATAMODE="$(OutputDataMode "check")"
+	OUTPUTTIMEMODE="$(OutputTimeMode "check")"
 	TZ=$(cat /etc/TZ)
 	export TZ
 	
@@ -672,7 +694,18 @@ Generate_CSVs(){
 	tmpoutputdir="/tmp/""$SCRIPT_NAME""results"
 	mkdir -p "$tmpoutputdir"
 	cp "$CSV_OUTPUT_DIR/"*.htm "$tmpoutputdir/."
-	find "$tmpoutputdir/" -name '*.htm' -exec sh -c 'i="$1"; mv -- "$i" "${i%.htm}.csv"' _ {} \;
+	
+	if [ "$OUTPUTTIMEMODE" = "unix" ]; then
+		find "$tmpoutputdir/" -name '*.htm' -exec sh -c 'i="$1"; mv -- "$i" "${i%.htm}.csv"' _ {} \;
+	elif [ "$OUTPUTTIMEMODE" = "non-unix" ]; then
+		for i in "$tmpoutputdir/"*".htm"; do
+			awk -F"," 'NR==1 {OFS=","; print} NR>1 {OFS=","; $2=strftime("%Y-%m-%d %H:%M:%S", $2); print }' "$i" > "$i.out"
+		done
+		
+		find "$tmpoutputdir/" -name '*.htm.out' -exec sh -c 'i="$1"; mv -- "$i" "${i%.htm.out}.csv"' _ {} \;
+		rm -f "$tmpoutputdir/"*.htm
+	fi
+	
 	if [ ! -f /opt/bin/7z ]; then
 		opkg update
 		opkg install p7zip
@@ -730,9 +763,11 @@ ScriptHeader(){
 
 MainMenu(){
 	OUTPUTDATAMODE_MENU="$(OutputDataMode "check")"
+	OUTPUTTIMEMODE_MENU="$(OutputTimeMode "check")"
 	printf "1.    Check connection now\\n\\n"
 	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(ShowPingServer)"
 	printf "3.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$OUTPUTDATAMODE_MENU"
+	printf "4.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$OUTPUTTIMEMODE_MENU"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
 	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
@@ -763,6 +798,13 @@ MainMenu(){
 				printf "\\n"
 				if Check_Lock "menu"; then
 					Menu_ToggleOutputDataMode
+				fi
+				break
+			;;
+			4)
+				printf "\\n"
+				if Check_Lock "menu"; then
+					Menu_ToggleOutputTimeMode
 				fi
 				break
 			;;
@@ -894,6 +936,15 @@ Menu_ToggleOutputDataMode(){
 		OutputDataMode "average"
 	elif [ "$(OutputDataMode "check")" = "average" ]; then
 		OutputDataMode "raw"
+	fi
+	Clear_Lock
+}
+
+Menu_ToggleOutputTimeMode(){
+	if [ "$(OutputTimeMode "check")" = "unix" ]; then
+		OutputTimeMode "non-unix"
+	elif [ "$(OutputTimeMode "check")" = "non-unix" ]; then
+		OutputTimeMode "unix"
 	fi
 	Clear_Lock
 }
