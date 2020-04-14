@@ -693,6 +693,8 @@ Generate_CSVs(){
 	
 	rm -f "/tmp/connmon-stats.sql"
 	
+	dos2unix "$CSV_OUTPUT_DIR/"*.htm
+	
 	tmpoutputdir="/tmp/""$SCRIPT_NAME""results"
 	mkdir -p "$tmpoutputdir"
 	cp "$CSV_OUTPUT_DIR/"*.htm "$tmpoutputdir/."
