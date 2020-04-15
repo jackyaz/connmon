@@ -442,7 +442,6 @@ function RedrawAllCharts() {
 			d3.csv('/ext/connmon/csv/'+metriclist[i]+chartlist[i2]+'.htm').then(Draw_Chart.bind(null,metriclist[i]+chartlist[i2],titlelist[i],measureunitlist[i],timeunitlist[i2],intervallist[i2],colourlist[i]));
 		}
 	}
-	ResetZoom();
 }
 
 function GetCookie(cookiename) {
