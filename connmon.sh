@@ -152,9 +152,9 @@ Update_Version(){
 			/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output "true" "$SCRIPT_NAME successfully updated"
 			chmod 0755 /jffs/scripts/"$SCRIPT_NAME"
 			Clear_Lock
-			if [ -z "$2" ]; then
+			if [ -z "$1" ]; then
 				exec "$0"
-			elif [ "$2" = "unattended" ]; then
+			elif [ "$1" = "unattended" ]; then
 				exec "$0" "setversion"
 			fi
 			exit 0
@@ -259,7 +259,7 @@ Conf_FromSettings(){
 	SETTINGSFILE="/jffs/addons/custom_settings.txt"
 	TMPFILE="/tmp/connmon_settings.txt"
 	if [ -f "$SETTINGSFILE" ]; then
-		if [ "$(grep "connmon_" $SETTINGSFILE | grep -v "version" | wc -l)" -gt 0 ]; then
+		if [ "$(grep "connmon_" $SETTINGSFILE | grep -v "version" -c)" -gt 0 ]; then
 			Print_Output "true" "Updated settings from WebUI found, merging into $SCRIPT_CONF" "$PASS"
 			cp -a "$SCRIPT_CONF" "$SCRIPT_CONF.bak"
 			grep "connmon_" "$SETTINGSFILE" | grep -v "version" > "$TMPFILE"
@@ -553,7 +553,7 @@ ScriptStorageLocation(){
 	case "$1" in
 		usb)
 			sed -i 's/^STORAGELOCATION.*$/STORAGELOCATION=usb/' "$SCRIPT_CONF"
-			mv "/jffs/addons/$SCRIPT_NAME.d/csv/" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/jffs/addons/$SCRIPT_NAME.d/csv" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/config" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstatstext.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstats.db" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
