@@ -824,7 +824,7 @@ function changeChart(e) {
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="2" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;" id="table_buttons2">
-<thead class="collapsible-jquery" id="spd_charttools">
+<thead class="collapsible-jquery" id="connmon_charttools">
 <tr><td colspan="2">Chart Configuration (click to expand/collapse)</td></tr>
 </thead>
 <div class="collapsiblecontent">
