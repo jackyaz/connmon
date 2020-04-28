@@ -649,7 +649,6 @@ Run_PingTest(){
 	Create_Dirs
 	Conf_Exists
 	Set_Version_Custom_Settings "local"
-	Set_Version_Custom_Settings "server" "$SCRIPT_VERSION"
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
@@ -1161,7 +1160,6 @@ if [ -z "$1" ]; then
 	Create_Dirs
 	Conf_Exists
 	Set_Version_Custom_Settings "local"
-	Set_Version_Custom_Settings "server" "$SCRIPT_VERSION"
 	ScriptStorageLocation "load"
 	Create_Symlinks
 	Auto_Startup create 2>/dev/null
