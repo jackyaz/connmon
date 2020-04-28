@@ -269,8 +269,12 @@ Conf_FromSettings(){
 				SETTINGVALUE="$(echo "$line" | cut -f2 -d'=')"
 				sed -i "s/$SETTINGNAME=.*/$SETTINGNAME=$SETTINGVALUE/" "$SCRIPT_CONF"
 			done < "$TMPFILE"
-			sed -i "\\~connmon_((?![v][e][r][s][i][o][n]))~d" "$SETTINGSFILE"
+			grep 'connmon_version' "$SETTINGSFILE" > "$TMPFILE"
+			sed -i "\\~connmon_~d" "$SETTINGSFILE"
+			mv "$SETTINGSFILE" "$SETTINGSFILE.bak"
+			cat "$SETTINGSFILE.bak" "$TMPFILE" > "$SETTINGSFILE"
 			rm -f "$TMPFILE"
+			rm -f "$SETTINGSFILE.bak"
 			Print_Output "true" "Merge of updated settings from WebUI completed successfully" "$PASS"
 		else
 			Print_Output "false" "No updated settings from WebUI found, no merge into $SCRIPT_CONF necessary" "$PASS"
