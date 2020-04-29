@@ -1252,14 +1252,12 @@ case "$1" in
 	;;
 	update)
 		Check_Lock
-		Menu_Update
 		Update_Version "unattended"
 		Clear_Lock
 		exit 0
 	;;
 	forceupdate)
 		Check_Lock
-		Menu_ForceUpdate
 		Update_Version "force" "unattended"
 		Clear_Lock
 		exit 0
