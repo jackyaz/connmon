@@ -1020,9 +1020,10 @@ Menu_Install(){
 
 Menu_Startup(){
 	Create_Dirs
-	Create_Symlinks
 	Conf_Exists
 	Set_Version_Custom_Settings "local"
+	ScriptStorageLocation "load"
+	Create_Symlinks
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
@@ -1266,11 +1267,11 @@ case "$1" in
 		Check_Lock
 		Set_Version_Custom_Settings "local"
 		Set_Version_Custom_Settings "server" "$SCRIPT_VERSION"
+		Clear_Lock
 		if [ -z "$2" ]; then
 			exec "$0"
 		fi
 		exit 0
-		Clear_Lock
 	;;
 	checkupdate)
 		Check_Lock
