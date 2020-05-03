@@ -1020,9 +1020,10 @@ Menu_Install(){
 
 Menu_Startup(){
 	Create_Dirs
-	Create_Symlinks
 	Conf_Exists
 	Set_Version_Custom_Settings "local"
+	ScriptStorageLocation "load"
+	Create_Symlinks
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
