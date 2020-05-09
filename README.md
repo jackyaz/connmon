@@ -15,7 +15,10 @@ connmon is free to use under the [GNU General Public License version 3](https://
 
 ### Supporting development
 Love the script and want to support future development? Any and all donations gratefully received!
+
 [**PayPal donation**](https://paypal.me/jackyaz21)
+
+[**Buy me a coffee**](https://www.buymeacoffee.com/jackyaz)
 
 ## Supported firmware versions
 You must be running firmware Merlin 384.15/384.13_4 or Fork 43E5 (or later) [Asuswrt-Merlin](https://asuswrt.lostrealm.ca/)
