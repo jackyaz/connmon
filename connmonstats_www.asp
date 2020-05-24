@@ -157,7 +157,7 @@ var $j=jQuery.noConflict(),maxNoCharts=9,currentNoCharts=0,ShowLines=GetCookie("
 <tr class="even">
 <th width="40%">Ping destination type</th>
 <td>
-<select style="width:100px" class="input_option" onchange="changePingType(this)" id="pingtype">
+<select style="width:125px" class="input_option" onchange="changePingType(this)" id="pingtype">
 <option value="0">IP Address</option>
 <option value="1">Domain</option>
 </select>
