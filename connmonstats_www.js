@@ -364,9 +364,9 @@ function ToggleLines() {
 	}
 	for(i = 0; i < metriclist.length; i++){
 		for (i3 = 0; i3 < 3; i3++) {
-			window["LineChart"+metriclist[i]].options.annotation.annotations[i3].type=ShowLines;
+			window["LineChart_"+metriclist[i]].options.annotation.annotations[i3].type=ShowLines;
 		}
-		window["LineChart"+metriclist[i]].update();
+		window["LineChart_"+metriclist[i]].update();
 	}
 }
 
