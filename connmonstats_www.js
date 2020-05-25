@@ -219,9 +219,6 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 					speed: 0.1
 				},
 			},
-			deferred: {
-				delay: 250
-			},
 		},
 		annotation: {
 			drawTime: 'afterDatasetsDraw',
@@ -268,9 +265,9 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 					xPadding: 6,
 					yPadding: 6,
 					cornerRadius: 6,
-					position: "center",
+					position: "right",
 					enabled: true,
-					xAdjust: 0,
+					xAdjust: 15,
 					yAdjust: 0,
 					content: "Max=" + round(getLimit(chartData,"y","max",true),3).toFixed(3)+txtunity,
 				}
@@ -293,9 +290,9 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 					xPadding: 6,
 					yPadding: 6,
 					cornerRadius: 6,
-					position: "center",
+					position: "left",
 					enabled: true,
-					xAdjust: 0,
+					xAdjust: 15,
 					yAdjust: 0,
 					content: "Min=" + round(getLimit(chartData,"y","min",true),3).toFixed(3)+txtunity,
 				}
