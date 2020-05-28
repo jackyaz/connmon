@@ -53,7 +53,6 @@ thead.collapsible-jquery {
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/hammerjs.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/chartjs-plugin-zoom.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/chartjs-plugin-annotation.js"></script>
-<script language="JavaScript" type="text/javascript" src="/ext/shared-jy/chartjs-plugin-deferred.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/d3.js"></script>
 <script language="JavaScript" type="text/javascript" src="/state.js"></script>
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
@@ -66,17 +65,7 @@ thead.collapsible-jquery {
 <script language="JavaScript" type="text/javascript" src="/ext/shared-jy/validator.js"></script>
 <script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatstext.js"></script>
 <script>
-var $j = jQuery.noConflict(); //avoid conflicts on John's fork (state.js)
-
-var ShowLines=GetCookie("ShowLines","string");
-var ShowFill=GetCookie("ShowFill","string");
-Chart.defaults.global.defaultFontColor = "#CCC";
-Chart.Tooltip.positioners.cursor = function(chartElements, coordinates) {
-	return coordinates;
-};
-
 var custom_settings;
-
 function LoadCustomSettings(){
 	custom_settings = <% get_custom_settings(); %>;
 	for (var prop in custom_settings) {
@@ -87,637 +76,7 @@ function LoadCustomSettings(){
 		}
 	}
 }
-
-var metriclist = ["Ping","Jitter","Packet_Loss"];
-var titlelist = ["Ping","Jitter","Quality"];
-var measureunitlist = ["ms","ms","%"];
-var chartlist = ["daily","weekly","monthly"];
-var timeunitlist = ["hour","day","day"];
-var intervallist = [24,7,30];
-var bordercolourlist = ["#fc8500","#42ecf5","#ffffff"];
-var backgroundcolourlist = ["rgba(252,133,0,0.5)","rgba(66,236,245,0.5)","rgba(255,255,255,0.5)"];
-
-function keyHandler(e) {
-	if (e.keyCode == 27){
-		$j(document).off("keydown");
-		ResetZoom();
-	}
-}
-
-$j(document).keydown(function(e){keyHandler(e);});
-$j(document).keyup(function(e){
-	$j(document).keydown(function(e){
-		keyHandler(e);
-	});
-});
-
-function Validate_IP(forminput){
-	var inputvalue = forminput.value;
-	var inputname = forminput.name;
-	if(/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(inputvalue)){
-			$j(forminput).removeClass("invalid");
-			return true;
-	}
-	else{
-		$j(forminput).addClass("invalid");
-		return false;
-	}
-}
-
-function Validate_Domain(forminput){
-	var inputvalue = forminput.value;
-	var inputname = forminput.name;
-	if(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/.test(inputvalue)){
-		$j(forminput).removeClass("invalid");
-		return true;
-	}
-	else{
-		$j(forminput).addClass("invalid");
-		return false;
-	}
-}
-
-function Validate_All(){
-	var validationfailed = false;
-	if(! Validate_IP(document.form.connmon_ipaddr)){validationfailed=true;}
-	if(! Validate_Domain(document.form.connmon_domain)){validationfailed=true;}
-	
-	if(validationfailed){
-		alert("Validation for some fields failed. Please correct invalid values and try again.");
-		return false;
-	}
-	else{
-		return true;
-	}
-}
-
-function changePingType(forminput){
-	var inputvalue = forminput.value;
-	var inputname = forminput.name;
-	if(inputvalue == "0"){
-		document.getElementById("rowip").style.display = "";
-		document.getElementById("rowdomain").style.display = "none";
-	} else {
-		document.getElementById("rowip").style.display = "none";
-		document.getElementById("rowdomain").style.display = "";
-	}
-}
-
-function Draw_Chart_NoData(txtchartname){
-	document.getElementById("divLineChart"+txtchartname).width="730";
-	document.getElementById("divLineChart"+txtchartname).height="300";
-	document.getElementById("divLineChart"+txtchartname).style.width="730px";
-	document.getElementById("divLineChart"+txtchartname).style.height="300px";
-	var ctx = document.getElementById("divLineChart"+txtchartname).getContext("2d");
-	ctx.save();
-	ctx.textAlign = 'center';
-	ctx.textBaseline = 'middle';
-	ctx.font = "normal normal bolder 48px Arial";
-	ctx.fillStyle = 'white';
-	ctx.fillText('No data to display', 365, 150);
-	ctx.restore();
-}
-
-function Draw_Chart(txtchartname,txttitle,txtunity,txtunitx,numunitx,bordercolourname,backgroundcolourname,dataobject){
-	if(typeof dataobject === 'undefined' || dataobject === null) { Draw_Chart_NoData(txtchartname); return; }
-	if (dataobject.length == 0) { Draw_Chart_NoData(txtchartname); return; }
-	
-	var chartLabels = dataobject.map(function(d) {return d.Metric});
-	var chartData = dataobject.map(function(d) {return {x: d.Time, y: d.Value}});
-	var objchartname=window["LineChart"+txtchartname];
-	
-	var timeaxisformat = getTimeFormat($j("#Time_Format option:selected").val(),"axis");
-	var timetooltipformat = getTimeFormat($j("#Time_Format option:selected").val(),"tooltip");
-	
-	factor=0;
-	if (txtunitx=="hour"){
-		factor=60*60*1000;
-	}
-	else if (txtunitx=="day"){
-		factor=60*60*24*1000;
-	}
-	if (objchartname != undefined) objchartname.destroy();
-	var ctx = document.getElementById("divLineChart"+txtchartname).getContext("2d");
-	var lineOptions = {
-		segmentShowStroke : false,
-		segmentStrokeColor : "#000",
-		animationEasing : "easeOutQuart",
-		animationSteps : 100,
-		maintainAspectRatio: false,
-		animateScale : true,
-		hover: { mode: "point" },
-		legend: { display: false, position: "bottom", onClick: null },
-		title: { display: true, text: txttitle },
-		tooltips: {
-			callbacks: {
-					title: function (tooltipItem, data) { return (moment(tooltipItem[0].xLabel,"X").format(timetooltipformat)); },
-					label: function (tooltipItem, data) { return round(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y,3).toFixed(3) + ' ' + txtunity;}
-				},
-				mode: 'x',
-				position: 'nearest',
-				intersect: false
-		},
-		scales: {
-			xAxes: [{
-				type: "time",
-				gridLines: { display: true, color: "#282828" },
-				ticks: {
-					min: moment().subtract(numunitx, txtunitx+"s"),
-					display: true
-				},
-				time: {
-					parser: "X",
-					unit: txtunitx,
-					stepSize: 1,
-					displayFormats: timeaxisformat
-				}
-			}],
-			yAxes: [{
-				gridLines: { display: false, color: "#282828" },
-				scaleLabel: { display: false, labelString: txttitle },
-				ticks: {
-					display: true,
-					callback: function (value, index, values) {
-						return round(value,3).toFixed(3) + ' ' + txtunity;
-					}
-				},
-			}]
-		},
-		plugins: {
-			zoom: {
-				pan: {
-					enabled: false,
-					mode: 'xy',
-					rangeMin: {
-						x: new Date().getTime() - (factor * numunitx),
-						y: getLimit(chartData,"y","min",false) - Math.sqrt(Math.pow(getLimit(chartData,"y","min",false),2))*0.1,
-					},
-					rangeMax: {
-						x: new Date().getTime(),
-						y: getLimit(chartData,"y","max",false) + getLimit(chartData,"y","max",false)*0.1,
-					},
-				},
-				zoom: {
-					enabled: true,
-					drag: true,
-					mode: 'xy',
-					rangeMin: {
-						x: new Date().getTime() - (factor * numunitx),
-						y: getLimit(chartData,"y","min",false) - Math.sqrt(Math.pow(getLimit(chartData,"y","min",false),2))*0.1,
-					},
-					rangeMax: {
-						x: new Date().getTime(),
-						y: getLimit(chartData,"y","max",false) + getLimit(chartData,"y","max",false)*0.1,
-					},
-					speed: 0.1
-				},
-			},
-			deferred: {
-				delay: 250
-			},
-		},
-		annotation: {
-			drawTime: 'afterDatasetsDraw',
-			annotations: [{
-				//id: 'avgline',
-				type: ShowLines,
-				mode: 'horizontal',
-				scaleID: 'y-axis-0',
-				value: getAverage(chartData),
-				borderColor: bordercolourname,
-				borderWidth: 1,
-				borderDash: [5, 5],
-				label: {
-					backgroundColor: 'rgba(0,0,0,0.3)',
-					fontFamily: "sans-serif",
-					fontSize: 10,
-					fontStyle: "bold",
-					fontColor: "#fff",
-					xPadding: 6,
-					yPadding: 6,
-					cornerRadius: 6,
-					position: "center",
-					enabled: true,
-					xAdjust: 0,
-					yAdjust: 0,
-					content: "Avg=" + round(getAverage(chartData),3).toFixed(3)+txtunity,
-				}
-			},
-			{
-				//id: 'maxline',
-				type: ShowLines,
-				mode: 'horizontal',
-				scaleID: 'y-axis-0',
-				value: getLimit(chartData,"y","max",true),
-				borderColor: bordercolourname,
-				borderWidth: 1,
-				borderDash: [5, 5],
-				label: {
-					backgroundColor: 'rgba(0,0,0,0.3)',
-					fontFamily: "sans-serif",
-					fontSize: 10,
-					fontStyle: "bold",
-					fontColor: "#fff",
-					xPadding: 6,
-					yPadding: 6,
-					cornerRadius: 6,
-					position: "center",
-					enabled: true,
-					xAdjust: 0,
-					yAdjust: 0,
-					content: "Max=" + round(getLimit(chartData,"y","max",true),3).toFixed(3)+txtunity,
-				}
-			},
-			{
-				//id: 'minline',
-				type: ShowLines,
-				mode: 'horizontal',
-				scaleID: 'y-axis-0',
-				value: getLimit(chartData,"y","min",true),
-				borderColor: bordercolourname,
-				borderWidth: 1,
-				borderDash: [5, 5],
-				label: {
-					backgroundColor: 'rgba(0,0,0,0.3)',
-					fontFamily: "sans-serif",
-					fontSize: 10,
-					fontStyle: "bold",
-					fontColor: "#fff",
-					xPadding: 6,
-					yPadding: 6,
-					cornerRadius: 6,
-					position: "center",
-					enabled: true,
-					xAdjust: 0,
-					yAdjust: 0,
-					content: "Min=" + round(getLimit(chartData,"y","min",true),3).toFixed(3)+txtunity,
-				}
-			}]
-		}
-	};
-	var lineDataset = {
-		labels: chartLabels,
-		datasets: [{data: chartData,
-			borderWidth: 1,
-			pointRadius: 1,
-			lineTension: 0,
-			fill: ShowFill,
-			backgroundColor: backgroundcolourname,
-			borderColor: bordercolourname,
-		}]
-	};
-	objchartname = new Chart(ctx, {
-		type: 'line',
-		options: lineOptions,
-		data: lineDataset
-	});
-	window["LineChart"+txtchartname]=objchartname;
-}
-
-function getLimit(datasetname,axis,maxmin,isannotation) {
-	var limit=0;
-	var values;
-	if(axis == "x"){
-		values = datasetname.map(function(o) { return o.x } );
-	}
-	else{
-		values = datasetname.map(function(o) { return o.y } );
-	}
-	
-	if(maxmin == "max"){
-		limit=Math.max.apply(Math, values);
-	}
-	else{
-		limit=Math.min.apply(Math, values);
-	}
-	if(maxmin == "max" && limit == 0 && isannotation == false){
-		limit = 1;
-	}
-	return limit;
-}
-
-function getAverage(datasetname) {
-	var total = 0;
-	for(var i = 0; i < datasetname.length; i++) {
-		total += (datasetname[i].y*1);
-	}
-	var avg = total / datasetname.length;
-	return avg;
-}
-
-function round(value, decimals) {
-	return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
-}
-
-function ToggleLines() {
-	if(ShowLines == ""){
-		ShowLines = "line";
-		SetCookie("ShowLines","line");
-	}
-	else {
-		ShowLines = "";
-		SetCookie("ShowLines","");
-	}
-	for(i = 0; i < metriclist.length; i++){
-		for (i2 = 0; i2 < chartlist.length; i2++) {
-			for (i3 = 0; i3 < 3; i3++) {
-				window["LineChart"+metriclist[i]+chartlist[i2]].options.annotation.annotations[i3].type=ShowLines;
-			}
-			window["LineChart"+metriclist[i]+chartlist[i2]].update();
-		}
-	}
-}
-
-function ToggleFill() {
-	if(ShowFill == "false"){
-		ShowFill = "origin";
-		SetCookie("ShowFill","origin");
-	}
-	else {
-		ShowFill = "false";
-		SetCookie("ShowFill","false");
-	}
-	for(i = 0; i < metriclist.length; i++){
-		for (i2 = 0; i2 < chartlist.length; i2++) {
-			window["LineChart"+metriclist[i]+chartlist[i2]].data.datasets[0].fill=ShowFill;
-			window["LineChart"+metriclist[i]+chartlist[i2]].update();
-		}
-	}
-}
-
-function RedrawAllCharts() {
-	for(i = 0; i < metriclist.length; i++){
-		for (i2 = 0; i2 < chartlist.length; i2++) {
-			d3.csv('/ext/connmon/csv/'+metriclist[i]+chartlist[i2]+'.htm').then(Draw_Chart.bind(null,metriclist[i]+chartlist[i2],titlelist[i],measureunitlist[i],timeunitlist[i2],intervallist[i2],bordercolourlist[i],backgroundcolourlist[i]));
-		}
-	}
-}
-
-function getTimeFormat(value,format) {
-	var timeformat;
-	
-	if(format == "axis"){
-		if (value == 0){
-			timeformat = {
-				millisecond: 'HH:mm:ss.SSS',
-				second: 'HH:mm:ss',
-				minute: 'HH:mm',
-				hour: 'HH:mm'
-			}
-		}
-		else if (value == 1){
-			timeformat = {
-				millisecond: 'h:mm:ss.SSS A',
-				second: 'h:mm:ss A',
-				minute: 'h:mm A',
-				hour: 'h A'
-			}
-		}
-	}
-	else if(format == "tooltip"){
-		if (value == 0){
-			timeformat = "YYYY-MM-DD HH:mm:ss";
-		}
-		else if (value == 1){
-			timeformat = "YYYY-MM-DD h:mm:ss A";
-		}
-	}
-	
-	return timeformat;
-}
-
-function GetCookie(cookiename,returntype) {
-	var s;
-	if ((s = cookie.get("conn_"+cookiename)) != null) {
-		return cookie.get("conn_"+cookiename);
-	}
-	else {
-		if(returntype == "string"){
-			return "";
-		}
-		else if(returntype == "number"){
-			return 0;
-		}
-	}
-}
-
-function SetCookie(cookiename,cookievalue) {
-	cookie.set("conn_"+cookiename, cookievalue, 31);
-}
-
-function AddEventHandlers(){
-	$j(".collapsible-jquery").click(function(){
-		$j(this).siblings().toggle("fast")
-	});
-	
-	var coll = document.getElementsByClassName("collapsible");
-	var i;
-	
-	for (i = 0; i < coll.length; i++) {
-		coll[i].addEventListener("click", function() {
-			this.classList.toggle("active");
-			var content = this.nextElementSibling.firstElementChild.firstElementChild.firstElementChild;
-			if (content.style.maxHeight){
-				content.style.maxHeight = null;
-				SetCookie(this.id,"collapsed");
-			} else {
-				content.style.maxHeight = content.scrollHeight + "px";
-				SetCookie(this.id,"expanded");
-			}
-		});
-		if(GetCookie(coll[i].id,"string") == "expanded"){
-			coll[i].click();
-		}
-	}
-}
-
-$j.fn.serializeObject = function(){
-	var o = custom_settings;
-	var a = this.serializeArray();
-	$j.each(a, function() {
-		if (o[this.name] !== undefined && this.name.indexOf("connmon_pingserver") != -1) {
-			if (!o[this.name].push) {
-				o[this.name] = [o[this.name]];
-			}
-			o[this.name].push(this.value || '');
-		} else if (this.name.indexOf("connmon_pingserver") != -1){
-			o[this.name] = this.value || '';
-		}
-	});
-	return o;
-};
-
-function SetCurrentPage(){
-	document.form.next_page.value = window.location.pathname.substring(1);
-	document.form.current_page.value = window.location.pathname.substring(1);
-}
-
-function initial(){
-	SetCurrentPage();
-	LoadCustomSettings();
-	show_menu();
-	get_conf_file();
-	RedrawAllCharts();
-	ScriptUpdateLayout();
-	SetConnmonStatsTitle();
-	$j("#Time_Format").val(GetCookie("Time_Format","number"));
-	AddEventHandlers();
-}
-
-function ScriptUpdateLayout(){
-	var localver = GetVersionNumber("local");
-	var serverver = GetVersionNumber("server");
-	$j("#scripttitle").text($j("#scripttitle").text()+" - "+localver);
-	$j("#connmon_version_local").text(localver);
-	
-	if (localver != serverver && serverver != "N/A"){
-		$j("#connmon_version_server").text("Updated version available: "+serverver);
-		showhide("btnChkUpdate", false);
-		showhide("connmon_version_server", true);
-		showhide("btnDoUpdate", true);
-	}
-}
-
-function reload() {
-	location.reload(true);
-}
-
-function ResetZoom(){
-	for(i = 0; i < metriclist.length; i++){
-		for (i2 = 0; i2 < chartlist.length; i2++) {
-			var chartobj = window["LineChart"+metriclist[i]+chartlist[i2]];
-			if(typeof chartobj === 'undefined' || chartobj === null) { continue; }
-			chartobj.resetZoom();
-		}
-	}
-}
-
-function DragZoom(button){
-	var drag = true;
-	var pan = false;
-	var buttonvalue = "";
-	if(button.value.indexOf("On") != -1){
-		drag = false;
-		pan = true;
-		buttonvalue = "Drag Zoom Off";
-	}
-	else {
-		drag = true;
-		pan = false;
-		buttonvalue = "Drag Zoom On";
-	}
-	
-	for(i = 0; i < metriclist.length; i++){
-		for (i2 = 0; i2 < chartlist.length; i2++) {
-			var chartobj = window["LineChart"+metriclist[i]+chartlist[i2]];
-			if(typeof chartobj === 'undefined' || chartobj === null) { continue; }
-			chartobj.options.plugins.zoom.zoom.drag = drag;
-			chartobj.options.plugins.zoom.pan.enabled = pan;
-			button.value = buttonvalue;
-			chartobj.update();
-		}
-	}
-}
-
-function ExportCSV() {
-	location.href = "ext/connmon/csv/connmondata.zip";
-	return 0;
-}
-
-function CheckUpdate(){
-	var action_script_tmp = "start_connmoncheckupdate";
-	document.form.action_script.value = action_script_tmp;
-	var restart_time = 10;
-	document.form.action_wait.value = restart_time;
-	showLoading();
-	document.form.submit();
-}
-function DoUpdate(){
-	var action_script_tmp = "start_connmondoupdate";
-	document.form.action_script.value = action_script_tmp;
-	var restart_time = 20;
-	document.form.action_wait.value = restart_time;
-	showLoading();
-	document.form.submit();
-}
-
-function applyRule() {
-	if(Validate_All()){
-		if(document.form.pingtype.value == 0){
-			document.form.connmon_pingserver.value = document.form.connmon_ipaddr.value;
-		} else if(document.form.pingtype.value == 1) {
-			document.form.connmon_pingserver.value = document.form.connmon_domain.value;
-		}
-		document.getElementById('amng_custom').value = JSON.stringify($j('form').serializeObject())
-		var action_script_tmp = "start_connmonconfig";
-		document.form.action_script.value = action_script_tmp;
-		var restart_time = 5;
-		document.form.action_wait.value = restart_time;
-		showLoading();
-		document.form.submit();
-	}
-	else {
-		return false;
-	}
-}
-
-function GetVersionNumber(versiontype)
-{
-	var versionprop;
-	if(versiontype == "local"){
-		versionprop = custom_settings.connmon_version_local;
-	}
-	else if(versiontype == "server"){
-		versionprop = custom_settings.connmon_version_server;
-	}
-	
-	if(typeof versionprop == 'undefined' || versionprop == null)
-	{
-		return "N/A";
-	}
-	else {
-		return versionprop;
-	}
-}
-
-function get_conf_file(){
-	$j.ajax({
-		url: '/ext/connmon/config.htm',
-		dataType: 'text',
-		error: function(xhr){
-			setTimeout("get_conf_file();", 1000);
-		},
-		success: function(data){
-			var pingserver=data.split("\n")[0].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
-			document.form.connmon_pingserver.value = pingserver;
-			if(Validate_IP(document.form.connmon_pingserver)) {
-				document.form.pingtype.value=0;
-				document.form.connmon_ipaddr.value=pingserver;
-			} else {
-				document.form.pingtype.value=1;
-				document.form.connmon_domain.value=pingserver;
-			}
-			document.form.pingtype.onchange();
-		}
-	});
-}
-
-function runPingTest() {
-	var action_script_tmp = "start_connmon";
-	document.form.action_script.value = action_script_tmp;
-	var restart_time = 45;
-	document.form.action_wait.value = restart_time;
-	showLoading();
-	document.form.submit();
-}
-
-function changeChart(e) {
-	value = e.value * 1;
-	name = e.id.substring(0, e.id.indexOf("_"));
-	SetCookie(e.id,value);
-	RedrawAllCharts();
-}
-
+var $j=jQuery.noConflict(),maxNoCharts=9,currentNoCharts=0,ShowLines=GetCookie("ShowLines","string"),ShowFill=GetCookie("ShowFill","string");""==ShowFill&&(ShowFill="origin");var DragZoom=!0,ChartPan=!1;Chart.defaults.global.defaultFontColor="#CCC",Chart.Tooltip.positioners.cursor=function(a,b){return b};var metriclist=["Ping","Jitter","PacketLoss"],titlelist=["Ping","Jitter","Quality"],measureunitlist=["ms","ms","%"],chartlist=["daily","weekly","monthly"],timeunitlist=["hour","day","day"],intervallist=[24,7,30],bordercolourlist=["#fc8500","#42ecf5","#ffffff"],backgroundcolourlist=["rgba(252,133,0,0.5)","rgba(66,236,245,0.5)","rgba(255,255,255,0.5)"];function keyHandler(a){27==a.keyCode&&($j(document).off("keydown"),ResetZoom())}$j(document).keydown(function(a){keyHandler(a)}),$j(document).keyup(function(){$j(document).keydown(function(a){keyHandler(a)})});function Validate_IP(a){var b=a.value,c=a.name;return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(b)?($j(a).removeClass("invalid"),!0):($j(a).addClass("invalid"),!1)}function Validate_Domain(a){var b=a.value,c=a.name;return /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/.test(b)?($j(a).removeClass("invalid"),!0):($j(a).addClass("invalid"),!1)}function Validate_All(){var a=!1;return Validate_IP(document.form.connmon_ipaddr)||(a=!0),Validate_Domain(document.form.connmon_domain)||(a=!0),!a||(alert("Validation for some fields failed. Please correct invalid values and try again."),!1)}function changePingType(a){var b=a.value,c=a.name;"0"==b?(document.getElementById("rowip").style.display="",document.getElementById("rowdomain").style.display="none"):(document.getElementById("rowip").style.display="none",document.getElementById("rowdomain").style.display="")}function Draw_Chart_NoData(a){document.getElementById("divLineChart_"+a).width="730",document.getElementById("divLineChart_"+a).height="500",document.getElementById("divLineChart_"+a).style.width="730px",document.getElementById("divLineChart_"+a).style.height="500px";var b=document.getElementById("divLineChart_"+a).getContext("2d");b.save(),b.textAlign="center",b.textBaseline="middle",b.font="normal normal bolder 48px Arial",b.fillStyle="white",b.fillText("No data to display",365,250),b.restore()}function Draw_Chart(a,b,c,d,e){var f=getChartPeriod($j("#"+a+"_Period option:selected").val()),g=timeunitlist[$j("#"+a+"_Period option:selected").val()],h=intervallist[$j("#"+a+"_Period option:selected").val()],j=window[a+f];if("undefined"==typeof j||null===j)return void Draw_Chart_NoData(a);if(0==j.length)return void Draw_Chart_NoData(a);var k=j.map(function(a){return a.Metric}),l=j.map(function(a){return{x:a.Time,y:a.Value}}),m=window["LineChart_"+a],n=getTimeFormat($j("#Time_Format option:selected").val(),"axis"),o=getTimeFormat($j("#Time_Format option:selected").val(),"tooltip");factor=0,"hour"==g?factor=3600000:"day"==g&&(factor=86400000),m!=null&&m.destroy();var p=document.getElementById("divLineChart_"+a).getContext("2d"),q={segmentShowStroke:!1,segmentStrokeColor:"#000",animationEasing:"easeOutQuart",animationSteps:100,maintainAspectRatio:!1,animateScale:!0,hover:{mode:"point"},legend:{display:!1,position:"bottom",onClick:null},title:{display:!0,text:b},tooltips:{callbacks:{title:function(a){return moment(a[0].xLabel,"X").format(o)},label:function(a,b){return round(b.datasets[a.datasetIndex].data[a.index].y,3).toFixed(3)+" "+c}},mode:"x",position:"nearest",intersect:!1},scales:{xAxes:[{type:"time",gridLines:{display:!0,color:"#282828"},ticks:{min:moment().subtract(h,g+"s"),display:!0},time:{parser:"X",unit:g,stepSize:1,displayFormats:n}}],yAxes:[{gridLines:{display:!1,color:"#282828"},scaleLabel:{display:!1,labelString:b},ticks:{display:!0,beginAtZero:!0,callback:function(a){return round(a,3).toFixed(3)+" "+c}}}]},plugins:{zoom:{pan:{enabled:ChartPan,mode:"xy",rangeMin:{x:new Date().getTime()-factor*h,y:0},rangeMax:{x:new Date().getTime(),y:getLimit(l,"y","max",!1)+.1*getLimit(l,"y","max",!1)}},zoom:{enabled:!0,drag:DragZoom,mode:"xy",rangeMin:{x:new Date().getTime()-factor*h,y:0},rangeMax:{x:new Date().getTime(),y:getLimit(l,"y","max",!1)+.1*getLimit(l,"y","max",!1)},speed:.1}}},annotation:{drawTime:"afterDatasetsDraw",annotations:[{type:ShowLines,mode:"horizontal",scaleID:"y-axis-0",value:getAverage(l),borderColor:d,borderWidth:1,borderDash:[5,5],label:{backgroundColor:"rgba(0,0,0,0.3)",fontFamily:"sans-serif",fontSize:10,fontStyle:"bold",fontColor:"#fff",xPadding:6,yPadding:6,cornerRadius:6,position:"center",enabled:!0,xAdjust:0,yAdjust:0,content:"Avg="+round(getAverage(l),3).toFixed(3)+c}},{type:ShowLines,mode:"horizontal",scaleID:"y-axis-0",value:getLimit(l,"y","max",!0),borderColor:d,borderWidth:1,borderDash:[5,5],label:{backgroundColor:"rgba(0,0,0,0.3)",fontFamily:"sans-serif",fontSize:10,fontStyle:"bold",fontColor:"#fff",xPadding:6,yPadding:6,cornerRadius:6,position:"right",enabled:!0,xAdjust:15,yAdjust:0,content:"Max="+round(getLimit(l,"y","max",!0),3).toFixed(3)+c}},{type:ShowLines,mode:"horizontal",scaleID:"y-axis-0",value:getLimit(l,"y","min",!0),borderColor:d,borderWidth:1,borderDash:[5,5],label:{backgroundColor:"rgba(0,0,0,0.3)",fontFamily:"sans-serif",fontSize:10,fontStyle:"bold",fontColor:"#fff",xPadding:6,yPadding:6,cornerRadius:6,position:"left",enabled:!0,xAdjust:15,yAdjust:0,content:"Min="+round(getLimit(l,"y","min",!0),3).toFixed(3)+c}}]}},r={labels:k,datasets:[{data:l,borderWidth:1,pointRadius:1,lineTension:0,fill:ShowFill,backgroundColor:e,borderColor:d}]};m=new Chart(p,{type:"line",options:q,data:r}),window["LineChart_"+a]=m}function getLimit(a,b,c,d){var e,f=0;return e="x"==b?a.map(function(a){return a.x}):a.map(function(a){return a.y}),f="max"==c?Math.max.apply(Math,e):Math.min.apply(Math,e),"max"==c&&0==f&&!1==d&&(f=1),f}function getAverage(a){for(var b=0,c=0;c<a.length;c++)b+=1*a[c].y;var d=b/a.length;return d}function round(a,b){return+(Math.round(a+"e"+b)+"e-"+b)}function ToggleLines(){for(""==ShowLines?(ShowLines="line",SetCookie("ShowLines","line")):(ShowLines="",SetCookie("ShowLines","")),i=0;i<metriclist.length;i++){for(i3=0;3>i3;i3++)window["LineChart_"+metriclist[i]].options.annotation.annotations[i3].type=ShowLines;window["LineChart_"+metriclist[i]].update()}}function ToggleFill(){for("false"==ShowFill?(ShowFill="origin",SetCookie("ShowFill","origin")):(ShowFill="false",SetCookie("ShowFill","false")),i=0;i<metriclist.length;i++)window["LineChart_"+metriclist[i]].data.datasets[0].fill=ShowFill,window["LineChart_"+metriclist[i]].update()}function RedrawAllCharts(){for(i=0;i<metriclist.length;i++)for(i2=0;i2<chartlist.length;i2++)d3.csv("/ext/connmon/csv/"+metriclist[i].replace("PacketLoss","Packet_Loss")+chartlist[i2]+".htm").then(SetGlobalDataset.bind(null,metriclist[i]+chartlist[i2]))}function SetGlobalDataset(a,b){if(window[a]=b,currentNoCharts++,currentNoCharts==maxNoCharts)for(i=0;i<metriclist.length;i++)$j("#"+metriclist[i]+"_Period").val(GetCookie(metriclist[i]+"_Period","number")),Draw_Chart(metriclist[i],titlelist[i],measureunitlist[i],bordercolourlist[i],backgroundcolourlist[i])}function getTimeFormat(a,b){var c;return"axis"==b?0==a?c={millisecond:"HH:mm:ss.SSS",second:"HH:mm:ss",minute:"HH:mm",hour:"HH:mm"}:1==a&&(c={millisecond:"h:mm:ss.SSS A",second:"h:mm:ss A",minute:"h:mm A",hour:"h A"}):"tooltip"==b&&(0==a?c="YYYY-MM-DD HH:mm:ss":1==a&&(c="YYYY-MM-DD h:mm:ss A")),c}function GetCookie(a,b){var c;if(null!=(c=cookie.get("conn_"+a)))return cookie.get("conn_"+a);return"string"==b?"":"number"==b?0:void 0}function SetCookie(a,b){cookie.set("conn_"+a,b,31)}function AddEventHandlers(){$j(".collapsible-jquery").click(function(){$j(this).siblings().toggle("fast",function(){"none"==$j(this).css("display")?SetCookie($j(this).siblings()[0].id,"collapsed"):SetCookie($j(this).siblings()[0].id,"expanded")})}),$j(".collapsible-jquery").each(function(){"collapsed"==GetCookie($j(this)[0].id,"string")?$j(this).siblings().toggle(!1):$j(this).siblings().toggle(!0)})}$j.fn.serializeObject=function(){var b=custom_settings,c=this.serializeArray();return $j.each(c,function(){void 0!==b[this.name]&&-1!=this.name.indexOf("connmon_pingserver")?(!b[this.name].push&&(b[this.name]=[b[this.name]]),b[this.name].push(this.value||"")):-1!=this.name.indexOf("connmon_pingserver")&&(b[this.name]=this.value||"")}),b};function SetCurrentPage(){document.form.next_page.value=window.location.pathname.substring(1),document.form.current_page.value=window.location.pathname.substring(1)}function initial(){SetCurrentPage(),LoadCustomSettings(),show_menu(),get_conf_file(),$j("#Time_Format").val(GetCookie("Time_Format","number")),RedrawAllCharts(),ScriptUpdateLayout(),SetConnmonStatsTitle(),AddEventHandlers()}function ScriptUpdateLayout(){var a=GetVersionNumber("local"),b=GetVersionNumber("server");$j("#scripttitle").text($j("#scripttitle").text()+" - "+a),$j("#connmon_version_local").text(a),a!=b&&"N/A"!=b&&($j("#connmon_version_server").text("Updated version available: "+b),showhide("btnChkUpdate",!1),showhide("connmon_version_server",!0),showhide("btnDoUpdate",!0))}function reload(){location.reload(!0)}function getChartPeriod(a){var b="daily";return 0==a?b="daily":1==a?b="weekly":2==a&&(b="monthly"),b}function ResetZoom(){for(i=0;i<metriclist.length;i++){var a=window["LineChart_"+metriclist[i]];"undefined"!=typeof a&&null!==a&&a.resetZoom()}}function ToggleDragZoom(a){var b=!0,c=!1,d="";for(-1==a.value.indexOf("On")?(b=!0,c=!1,DragZoom=!0,ChartPan=!1,d="Drag Zoom On"):(b=!1,c=!0,DragZoom=!1,ChartPan=!0,d="Drag Zoom Off"),i=0;i<metriclist.length;i++){var e=window["LineChart_"+metriclist[i]];"undefined"!=typeof e&&null!==e&&(e.options.plugins.zoom.zoom.drag=b,e.options.plugins.zoom.pan.enabled=c,a.value=d,e.update())}}function ExportCSV(){return location.href="ext/connmon/csv/connmondata.zip",0}function CheckUpdate(){document.form.action_script.value="start_connmoncheckupdate";document.form.action_wait.value=10,showLoading(),document.form.submit()}function DoUpdate(){document.form.action_script.value="start_connmondoupdate";document.form.action_wait.value=20,showLoading(),document.form.submit()}function applyRule(){if(Validate_All()){0==document.form.pingtype.value?document.form.connmon_pingserver.value=document.form.connmon_ipaddr.value:1==document.form.pingtype.value&&(document.form.connmon_pingserver.value=document.form.connmon_domain.value),document.getElementById("amng_custom").value=JSON.stringify($j("form").serializeObject());document.form.action_script.value="start_connmonconfig";document.form.action_wait.value=5,showLoading(),document.form.submit()}else return!1}function GetVersionNumber(a){var b;return"local"==a?b=custom_settings.connmon_version_local:"server"==a&&(b=custom_settings.connmon_version_server),"undefined"==typeof b||null==b?"N/A":b}function get_conf_file(){$j.ajax({url:"/ext/connmon/config.htm",dataType:"text",error:function(){setTimeout("get_conf_file();",1e3)},success:function(a){var b=a.split("\n")[0].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");document.form.connmon_pingserver.value=b,Validate_IP(document.form.connmon_pingserver)?(document.form.pingtype.value=0,document.form.connmon_ipaddr.value=b):(document.form.pingtype.value=1,document.form.connmon_domain.value=b),document.form.pingtype.onchange()}})}function runPingTest(){document.form.action_script.value="start_connmon";document.form.action_wait.value=45,showLoading(),document.form.submit()}function changeAllCharts(a){for(value=1*a.value,name=a.id.substring(0,a.id.indexOf("_")),SetCookie(a.id,value),i=0;i<metriclist.length;i++)Draw_Chart(metriclist[i],titlelist[i],measureunitlist[i],bordercolourlist[i],backgroundcolourlist[i])}function changeChart(a){value=1*a.value,name=a.id.substring(0,a.id.indexOf("_")),SetCookie(a.id,value),"Ping"==name?Draw_Chart("Ping",titlelist[0],measureunitlist[0],bordercolourlist[0],backgroundcolourlist[0]):"Jitter"==name?Draw_Chart("Jitter",titlelist[1],measureunitlist[1],bordercolourlist[1],backgroundcolourlist[1]):"PacketLoss"==name&&Draw_Chart("PacketLoss",titlelist[2],measureunitlist[2],bordercolourlist[2],backgroundcolourlist[2])}
 </script>
 </head>
 <body onload="initial();" onunload="return unload_body();">
@@ -758,7 +117,7 @@ function changeChart(e) {
 <div style="margin:10px 0 10px 5px;" class="splitLine"></div>
 <div class="formfontdesc">connmon is an automatic connection monitoring tool for AsusWRT Merlin - with charts.</div>
 <table width="100%" border="1" align="center" cellpadding="2" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;" id="table_buttons">
-<thead class="collapsible-jquery" id="connmon_scripttools">
+<thead class="collapsible-jquery" id="scripttools">
 <tr><td colspan="2">Script Utilities (click to expand/collapse)</td></tr>
 </thead>
 <div class="collapsiblecontent">
@@ -790,14 +149,14 @@ function changeChart(e) {
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="2" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;" id="table_config">
-<thead class="collapsible-jquery" id="connmon_scriptconfig">
+<thead class="collapsible-jquery" id="scriptconfig">
 <tr><td colspan="2">Script Configuration (click to expand/collapse)</td></tr>
 </thead>
 <div class="collapsiblecontent">
 <tr class="even">
 <th width="40%">Ping destination type</th>
 <td>
-<select style="width:100px" class="input_option" onchange="changePingType(this)" id="pingtype">
+<select style="width:125px" class="input_option" onchange="changePingType(this)" id="pingtype">
 <option value="0">IP Address</option>
 <option value="1">Domain</option>
 </select>
@@ -824,14 +183,14 @@ function changeChart(e) {
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="2" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;" id="table_buttons2">
-<thead class="collapsible-jquery" id="connmon_charttools">
+<thead class="collapsible-jquery" id="charttools">
 <tr><td colspan="2">Chart Configuration (click to expand/collapse)</td></tr>
 </thead>
 <div class="collapsiblecontent">
 <tr>
 <th width="20%"><span style="color:#FFFFFF;">Time format</span><br /><span style="color:#FFFFFF;">for tooltips and Last 24h chart axis</span></th>
 <td>
-<select style="width:100px" class="input_option" onchange="changeChart(this)" id="Time_Format">
+<select style="width:100px" class="input_option" onchange="changeAllCharts(this)" id="Time_Format">
 <option value="0">24h</option>
 <option value="1">12h</option>
 </select>
@@ -839,7 +198,7 @@ function changeChart(e) {
 </tr>
 <tr class="apply_gen" valign="top">
 <td style="background-color:rgb(77, 89, 93);" colspan="2">
-<input type="button" onclick="DragZoom(this);" value="Drag Zoom On" class="button_gen" name="btnDragZoom">
+<input type="button" onclick="ToggleDragZoom(this);" value="Drag Zoom On" class="button_gen" name="btnDragZoom">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <input type="button" onclick="ResetZoom();" value="Reset Zoom" class="button_gen" name="btnResetZoom">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -851,62 +210,82 @@ function changeChart(e) {
 </div>
 </table>
 <div style="line-height:10px;">&nbsp;</div>
+
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
-<thead class="collapsible" id="last24">
+<thead class="collapsible-jquery" id="chart_ping">
 <tr>
-<td colspan="2">Last 24 Hours (click to expand/collapse)</td>
+<td colspan="2">Ping (click to expand/collapse)</td>
 </tr>
 </thead>
-<tr>
-<td colspan="2" align="center" style="padding: 0px;">
 <div class="collapsiblecontent">
-<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartPingdaily" height="300" /></div>
-<div style="line-height:10px;">&nbsp;</div>
-<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartJitterdaily" height="300" /></div>
-<div style="line-height:10px;">&nbsp;</div>
-<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartPacket_Lossdaily" height="300" /></div>
-</div>
+<tr class="even">
+<th width="40%">Period to display</th>
+<td>
+<select style="width:125px" class="input_option" onchange="changeChart(this)" id="Ping_Period">
+<option value="0">Last 24 hours</option>
+<option value="1">Last 7 days</option>
+<option value="2">Last 30 days</option>
+</select>
 </td>
 </tr>
+<tr>
+<td colspan="2" align="center" style="padding: 0px;">
+<div style="background-color:#2f3e44;border-radius:10px;width:730px;height:500px;padding-left:5px;"><canvas id="divLineChart_Ping" height="500" /></div>
+</td>
+</tr>
+</div>
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
-<thead class="collapsible" id="last7">
+<thead class="collapsible-jquery" id="chart_jitter">
 <tr>
-<td colspan="2">Last 7 days (click to expand/collapse)</td>
+<td colspan="2">Jitter (click to expand/collapse)</td>
 </tr>
 </thead>
-<tr>
-<td colspan="2" align="center" style="padding: 0px;">
 <div class="collapsiblecontent">
-<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartPingweekly" height="300" /></div>
-<div style="line-height:10px;">&nbsp;</div>
-<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartJitterweekly" height="300" /></div>
-<div style="line-height:10px;">&nbsp;</div>
-<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartPacket_Lossweekly" height="300" /></div>
-</div>
+<tr class="even">
+<th width="40%">Period to display</th>
+<td>
+<select style="width:125px" class="input_option" onchange="changeChart(this)" id="Jitter_Period">
+<option value="0">Last 24 hours</option>
+<option value="1">Last 7 days</option>
+<option value="2">Last 30 days</option>
+</select>
 </td>
 </tr>
+<tr>
+<td colspan="2" align="center" style="padding: 0px;">
+<div style="background-color:#2f3e44;border-radius:10px;width:730px;height:500px;padding-left:5px;"><canvas id="divLineChart_Jitter" height="500" /></div>
+</td>
+</tr>
+</div>
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
-<thead class="collapsible" id="last30">
+<thead class="collapsible-jquery" id="chart_packetloss">
 <tr>
-<td colspan="2">Last 30 days (click to expand/collapse)</td>
+<td colspan="2">Quality (click to expand/collapse)</td>
 </tr>
 </thead>
-<tr>
-<td colspan="2" align="center" style="padding: 0px;">
 <div class="collapsiblecontent">
-<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartPingmonthly" height="300" /></div>
-<div style="line-height:10px;">&nbsp;</div>
-<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartJittermonthly" height="300" /></div>
-<div style="line-height:10px;">&nbsp;</div>
-<div style="background-color:#2f3e44;border-radius:10px;width:730px;padding-left:5px;"><canvas id="divLineChartPacket_Lossmonthly" height="300" /></div>
-</div>
+<tr class="even">
+<th width="40%">Period to display</th>
+<td>
+<select style="width:125px" class="input_option" onchange="changeChart(this)" id="PacketLoss_Period">
+<option value="0">Last 24 hours</option>
+<option value="1">Last 7 days</option>
+<option value="2">Last 30 days</option>
+</select>
 </td>
 </tr>
+<tr>
+<td colspan="2" align="center" style="padding: 0px;">
+<div style="background-color:#2f3e44;border-radius:10px;width:730px;height:500px;padding-left:5px;"><canvas id="divLineChart_PacketLoss" height="500" /></div>
+</td>
+</tr>
+</div>
 </table>
+
 </td>
 </tr>
 </tbody>

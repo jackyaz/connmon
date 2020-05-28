@@ -2,16 +2,16 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/91af8db9cd354643a8ef6a7117be90fb)](https://www.codacy.com/app/jackyaz/connmon?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jackyaz/connmon&amp;utm_campaign=Badge_Grade)
 [![Build Status](https://travis-ci.com/jackyaz/connmon.svg?branch=master)](https://travis-ci.com/jackyaz/connmon)
 
-## v2.5.0
-### Updated on 2020-04-29
+## v2.6.0
+### Updated on 2020-05-28
 ## About
 Track your Internet uptime, on your router. Graphs available for on the Addons page of the WebUI.
 
 connmon is free to use under the [GNU General Public License version 3](https://opensource.org/licenses/GPL-3.0) (GPL 3.0).
 
-![Menu UI](https://puu.sh/DPKBK/a17409eb04.png)
+![Menu UI](https://puu.sh/FOlEk/c4f4c1be17.png)
 
-![Graph example](https://puu.sh/DPKCC/a314d9b1a4.png)
+![Graph example](https://puu.sh/FOlDH/4d33af75c7.png)
 
 ### Supporting development
 Love the script and want to support future development? Any and all donations gratefully received!
