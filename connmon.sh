@@ -483,7 +483,7 @@ Auto_Cron(){
 			
 			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
 			if [ "$STARTUPLINECOUNT" -eq 0 ]; then
-				cru a "$SCRIPT_NAME" "*/5 * * * * /jffs/scripts/$SCRIPT_NAME generate"
+				cru a "$SCRIPT_NAME" "*/2 * * * * /jffs/scripts/$SCRIPT_NAME generate"
 			fi
 		;;
 		delete)
@@ -663,7 +663,7 @@ Run_PingTest(){
 	
 	pingfile=/tmp/pingresult.txt
 	
-	Print_Output "false" "30 second ping test to $(ShowPingServer) starting..." "$PASS"
+	Print_Output "false" "60 second ping test to $(ShowPingServer) starting..." "$PASS"
 	if ! Validate_IP "$(ShowPingServer)" >/dev/null 2>&1 && ! Validate_Domain "$(ShowPingServer)" >/dev/null 2>&1; then
 		Print_Output "true" "$(ShowPingServer) not valid, aborting test. Please correct ASAP" "$ERR"
 		Clear_Lock
@@ -671,7 +671,7 @@ Run_PingTest(){
 	fi
 	
 	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
-	ping -w 30 "$(ShowPingServer)" > "$pingfile"
+	ping -w 60 "$(ShowPingServer)" > "$pingfile"
 	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
 	
 	PREVPING=0
