@@ -31,6 +31,10 @@ Using your preferred SSH client/terminal, copy and paste the following command, 
 ```
 
 ## Usage
+### WebUI
+Connmon can be configured via the WebUI, in the Addons section under Uptime Monitoring.
+
+### Command Line
 To launch the connmon menu after installation, use:
 ```sh
 connmon
@@ -40,9 +44,6 @@ If this does not work, you will need to use the full path:
 ```sh
 /jffs/scripts/connmon
 ```
-
-## Updating
-Launch connmon and select option u
 
 ## Help
 Please post about any issues and problems here: [connmon on SNBForums](https://www.snbforums.com/threads/connmon-internet-connection-monitoring.56163/)
