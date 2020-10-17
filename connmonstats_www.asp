@@ -233,6 +233,14 @@ var $j=jQuery.noConflict(),maxNoCharts=9,currentNoCharts=0,ShowLines=GetCookie("
 <div style="line-height:10px;">&nbsp;</div>
 
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
+<thead class="collapsible-jquery" id="table_charts">
+<tr>
+<td>Charts (click to expand/collapse)</td>
+</tr>
+</thead>
+<div class="collapsiblecontent">
+<tr><td align="center" style="padding: 0px;">
+<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 <thead class="collapsible-jquery" id="chart_ping">
 <tr>
 <td colspan="2">Ping (click to expand/collapse)</td>
@@ -302,6 +310,10 @@ var $j=jQuery.noConflict(),maxNoCharts=9,currentNoCharts=0,ShowLines=GetCookie("
 <tr>
 <td colspan="2" align="center" style="padding: 0px;">
 <div style="background-color:#2f3e44;border-radius:10px;width:730px;height:500px;padding-left:5px;"><canvas id="divLineChart_PacketLoss" height="500" /></div>
+</td>
+</tr>
+</div>
+</table>
 </td>
 </tr>
 </div>
