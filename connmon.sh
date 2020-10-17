@@ -348,9 +348,12 @@ Conf_Exists(){
 		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 3 ]; then
 			echo "STORAGELOCATION=jffs" >> "$SCRIPT_CONF"
 		fi
+		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 4 ]; then
+			{ echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; } >> "$SCRIPT_CONF"
+		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -405,6 +408,24 @@ SetPingServer(){
 			;;
 		esac
 	done
+}
+
+PingFrequency(){
+	case "$1" in
+		check)
+			PINGFREQUENCY=$(grep "PINGFREQUENCY" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$PINGFREQUENCY"
+			;;
+	esac
+}
+
+PingDuration(){
+	case "$1" in
+		check)
+			PINGDURATION=$(grep "PINGDURATION" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$PINGDURATION"
+			;;
+	esac
 }
 
 Auto_ServiceEvent(){
@@ -479,10 +500,13 @@ Auto_Startup(){
 Auto_Cron(){
 	case $1 in
 		create)
+			pingfrequency="$(PingFrequency "check")"
 			
-			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
-			if [ "$STARTUPLINECOUNT" -eq 0 ]; then
-				cru a "$SCRIPT_NAME" "*/3 * * * * /jffs/scripts/$SCRIPT_NAME generate"
+			# shellcheck disable=SC2063
+			STARTUPLINECOUNTEX=$(cru l | grep "$SCRIPT_NAME" | grep -c "*/$pingfrequency")
+			if [ "$STARTUPLINECOUNTEX" -eq 0 ]; then
+				cru d "$SCRIPT_NAME"
+				cru a "$SCRIPT_NAME" "*/$pingfrequency * * * * /jffs/scripts/$SCRIPT_NAME generate"
 			fi
 		;;
 		delete)
@@ -675,7 +699,7 @@ Run_PingTest(){
 	
 	Clear_Lock
 	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
-	ping -w 60 "$(ShowPingServer)" > "$pingfile"
+	ping -w "$(PingDuration "check")" "$(ShowPingServer)" > "$pingfile"
 	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
 	Check_Lock
 	
