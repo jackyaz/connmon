@@ -275,6 +275,12 @@ Conf_FromSettings(){
 			cat "$SETTINGSFILE.bak" "$TMPFILE" > "$SETTINGSFILE"
 			rm -f "$TMPFILE"
 			rm -f "$SETTINGSFILE.bak"
+			
+			ScriptStorageLocation "$(ScriptStorageLocation "check")"
+			Create_Symlinks
+			
+			Generate_CSVs
+			
 			Print_Output "true" "Merge of updated settings from WebUI completed successfully" "$PASS"
 		else
 			Print_Output "false" "No updated settings from WebUI found, no merge into $SCRIPT_CONF necessary" "$PASS"
