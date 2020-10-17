@@ -595,7 +595,7 @@ function update_status(){
 				document.getElementById("imgChkUpdate").style.display = "none";
 				showhide("connmon_version_server", true);
 				if(updatestatus != "None"){
-					$j("#spdmerlin_version_server").text("Updated version available: "+updatestatus);
+					$j("#connmon_version_server").text("Updated version available: "+updatestatus);
 					showhide("btnChkUpdate", false);
 					showhide("btnDoUpdate", true);
 				}
