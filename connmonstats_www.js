@@ -482,12 +482,12 @@ $j.fn.serializeObject = function(){
 	var o = custom_settings;
 	var a = this.serializeArray();
 	$j.each(a, function() {
-		if (o[this.name] !== undefined && this.name.indexOf("connmon") != -1 && this.name.indexOf("version") == -1) {
+		if (o[this.name] !== undefined && this.name.indexOf("connmon") != -1 && this.name.indexOf("version") == -1 && this.name.indexOf("ipaddr") == -1 && this.name.indexOf("domain") == -1) {
 			if (!o[this.name].push) {
 				o[this.name] = [o[this.name]];
 			}
 			o[this.name].push(this.value || '');
-		} else if (this.name.indexOf("connmon") != -1 && this.name.indexOf("version") == -1){
+		} else if (this.name.indexOf("connmon") != -1 && this.name.indexOf("version") == -1 && this.name.indexOf("ipaddr") == -1 && this.name.indexOf("domain") == -1){
 			o[this.name] = this.value || '';
 		}
 	});
@@ -660,13 +660,13 @@ function get_conf_file(){
 					document.form.pingtype.onchange();
 				}
 				else if (configdata[i].indexOf("OUTPUTDATAMODE") != -1) {
-					document.form.connmon_dataoutput.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+					document.form.connmon_outputdatamode.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
 				}
 				else if (configdata[i].indexOf("OUTPUTTIMEMODE") != -1) {
-					document.form.connmon_timeoutput.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+					document.form.connmon_outputtimemode.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
 				}
 				else if (configdata[i].indexOf("STORAGELOCATION") != -1) {
-					document.form.connmon_storageloc.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+					document.form.connmon_storagelocation.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
 				}
 			}
 		}
