@@ -676,7 +676,7 @@ function get_conf_file(){
 function runPingTest() {
 	var action_script_tmp = "start_connmon";
 	document.form.action_script.value = action_script_tmp;
-	var restart_time = 45;
+	var restart_time = 70;
 	document.form.action_wait.value = restart_time;
 	showLoading();
 	document.form.submit();
