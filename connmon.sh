@@ -483,7 +483,7 @@ Auto_Cron(){
 			
 			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
 			if [ "$STARTUPLINECOUNT" -eq 0 ]; then
-				cru a "$SCRIPT_NAME" "*/2 * * * * /jffs/scripts/$SCRIPT_NAME generate"
+				cru a "$SCRIPT_NAME" "*/3 * * * * /jffs/scripts/$SCRIPT_NAME generate"
 			fi
 		;;
 		delete)

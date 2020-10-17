@@ -482,12 +482,12 @@ $j.fn.serializeObject = function(){
 	var o = custom_settings;
 	var a = this.serializeArray();
 	$j.each(a, function() {
-		if (o[this.name] !== undefined && this.name.indexOf("connmon_pingserver") != -1) {
+		if (o[this.name] !== undefined && this.name.indexOf("connmon") != -1 & this.name.indexOf("version") == -1) {
 			if (!o[this.name].push) {
 				o[this.name] = [o[this.name]];
 			}
 			o[this.name].push(this.value || '');
-		} else if (this.name.indexOf("connmon_pingserver") != -1){
+		} else if (this.name.indexOf("connmon") != -1 & this.name.indexOf("version") == -1){
 			o[this.name] = this.value || '';
 		}
 	});
@@ -643,16 +643,32 @@ function get_conf_file(){
 			setTimeout("get_conf_file();", 1000);
 		},
 		success: function(data){
-			var pingserver=data.split("\n")[0].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
-			document.form.connmon_pingserver.value = pingserver;
-			if(Validate_IP(document.form.connmon_pingserver)) {
-				document.form.pingtype.value=0;
-				document.form.connmon_ipaddr.value=pingserver;
-			} else {
-				document.form.pingtype.value=1;
-				document.form.connmon_domain.value=pingserver;
+			var configdata=data.split("\n");
+			configdata = configdata.filter(Boolean);
+			
+			for (var i = 0; i < configdata.length; i++) {
+				if (configdata[i].indexOf("PINGSERVER") != -1) {
+					var pingserver=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+					document.form.connmon_pingserver.value = pingserver;
+					if(Validate_IP(document.form.connmon_pingserver)) {
+						document.form.pingtype.value=0;
+						document.form.connmon_ipaddr.value=pingserver;
+					} else {
+						document.form.pingtype.value=1;
+						document.form.connmon_domain.value=pingserver;
+					}
+					document.form.pingtype.onchange();
+				}
+				else if (configdata[i].indexOf("OUTPUTDATAMODE") != -1) {
+					document.form.connmon_dataoutput.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+				}
+				else if (configdata[i].indexOf("OUTPUTTIMEMODE") != -1) {
+					document.form.connmon_timeoutput.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+				}
+				else if (configdata[i].indexOf("STORAGELOCATION") != -1) {
+					document.form.connmon_storageloc.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+				}
 			}
-			document.form.pingtype.onchange();
 		}
 	});
 }
