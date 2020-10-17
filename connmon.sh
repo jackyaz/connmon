@@ -479,19 +479,6 @@ Auto_Startup(){
 Auto_Cron(){
 	case $1 in
 		create)
-			STARTUPLINECOUNTDAILY=$(cru l | grep -c "$SCRIPT_NAME""_daily")
-			STARTUPLINECOUNTWEEKLY=$(cru l | grep -c "$SCRIPT_NAME""_weekly")
-			STARTUPLINECOUNTMONTHLY=$(cru l | grep -c "$SCRIPT_NAME""_monthly")
-			
-			if [ "$STARTUPLINECOUNTDAILY" -gt 0 ]; then
-				cru d "$SCRIPT_NAME""_daily"
-			fi
-			if [ "$STARTUPLINECOUNTWEEKLY" -gt 0 ]; then
-				cru d "$SCRIPT_NAME""_weekly"
-			fi
-			if [ "$STARTUPLINECOUNTMONTHLY" -gt 0 ]; then
-				cru d "$SCRIPT_NAME""_monthly"
-			fi
 			
 			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
 			if [ "$STARTUPLINECOUNT" -eq 0 ]; then
