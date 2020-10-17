@@ -176,14 +176,14 @@ var $j=jQuery.noConflict(),maxNoCharts=9,currentNoCharts=0,ShowLines=GetCookie("
 </td>
 </tr>
 <tr class="even" id="rowdataoutput">
-<th width="40%">Data Output Mode</th>
+<th width="40%">Data Output Mode (for CSV export)</th>
 <td class="settingvalue">
 <input autocomplete="off" autocapitalize="off" type="radio" name="connmon_outputdatamode" id="connmon_dataoutput_average" class="input" value="average" checked>Average
 <input autocomplete="off" autocapitalize="off" type="radio" name="connmon_outputdatamode" id="connmon_dataoutput_raw" class="input" value="raw">Raw
 </td>
 </tr>
 <tr class="even" id="rowtimeoutput">
-<th width="40%">Time Output Mode</th>
+<th width="40%">Time Output Mode (for CSV export)</th>
 <td class="settingvalue">
 <input autocomplete="off" autocapitalize="off" type="radio" name="connmon_outputtimemode" id="connmon_timeoutput_non-unix" class="input" value="non-unix" checked>Non-Unix
 <input autocomplete="off" autocapitalize="off" type="radio" name="connmon_outputtimemode" id="connmon_timeoutput_unix" class="input" value="unix">Unix
