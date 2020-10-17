@@ -7,7 +7,7 @@
 <meta http-equiv="Expires" content="-1">
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
-<title>connmon - Internet Uptime Stats</title>
+<title>connmon</title>
 <link rel="stylesheet" type="text/css" href="index_style.css">
 <link rel="stylesheet" type="text/css" href="form_style.css">
 <style>
@@ -115,7 +115,7 @@ var $j=jQuery.noConflict(),maxNoCharts=9,currentNoCharts=0,ShowLines=GetCookie("
 <div class="formfonttitle" id="scripttitle" style="text-align:center;">connmon</div>
 <div id="statstitle" style="text-align:center;">Stats last updated:</div>
 <div style="margin:10px 0 10px 5px;" class="splitLine"></div>
-<div class="formfontdesc">connmon is an automatic connection monitoring tool for AsusWRT Merlin - with charts.</div>
+<div class="formfontdesc">connmon is an internet connection monitoring tool for AsusWRT Merlin with charts for daily, weekly and monthly summaries.</div>
 <table width="100%" border="1" align="center" cellpadding="2" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;" id="table_buttons">
 <thead class="collapsible-jquery" id="scripttools">
 <tr><td colspan="2">Utilities (click to expand/collapse)</td></tr>
