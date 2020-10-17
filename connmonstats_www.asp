@@ -118,7 +118,7 @@ var $j=jQuery.noConflict(),maxNoCharts=9,currentNoCharts=0,ShowLines=GetCookie("
 <div class="formfontdesc">connmon is an automatic connection monitoring tool for AsusWRT Merlin - with charts.</div>
 <table width="100%" border="1" align="center" cellpadding="2" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;" id="table_buttons">
 <thead class="collapsible-jquery" id="scripttools">
-<tr><td colspan="2">Script Utilities (click to expand/collapse)</td></tr>
+<tr><td colspan="2">Utilities (click to expand/collapse)</td></tr>
 </thead>
 <div class="collapsiblecontent">
 <tr>
@@ -150,7 +150,7 @@ var $j=jQuery.noConflict(),maxNoCharts=9,currentNoCharts=0,ShowLines=GetCookie("
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="2" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;" id="table_config">
 <thead class="collapsible-jquery" id="scriptconfig">
-<tr><td colspan="2">connmon Configuration (click to expand/collapse)</td></tr>
+<tr><td colspan="2">Configuration (click to expand/collapse)</td></tr>
 </thead>
 <div class="collapsiblecontent">
 <tr class="even">
@@ -205,7 +205,7 @@ var $j=jQuery.noConflict(),maxNoCharts=9,currentNoCharts=0,ShowLines=GetCookie("
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="2" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;" id="table_buttons2">
 <thead class="collapsible-jquery" id="charttools">
-<tr><td colspan="2">Chart Configuration (click to expand/collapse)</td></tr>
+<tr><td colspan="2">Chart Display Options (click to expand/collapse)</td></tr>
 </thead>
 <div class="collapsiblecontent">
 <tr>
