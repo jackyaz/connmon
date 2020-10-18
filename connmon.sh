@@ -285,6 +285,7 @@ Conf_FromSettings(){
 			ScriptStorageLocation "$(ScriptStorageLocation "check")"
 			Create_Symlinks
 			
+			Auto_Cron "create"
 			Generate_CSVs
 			
 			Print_Output "true" "Merge of updated settings from WebUI completed successfully" "$PASS"
@@ -441,6 +442,7 @@ PingFrequency(){
 			
 			if [ "$exitmenu" != "exit" ]; then
 				sed -i 's/^PINGFREQUENCY.*$/PINGFREQUENCY='"$pingfreq"'/' "$SCRIPT_CONF"
+				Auto_Cron "create"
 				return 0
 			else
 				printf "\\n"
