@@ -77,10 +77,40 @@ function Validate_Domain(forminput){
 	}
 }
 
+function Validate_PingDuration(forminput){
+	var inputname = forminput.name;
+	var inputvalue = forminput.value*1;
+	
+	if(inputvalue > 60 || inputvalue < 10){
+		$j(forminput).addClass("invalid");
+		return false;
+	}
+	else{
+		$j(forminput).removeClass("invalid");
+		return true;
+	}
+}
+
+function Validate_PingFrequency(forminput){
+	var inputname = forminput.name;
+	var inputvalue = forminput.value*1;
+	
+	if(inputvalue > 10 || inputvalue < 1){
+		$j(forminput).addClass("invalid");
+		return false;
+	}
+	else{
+		$j(forminput).removeClass("invalid");
+		return true;
+	}
+}
+
 function Validate_All(){
 	var validationfailed = false;
 	if(! Validate_IP(document.form.connmon_ipaddr)){validationfailed=true;}
 	if(! Validate_Domain(document.form.connmon_domain)){validationfailed=true;}
+	if(! Validate_PingDuration(document.form.connmon_pingduration)){validationfailed=true;}
+	if(! Validate_PingFrequency(document.form.connmon_pingfrequency)){validationfailed=true;}
 	
 	if(validationfailed){
 		alert("Validation for some fields failed. Please correct invalid values and try again.");
