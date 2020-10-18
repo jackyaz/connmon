@@ -415,19 +415,83 @@ PingServer(){
 
 PingFrequency(){
 	case "$1" in
+		update)
+			pingfreq=0
+			exitmenu=""
+			ScriptHeader
+			while true; do
+				printf "\\n\\e[1mPlease enter the desired test frequency (every 1-10 minutes):\\e[0m    "
+				read -r "pingfreq_choice"
+				
+				if [ "$pingfreq_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif ! Validate_Number "" "$pingfreq_choice" "silent"; then
+					printf "\\n\\e[31mPlease enter a valid number (1-10)\\e[0m\\n"
+				else
+					if [ "$pingfreq_choice" -lt 1 ] || [ "$pingfreq_choice" -gt 10 ]; then
+						printf "\\n\\e[31mPlease enter a number between 1 and 10\\e[0m\\n"
+					else
+						pingfreq="$pingfreq_choice"
+						printf "\\n"
+						break
+					fi
+				fi
+			done
+			
+			if [ "$exitmenu" != "exit" ]; then
+				sed -i 's/^PINGFREQUENCY.*$/PINGFREQUENCY='"$pingfreq"'/' "$SCRIPT_CONF"
+				return 0
+			else
+				printf "\\n"
+				return 1
+			fi
+		;;
 		check)
 			PINGFREQUENCY=$(grep "PINGFREQUENCY" "$SCRIPT_CONF" | cut -f2 -d"=")
 			echo "$PINGFREQUENCY"
-			;;
+		;;
 	esac
 }
 
 PingDuration(){
 	case "$1" in
+		update)
+			pingdur=0
+			exitmenu=""
+			ScriptHeader
+			while true; do
+				printf "\\n\\e[1mPlease enter the desired test duration (10-60 seconds):\\e[0m    "
+				read -r "pingdur_choice"
+				
+				if [ "$pingdur_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif ! Validate_Number "" "$pingdur_choice" "silent"; then
+					printf "\\n\\e[31mPlease enter a valid number (10-60)\\e[0m\\n"
+				else
+					if [ "$pingdur_choice" -lt 10 ] || [ "$pingdur_choice" -gt 60 ]; then
+						printf "\\n\\e[31mPlease enter a number between 10 and 60\\e[0m\\n"
+					else
+						pingdur="$pingdur_choice"
+						printf "\\n"
+						break
+					fi
+				fi
+			done
+			
+			if [ "$exitmenu" != "exit" ]; then
+				sed -i 's/^PINGDURATION.*$/PINGDURATION='"$pingdur"'/' "$SCRIPT_CONF"
+				return 0
+			else
+				printf "\\n"
+				return 1
+			fi
+		;;
 		check)
 			PINGDURATION=$(grep "PINGDURATION" "$SCRIPT_CONF" | cut -f2 -d"=")
 			echo "$PINGDURATION"
-			;;
+		;;
 	esac
 }
 
@@ -892,6 +956,8 @@ ScriptHeader(){
 MainMenu(){
 	printf "1.    Check connection now\\n\\n"
 	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(PingServer "check")"
+	printf "3.    Set ping test duration\\n      Currently: %ss\\n\\n" "$(PingDuration "check")"
+	printf "4.    Set ping test frequency\\n      Currently: Every %s minutes\\n\\n" "$(PingFrequency "check")"
 	printf "5.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode "check")"
 	printf "6.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode "check")"
 	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$(ScriptStorageLocation "check")"
@@ -923,10 +989,16 @@ MainMenu(){
 			;;
 			3)
 				printf "\\n"
-				Menu_ToggleOutputDataMode
+				Menu_SetPingDuration
+				PressEnter
 				break
 			;;
 			4)
+				printf "\\n"
+				Menu_SetPingFrequency
+				PressEnter
+				break
+			;;
 			5)
 				printf "\\n"
 				Menu_ToggleOutputDataMode
@@ -1072,6 +1144,14 @@ Menu_GenerateStats(){
 
 Menu_SetPingServer(){
 	PingServer "update"
+}
+
+Menu_SetPingDuration(){
+	PingDuration "update"
+}
+
+Menu_SetPingFrequency(){
+	PingFrequency "update"
 }
 
 Menu_ToggleOutputDataMode(){
