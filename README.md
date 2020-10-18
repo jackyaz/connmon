@@ -9,10 +9,6 @@ connmon is an internet connection monitoring tool for AsusWRT Merlin with charts
 
 connmon is free to use under the [GNU General Public License version 3](https://opensource.org/licenses/GPL-3.0) (GPL 3.0).
 
-![Menu UI](https://puu.sh/FOlEk/c4f4c1be17.png)
-
-![Graph example](https://puu.sh/FOlDH/4d33af75c7.png)
-
 ### Supporting development
 Love the script and want to support future development? Any and all donations gratefully received!
 
@@ -44,6 +40,12 @@ If this does not work, you will need to use the full path:
 ```sh
 /jffs/scripts/connmon
 ```
+
+## Screenshots
+
+![WebUI](https://puu.sh/GEos0/886712d1f2.png)
+
+![CLI UI](https://puu.sh/GEolp/0ccba82b9c.png)
 
 ## Help
 Please post about any issues and problems here: [connmon on SNBForums](https://www.snbforums.com/threads/connmon-internet-connection-monitoring.56163/)
