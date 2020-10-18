@@ -13,6 +13,7 @@ function LoadCustomSettings(){
 
 var $j = jQuery.noConflict(); //avoid conflicts on John's fork (state.js)
 
+var pingtestdur=60;
 var maxNoCharts = 9;
 var currentNoCharts = 0;
 var ShowLines = GetCookie("ShowLines","string");
@@ -719,6 +720,13 @@ function get_conf_file(){
 					document.form.pingtype.onchange();
 				}
 				else if (configdata[i].indexOf("OUTPUTDATAMODE") != -1) {
+				else if (configdata[i].indexOf("PINGDURATION") != -1){
+					document.form.connmon_pingduration.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+					pingtestdur=document.form.connmon_pingduration.value;
+				}
+				else if (configdata[i].indexOf("PINGFREQUENCY") != -1){
+					document.form.connmon_pingfrequency.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+				}
 					document.form.connmon_outputdatamode.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
 				}
 				else if (configdata[i].indexOf("OUTPUTTIMEMODE") != -1) {
@@ -735,7 +743,7 @@ function get_conf_file(){
 function runPingTest() {
 	var action_script_tmp = "start_connmon";
 	document.form.action_script.value = action_script_tmp;
-	var restart_time = 70;
+	var restart_time = pingtestdur;
 	document.form.action_wait.value = restart_time;
 	showLoading();
 	document.form.submit();
