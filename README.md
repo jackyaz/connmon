@@ -2,16 +2,12 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/91af8db9cd354643a8ef6a7117be90fb)](https://www.codacy.com/app/jackyaz/connmon?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jackyaz/connmon&amp;utm_campaign=Badge_Grade)
 [![Build Status](https://travis-ci.com/jackyaz/connmon.svg?branch=master)](https://travis-ci.com/jackyaz/connmon)
 
-## v2.6.0
-### Updated on 2020-05-28
+## v2.7.0
+### Updated on 2020-10-18
 ## About
-Track your Internet uptime, on your router. Graphs available for on the Addons page of the WebUI.
+connmon is an internet connection monitoring tool for AsusWRT Merlin with charts for daily, weekly and monthly summaries.
 
 connmon is free to use under the [GNU General Public License version 3](https://opensource.org/licenses/GPL-3.0) (GPL 3.0).
-
-![Menu UI](https://puu.sh/FOlEk/c4f4c1be17.png)
-
-![Graph example](https://puu.sh/FOlDH/4d33af75c7.png)
 
 ### Supporting development
 Love the script and want to support future development? Any and all donations gratefully received!
@@ -31,6 +27,10 @@ Using your preferred SSH client/terminal, copy and paste the following command, 
 ```
 
 ## Usage
+### WebUI
+Connmon can be configured via the WebUI, in the Addons section under Uptime Monitoring.
+
+### Command Line
 To launch the connmon menu after installation, use:
 ```sh
 connmon
@@ -41,8 +41,11 @@ If this does not work, you will need to use the full path:
 /jffs/scripts/connmon
 ```
 
-## Updating
-Launch connmon and select option u
+## Screenshots
+
+![WebUI](https://puu.sh/GEos0/886712d1f2.png)
+
+![CLI UI](https://puu.sh/GEolp/0ccba82b9c.png)
 
 ## Help
 Please post about any issues and problems here: [connmon on SNBForums](https://www.snbforums.com/threads/connmon-internet-connection-monitoring.56163/)

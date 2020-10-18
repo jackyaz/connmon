@@ -2,8 +2,8 @@ var custom_settings;
 
 function LoadCustomSettings(){
 	custom_settings = <% get_custom_settings(); %>;
-	for (var prop in custom_settings) {
-		if (Object.prototype.hasOwnProperty.call(custom_settings, prop)) {
+	for (var prop in custom_settings){
+		if (Object.prototype.hasOwnProperty.call(custom_settings, prop)){
 			if(prop.indexOf("connmon") != -1 && prop.indexOf("connmon_version") == -1){
 				eval("delete custom_settings."+prop)
 			}
@@ -13,6 +13,7 @@ function LoadCustomSettings(){
 
 var $j = jQuery.noConflict(); //avoid conflicts on John's fork (state.js)
 
+var pingtestdur=60;
 var maxNoCharts = 9;
 var currentNoCharts = 0;
 var ShowLines = GetCookie("ShowLines","string");
@@ -24,7 +25,7 @@ var DragZoom = true;
 var ChartPan = false;
 
 Chart.defaults.global.defaultFontColor = "#CCC";
-Chart.Tooltip.positioners.cursor = function(chartElements, coordinates) {
+Chart.Tooltip.positioners.cursor = function(chartElements, coordinates){
 	return coordinates;
 };
 
@@ -37,7 +38,7 @@ var intervallist = [24,7,30];
 var bordercolourlist = ["#fc8500","#42ecf5","#ffffff"];
 var backgroundcolourlist = ["rgba(252,133,0,0.5)","rgba(66,236,245,0.5)","rgba(255,255,255,0.5)"];
 
-function keyHandler(e) {
+function keyHandler(e){
 	if (e.keyCode == 27){
 		$j(document).off("keydown");
 		ResetZoom();
@@ -55,8 +56,8 @@ function Validate_IP(forminput){
 	var inputvalue = forminput.value;
 	var inputname = forminput.name;
 	if(/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(inputvalue)){
-			$j(forminput).removeClass("invalid");
-			return true;
+		$j(forminput).removeClass("invalid");
+		return true;
 	}
 	else{
 		$j(forminput).addClass("invalid");
@@ -77,10 +78,40 @@ function Validate_Domain(forminput){
 	}
 }
 
+function Validate_PingDuration(forminput){
+	var inputname = forminput.name;
+	var inputvalue = forminput.value*1;
+	
+	if(inputvalue > 60 || inputvalue < 10){
+		$j(forminput).addClass("invalid");
+		return false;
+	}
+	else{
+		$j(forminput).removeClass("invalid");
+		return true;
+	}
+}
+
+function Validate_PingFrequency(forminput){
+	var inputname = forminput.name;
+	var inputvalue = forminput.value*1;
+	
+	if(inputvalue > 10 || inputvalue < 1){
+		$j(forminput).addClass("invalid");
+		return false;
+	}
+	else{
+		$j(forminput).removeClass("invalid");
+		return true;
+	}
+}
+
 function Validate_All(){
 	var validationfailed = false;
 	if(! Validate_IP(document.form.connmon_ipaddr)){validationfailed=true;}
 	if(! Validate_Domain(document.form.connmon_domain)){validationfailed=true;}
+	if(! Validate_PingDuration(document.form.connmon_pingduration)){validationfailed=true;}
+	if(! Validate_PingFrequency(document.form.connmon_pingfrequency)){validationfailed=true;}
 	
 	if(validationfailed){
 		alert("Validation for some fields failed. Please correct invalid values and try again.");
@@ -97,7 +128,7 @@ function changePingType(forminput){
 	if(inputvalue == "0"){
 		document.getElementById("rowip").style.display = "";
 		document.getElementById("rowdomain").style.display = "none";
-	} else {
+	} else{
 		document.getElementById("rowip").style.display = "none";
 		document.getElementById("rowdomain").style.display = "";
 	}
@@ -125,11 +156,11 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 	var numunitx = intervallist[$j("#" + txtchartname + "_Period option:selected").val()];
 	var dataobject = window[txtchartname+chartperiod];
 	
-	if(typeof dataobject === 'undefined' || dataobject === null) { Draw_Chart_NoData(txtchartname); return; }
-	if (dataobject.length == 0) { Draw_Chart_NoData(txtchartname); return; }
+	if(typeof dataobject === 'undefined' || dataobject === null){ Draw_Chart_NoData(txtchartname); return; }
+	if (dataobject.length == 0){ Draw_Chart_NoData(txtchartname); return; }
 	
-	var chartLabels = dataobject.map(function(d) {return d.Metric});
-	var chartData = dataobject.map(function(d) {return {x: d.Time, y: d.Value}});
+	var chartLabels = dataobject.map(function(d){return d.Metric});
+	var chartData = dataobject.map(function(d){return {x: d.Time, y: d.Value}});
 	var objchartname=window["LineChart_"+txtchartname];
 	
 	var timeaxisformat = getTimeFormat($j("#Time_Format option:selected").val(),"axis");
@@ -156,8 +187,8 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 		title: { display: true, text: txttitle },
 		tooltips: {
 			callbacks: {
-				title: function (tooltipItem, data) { return (moment(tooltipItem[0].xLabel,"X").format(timetooltipformat)); },
-				label: function (tooltipItem, data) { return round(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y,3).toFixed(3) + ' ' + txtunity;}
+				title: function (tooltipItem, data){ return (moment(tooltipItem[0].xLabel,"X").format(timetooltipformat)); },
+				label: function (tooltipItem, data){ return round(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y,3).toFixed(3) + ' ' + txtunity;}
 			},
 			mode: 'x',
 			position: 'nearest',
@@ -184,7 +215,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 				ticks: {
 					display: true,
 					beginAtZero: true,
-					callback: function (value, index, values) {
+					callback: function (value, index, values){
 						return round(value,3).toFixed(3) + ' ' + txtunity;
 					}
 				},
@@ -318,14 +349,14 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 	window["LineChart_"+txtchartname]=objchartname;
 }
 
-function getLimit(datasetname,axis,maxmin,isannotation) {
+function getLimit(datasetname,axis,maxmin,isannotation){
 	var limit=0;
 	var values;
 	if(axis == "x"){
-		values = datasetname.map(function(o) { return o.x } );
+		values = datasetname.map(function(o){ return o.x } );
 	}
 	else{
-		values = datasetname.map(function(o) { return o.y } );
+		values = datasetname.map(function(o){ return o.y } );
 	}
 	
 	if(maxmin == "max"){
@@ -340,42 +371,42 @@ function getLimit(datasetname,axis,maxmin,isannotation) {
 	return limit;
 }
 
-function getAverage(datasetname) {
+function getAverage(datasetname){
 	var total = 0;
-	for(var i = 0; i < datasetname.length; i++) {
+	for(var i = 0; i < datasetname.length; i++){
 		total += (datasetname[i].y*1);
 	}
 	var avg = total / datasetname.length;
 	return avg;
 }
 
-function round(value, decimals) {
+function round(value, decimals){
 	return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
 }
 
-function ToggleLines() {
+function ToggleLines(){
 	if(ShowLines == ""){
 		ShowLines = "line";
 		SetCookie("ShowLines","line");
 	}
-	else {
+	else{
 		ShowLines = "";
 		SetCookie("ShowLines","");
 	}
 	for(i = 0; i < metriclist.length; i++){
-		for (i3 = 0; i3 < 3; i3++) {
+		for (i3 = 0; i3 < 3; i3++){
 			window["LineChart_"+metriclist[i]].options.annotation.annotations[i3].type=ShowLines;
 		}
 		window["LineChart_"+metriclist[i]].update();
 	}
 }
 
-function ToggleFill() {
+function ToggleFill(){
 	if(ShowFill == "false"){
 		ShowFill = "origin";
 		SetCookie("ShowFill","origin");
 	}
-	else {
+	else{
 		ShowFill = "false";
 		SetCookie("ShowFill","false");
 	}
@@ -385,9 +416,9 @@ function ToggleFill() {
 	}
 }
 
-function RedrawAllCharts() {
+function RedrawAllCharts(){
 	for(i = 0; i < metriclist.length; i++){
-		for (i2 = 0; i2 < chartlist.length; i2++) {
+		for (i2 = 0; i2 < chartlist.length; i2++){
 			d3.csv('/ext/connmon/csv/'+metriclist[i].replace("PacketLoss","Packet_Loss")+chartlist[i2]+'.htm').then(SetGlobalDataset.bind(null,metriclist[i]+chartlist[i2]));
 		}
 	}
@@ -396,7 +427,7 @@ function RedrawAllCharts() {
 function SetGlobalDataset(txtchartname,dataobject){
 	window[txtchartname] = dataobject;
 	currentNoCharts++;
-	if(currentNoCharts == maxNoCharts) {
+	if(currentNoCharts == maxNoCharts){
 		for(i = 0; i < metriclist.length; i++){
 			$j("#"+metriclist[i]+"_Period").val(GetCookie(metriclist[i]+"_Period","number"));
 			Draw_Chart(metriclist[i],titlelist[i],measureunitlist[i],bordercolourlist[i],backgroundcolourlist[i]);
@@ -404,7 +435,7 @@ function SetGlobalDataset(txtchartname,dataobject){
 	}
 }
 
-function getTimeFormat(value,format) {
+function getTimeFormat(value,format){
 	var timeformat;
 	
 	if(format == "axis"){
@@ -437,12 +468,12 @@ function getTimeFormat(value,format) {
 	return timeformat;
 }
 
-function GetCookie(cookiename,returntype) {
+function GetCookie(cookiename,returntype){
 	var s;
-	if ((s = cookie.get("conn_"+cookiename)) != null) {
+	if ((s = cookie.get("conn_"+cookiename)) != null){
 		return cookie.get("conn_"+cookiename);
 	}
-	else {
+	else{
 		if(returntype == "string"){
 			return "";
 		}
@@ -452,7 +483,7 @@ function GetCookie(cookiename,returntype) {
 	}
 }
 
-function SetCookie(cookiename,cookievalue) {
+function SetCookie(cookiename,cookievalue){
 	cookie.set("conn_"+cookiename, cookievalue, 31);
 }
 
@@ -462,7 +493,7 @@ function AddEventHandlers(){
 			if($j(this).css("display") == "none"){
 				SetCookie($j(this).siblings()[0].id,"collapsed");
 			}
-			else {
+			else{
 				SetCookie($j(this).siblings()[0].id,"expanded");
 			}
 		})
@@ -472,7 +503,7 @@ function AddEventHandlers(){
 		if(GetCookie($j(this)[0].id,"string") == "collapsed"){
 			$j(this).siblings().toggle(false);
 		}
-		else {
+		else{
 			$j(this).siblings().toggle(true);
 		}
 	});
@@ -481,13 +512,13 @@ function AddEventHandlers(){
 $j.fn.serializeObject = function(){
 	var o = custom_settings;
 	var a = this.serializeArray();
-	$j.each(a, function() {
-		if (o[this.name] !== undefined && this.name.indexOf("connmon_pingserver") != -1) {
-			if (!o[this.name].push) {
+	$j.each(a, function(){
+		if (o[this.name] !== undefined && this.name.indexOf("connmon") != -1 && this.name.indexOf("version") == -1 && this.name.indexOf("ipaddr") == -1 && this.name.indexOf("domain") == -1){
+			if (!o[this.name].push){
 				o[this.name] = [o[this.name]];
 			}
 			o[this.name].push(this.value || '');
-		} else if (this.name.indexOf("connmon_pingserver") != -1){
+		} else if (this.name.indexOf("connmon") != -1 && this.name.indexOf("version") == -1 && this.name.indexOf("ipaddr") == -1 && this.name.indexOf("domain") == -1){
 			o[this.name] = this.value || '';
 		}
 	});
@@ -525,11 +556,11 @@ function ScriptUpdateLayout(){
 	}
 }
 
-function reload() {
+function reload(){
 	location.reload(true);
 }
 
-function getChartPeriod(period) {
+function getChartPeriod(period){
 	var chartperiod = "daily";
 	if (period == 0) chartperiod = "daily";
 	else if (period == 1) chartperiod = "weekly";
@@ -540,7 +571,7 @@ function getChartPeriod(period) {
 function ResetZoom(){
 	for(i = 0; i < metriclist.length; i++){
 		var chartobj = window["LineChart_"+metriclist[i]];
-		if(typeof chartobj === 'undefined' || chartobj === null) { continue; }
+		if(typeof chartobj === 'undefined' || chartobj === null){ continue; }
 		chartobj.resetZoom();
 	}
 }
@@ -556,7 +587,7 @@ function ToggleDragZoom(button){
 		ChartPan = true;
 		buttonvalue = "Drag Zoom Off";
 	}
-	else {
+	else{
 		drag = true;
 		pan = false;
 		DragZoom = true;
@@ -566,7 +597,7 @@ function ToggleDragZoom(button){
 	
 	for(i = 0; i < metriclist.length; i++){
 		var chartobj = window["LineChart_"+metriclist[i]];
-		if(typeof chartobj === 'undefined' || chartobj === null) { continue; }
+		if(typeof chartobj === 'undefined' || chartobj === null){ continue; }
 		chartobj.options.plugins.zoom.zoom.drag = drag;
 		chartobj.options.plugins.zoom.pan.enabled = pan;
 		button.value = buttonvalue;
@@ -574,18 +605,47 @@ function ToggleDragZoom(button){
 }
 }
 
-function ExportCSV() {
-	location.href = "ext/connmon/csv/connmondata.zip";
+function ExportCSV(){
+	location.href = "/ext/connmon/csv/connmondata.zip";
 	return 0;
 }
 
+function update_status(){
+	$j.ajax({
+		url: '/ext/connmon/detect_update.js',
+		dataType: 'script',
+		timeout: 3000,
+		error:	function(xhr){
+			setTimeout('update_status();', 1000);
+		},
+		success: function(){
+			if (updatestatus == "InProgress"){
+				setTimeout('update_status();', 1000);
+			}
+			else{
+				document.getElementById("imgChkUpdate").style.display = "none";
+				showhide("connmon_version_server", true);
+				if(updatestatus != "None"){
+					$j("#connmon_version_server").text("Updated version available: "+updatestatus);
+					showhide("btnChkUpdate", false);
+					showhide("btnDoUpdate", true);
+				}
+				else{
+					$j("#connmon_version_server").text("No update available");
+					showhide("btnChkUpdate", true);
+					showhide("btnDoUpdate", false);
+				}
+			}
+		}
+	});
+}
+
 function CheckUpdate(){
-	var action_script_tmp = "start_connmoncheckupdate";
-	document.form.action_script.value = action_script_tmp;
-	var restart_time = 10;
-	document.form.action_wait.value = restart_time;
-	showLoading();
-	document.form.submit();
+	showhide("btnChkUpdate", false);
+	document.formChkVer.action_script.value="start_connmoncheckupdate"
+	document.formChkVer.submit();
+	document.getElementById("imgChkUpdate").style.display = "";
+	setTimeout("update_status();", 2000);
 }
 
 function DoUpdate(){
@@ -597,11 +657,11 @@ function DoUpdate(){
 	document.form.submit();
 }
 
-function applyRule() {
+function applyRule(){
 	if(Validate_All()){
 		if(document.form.pingtype.value == 0){
 			document.form.connmon_pingserver.value = document.form.connmon_ipaddr.value;
-		} else if(document.form.pingtype.value == 1) {
+		} else if(document.form.pingtype.value == 1){
 			document.form.connmon_pingserver.value = document.form.connmon_domain.value;
 		}
 		document.getElementById('amng_custom').value = JSON.stringify($j('form').serializeObject())
@@ -612,7 +672,7 @@ function applyRule() {
 		showLoading();
 		document.form.submit();
 	}
-	else {
+	else{
 		return false;
 	}
 }
@@ -630,7 +690,7 @@ function GetVersionNumber(versiontype)
 	if(typeof versionprop == 'undefined' || versionprop == null){
 		return "N/A";
 	}
-	else {
+	else{
 		return versionprop;
 	}
 }
@@ -643,39 +703,62 @@ function get_conf_file(){
 			setTimeout("get_conf_file();", 1000);
 		},
 		success: function(data){
-			var pingserver=data.split("\n")[0].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
-			document.form.connmon_pingserver.value = pingserver;
-			if(Validate_IP(document.form.connmon_pingserver)) {
-				document.form.pingtype.value=0;
-				document.form.connmon_ipaddr.value=pingserver;
-			} else {
-				document.form.pingtype.value=1;
-				document.form.connmon_domain.value=pingserver;
+			var configdata=data.split("\n");
+			configdata = configdata.filter(Boolean);
+			
+			for (var i = 0; i < configdata.length; i++){
+				if (configdata[i].indexOf("PINGSERVER") != -1){
+					var pingserver=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+					document.form.connmon_pingserver.value = pingserver;
+					if(Validate_IP(document.form.connmon_pingserver)){
+						document.form.pingtype.value=0;
+						document.form.connmon_ipaddr.value=pingserver;
+					} else{
+						document.form.pingtype.value=1;
+						document.form.connmon_domain.value=pingserver;
+					}
+					document.form.pingtype.onchange();
+				}
+				else if (configdata[i].indexOf("PINGDURATION") != -1){
+					document.form.connmon_pingduration.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+					pingtestdur=document.form.connmon_pingduration.value;
+				}
+				else if (configdata[i].indexOf("PINGFREQUENCY") != -1){
+					document.form.connmon_pingfrequency.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+				}
+				else if (configdata[i].indexOf("OUTPUTDATAMODE") != -1){
+					document.form.connmon_outputdatamode.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+				}
+				else if (configdata[i].indexOf("OUTPUTTIMEMODE") != -1){
+					document.form.connmon_outputtimemode.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+				}
+				else if (configdata[i].indexOf("STORAGELOCATION") != -1){
+					document.form.connmon_storagelocation.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+				}
 			}
-			document.form.pingtype.onchange();
 		}
 	});
 }
 
-function runPingTest() {
+function runPingTest(){
 	var action_script_tmp = "start_connmon";
 	document.form.action_script.value = action_script_tmp;
-	var restart_time = 45;
+	var restart_time = pingtestdur;
 	document.form.action_wait.value = restart_time;
 	showLoading();
 	document.form.submit();
 }
 
-function changeAllCharts(e) {
+function changeAllCharts(e){
 	value = e.value * 1;
 	name = e.id.substring(0, e.id.indexOf("_"));
 	SetCookie(e.id,value);
-	for (i = 0; i < metriclist.length; i++) {
+	for (i = 0; i < metriclist.length; i++){
 		Draw_Chart(metriclist[i],titlelist[i],measureunitlist[i],bordercolourlist[i],backgroundcolourlist[i]);
 	}
 }
 
-function changeChart(e) {
+function changeChart(e){
 	value = e.value * 1;
 	name = e.id.substring(0, e.id.indexOf("_"));
 	SetCookie(e.id,value);

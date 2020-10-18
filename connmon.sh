@@ -13,7 +13,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.6.0"
+readonly SCRIPT_VERSION="v2.7.0"
 readonly SCRIPT_BRANCH="master"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -113,6 +113,7 @@ Set_Version_Custom_Settings(){
 }
 
 Update_Check(){
+	echo 'var updatestatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_update.js"
 	doupdate="false"
 	localver=$(grep "SCRIPT_VERSION=" /jffs/scripts/"$SCRIPT_NAME" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 	/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep -qF "jackyaz" || { Print_Output "true" "404 error detected - stopping update" "$ERR"; return 1; }
@@ -120,13 +121,18 @@ Update_Check(){
 	if [ "$localver" != "$serverver" ]; then
 		doupdate="version"
 		Set_Version_Custom_Settings "server" "$serverver"
+		echo 'var updatestatus = "'"$serverver"'";'  > "$SCRIPT_WEB_DIR/detect_update.js"
 	else
 		localmd5="$(md5sum "/jffs/scripts/$SCRIPT_NAME" | awk '{print $1}')"
 		remotemd5="$(curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | md5sum | awk '{print $1}')"
 		if [ "$localmd5" != "$remotemd5" ]; then
 			doupdate="md5"
 			Set_Version_Custom_Settings "server" "$serverver-hotfix"
+			echo 'var updatestatus = "'"$serverver-hotfix"'";'  > "$SCRIPT_WEB_DIR/detect_update.js"
 		fi
+	fi
+	if [ "$doupdate" = "false" ]; then
+		echo 'var updatestatus = "None";'  > "$SCRIPT_WEB_DIR/detect_update.js"
 	fi
 	echo "$doupdate,$localver,$serverver"
 }
@@ -275,6 +281,13 @@ Conf_FromSettings(){
 			cat "$SETTINGSFILE.bak" "$TMPFILE" > "$SETTINGSFILE"
 			rm -f "$TMPFILE"
 			rm -f "$SETTINGSFILE.bak"
+			
+			ScriptStorageLocation "$(ScriptStorageLocation "check")"
+			Create_Symlinks
+			
+			Auto_Cron "create"
+			Generate_CSVs
+			
 			Print_Output "true" "Merge of updated settings from WebUI completed successfully" "$PASS"
 		else
 			Print_Output "false" "No updated settings from WebUI found, no merge into $SCRIPT_CONF necessary" "$PASS"
@@ -336,63 +349,152 @@ Conf_Exists(){
 		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 3 ]; then
 			echo "STORAGELOCATION=jffs" >> "$SCRIPT_CONF"
 		fi
+		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 4 ]; then
+			{ echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; } >> "$SCRIPT_CONF"
+		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
 
-ShowPingServer(){
-	PINGSERVER=$(grep "PINGSERVER" "$SCRIPT_CONF" | cut -f2 -d"=")
-	echo "$PINGSERVER"
+PingServer(){
+	case "$1" in
+		update)
+			while true; do
+				ScriptHeader
+				printf "\\n\\e[1mCurrent ping destination: %s\\e[0m\\n\\n" "$(PingServer "check")"
+				printf "1.    Enter IP Address\\n"
+				printf "2.    Enter Domain\\n"
+				printf "\\ne.    Go back\\n"
+				printf "\\n\\e[1mChoose an option:\\e[0m    "
+				read -r "pingoption"
+				case "$pingoption" in
+					1)
+						while true; do
+							printf "\\n\\e[1mPlease enter an IP address, or enter e to go back:\\e[0m    "
+							read -r "ipoption"
+							if [ "$ipoption" = "e" ]; then
+								break
+							fi
+							if Validate_IP "$ipoption"; then
+								sed -i 's/^PINGSERVER.*$/PINGSERVER='"$ipoption"'/' "$SCRIPT_CONF"
+								break
+							fi
+						done
+					;;
+					2)
+						while true; do
+							printf "\\n\\e[1mPlease enter a domain name, or enter e to go back:\\e[0m    "
+							read -r "domainoption"
+							if [ "$domainoption" = "e" ]; then
+								break
+							fi
+							if Validate_Domain "$domainoption"; then
+								sed -i 's/^PINGSERVER.*$/PINGSERVER='"$domainoption"'/' "$SCRIPT_CONF"
+								break
+							fi
+						done
+					;;
+					e)
+						printf "\\n"
+						break
+					;;
+					*)
+						printf "\\nPlease choose a valid option\\n\\n"
+					;;
+				esac
+			done
+		;;
+		check)
+			PINGSERVER=$(grep "PINGSERVER" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$PINGSERVER"
+		;;
+	esac
 }
 
-SetPingServer(){
-	while true; do
-		ScriptHeader
-		printf "\\n\\e[1mCurrent ping destination: %s\\e[0m\\n\\n" "$(ShowPingServer)"
-		printf "1.    Enter IP Address\\n"
-		printf "2.    Enter Domain\\n"
-		printf "\\ne.    Go back\\n"
-		printf "\\n\\e[1mChoose an option:\\e[0m    "
-		read -r "pingoption"
-		case "$pingoption" in
-			1)
-				while true; do
-					printf "\\n\\e[1mPlease enter an IP address, or enter e to go back:\\e[0m    "
-					read -r "ipoption"
-					if [ "$ipoption" = "e" ]; then
+PingFrequency(){
+	case "$1" in
+		update)
+			pingfreq=0
+			exitmenu=""
+			ScriptHeader
+			while true; do
+				printf "\\n\\e[1mPlease enter the desired test frequency (every 1-10 minutes):\\e[0m    "
+				read -r "pingfreq_choice"
+				
+				if [ "$pingfreq_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif ! Validate_Number "" "$pingfreq_choice" "silent"; then
+					printf "\\n\\e[31mPlease enter a valid number (1-10)\\e[0m\\n"
+				else
+					if [ "$pingfreq_choice" -lt 1 ] || [ "$pingfreq_choice" -gt 10 ]; then
+						printf "\\n\\e[31mPlease enter a number between 1 and 10\\e[0m\\n"
+					else
+						pingfreq="$pingfreq_choice"
+						printf "\\n"
 						break
 					fi
-					if Validate_IP "$ipoption"; then
-						sed -i 's/^PINGSERVER.*$/PINGSERVER='"$ipoption"'/' "$SCRIPT_CONF"
-						break
-					fi
-				done
-			;;
-			2)
-				while true; do
-					printf "\\n\\e[1mPlease enter a domain name, or enter e to go back:\\e[0m    "
-					read -r "domainoption"
-					if [ "$domainoption" = "e" ]; then
-						break
-					fi
-					if Validate_Domain "$domainoption"; then
-						sed -i 's/^PINGSERVER.*$/PINGSERVER='"$domainoption"'/' "$SCRIPT_CONF"
-						break
-					fi
-				done
-			;;
-			e)
+				fi
+			done
+			
+			if [ "$exitmenu" != "exit" ]; then
+				sed -i 's/^PINGFREQUENCY.*$/PINGFREQUENCY='"$pingfreq"'/' "$SCRIPT_CONF"
+				Auto_Cron "create"
+				return 0
+			else
 				printf "\\n"
-				break
-			;;
-			*)
-				printf "\\nPlease choose a valid option\\n\\n"
-			;;
-		esac
-	done
+				return 1
+			fi
+		;;
+		check)
+			PINGFREQUENCY=$(grep "PINGFREQUENCY" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$PINGFREQUENCY"
+		;;
+	esac
+}
+
+PingDuration(){
+	case "$1" in
+		update)
+			pingdur=0
+			exitmenu=""
+			ScriptHeader
+			while true; do
+				printf "\\n\\e[1mPlease enter the desired test duration (10-60 seconds):\\e[0m    "
+				read -r "pingdur_choice"
+				
+				if [ "$pingdur_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif ! Validate_Number "" "$pingdur_choice" "silent"; then
+					printf "\\n\\e[31mPlease enter a valid number (10-60)\\e[0m\\n"
+				else
+					if [ "$pingdur_choice" -lt 10 ] || [ "$pingdur_choice" -gt 60 ]; then
+						printf "\\n\\e[31mPlease enter a number between 10 and 60\\e[0m\\n"
+					else
+						pingdur="$pingdur_choice"
+						printf "\\n"
+						break
+					fi
+				fi
+			done
+			
+			if [ "$exitmenu" != "exit" ]; then
+				sed -i 's/^PINGDURATION.*$/PINGDURATION='"$pingdur"'/' "$SCRIPT_CONF"
+				return 0
+			else
+				printf "\\n"
+				return 1
+			fi
+		;;
+		check)
+			PINGDURATION=$(grep "PINGDURATION" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$PINGDURATION"
+		;;
+	esac
 }
 
 Auto_ServiceEvent(){
@@ -467,23 +569,13 @@ Auto_Startup(){
 Auto_Cron(){
 	case $1 in
 		create)
-			STARTUPLINECOUNTDAILY=$(cru l | grep -c "$SCRIPT_NAME""_daily")
-			STARTUPLINECOUNTWEEKLY=$(cru l | grep -c "$SCRIPT_NAME""_weekly")
-			STARTUPLINECOUNTMONTHLY=$(cru l | grep -c "$SCRIPT_NAME""_monthly")
+			pingfrequency="$(PingFrequency "check")"
 			
-			if [ "$STARTUPLINECOUNTDAILY" -gt 0 ]; then
-				cru d "$SCRIPT_NAME""_daily"
-			fi
-			if [ "$STARTUPLINECOUNTWEEKLY" -gt 0 ]; then
-				cru d "$SCRIPT_NAME""_weekly"
-			fi
-			if [ "$STARTUPLINECOUNTMONTHLY" -gt 0 ]; then
-				cru d "$SCRIPT_NAME""_monthly"
-			fi
-			
-			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
-			if [ "$STARTUPLINECOUNT" -eq 0 ]; then
-				cru a "$SCRIPT_NAME" "*/5 * * * * /jffs/scripts/$SCRIPT_NAME generate"
+			# shellcheck disable=SC2063
+			STARTUPLINECOUNTEX=$(cru l | grep "$SCRIPT_NAME" | grep -c "*/$pingfrequency")
+			if [ "$STARTUPLINECOUNTEX" -eq 0 ]; then
+				cru d "$SCRIPT_NAME"
+				cru a "$SCRIPT_NAME" "*/$pingfrequency * * * * /jffs/scripts/$SCRIPT_NAME generate"
 			fi
 		;;
 		delete)
@@ -520,7 +612,7 @@ Mount_WebUI(){
 	fi
 	Print_Output "true" "Mounting $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
 	cp -f "$SCRIPT_DIR/connmonstats_www.asp" "$SCRIPT_WEBPAGE_DIR/$MyPage"
-	echo "Uptime Monitoring" > "$SCRIPT_WEBPAGE_DIR/$(echo $MyPage | cut -f1 -d'.').title"
+	echo "connmon" > "$SCRIPT_WEBPAGE_DIR/$(echo $MyPage | cut -f1 -d'.').title"
 	
 	if [ "$(uname -o)" = "ASUSWRT-Merlin" ]; then
 		if [ ! -f "/tmp/index_style.css" ]; then
@@ -548,7 +640,7 @@ Mount_WebUI(){
 		if ! grep -q "javascript:window.open('/ext/shared-jy/redirect.htm'" /tmp/menuTree.js ; then
 			sed -i "s~ext/shared-jy/redirect.htm~javascript:window.open('/ext/shared-jy/redirect.htm','_blank')~" /tmp/menuTree.js
 		fi
-		sed -i "/url: \"javascript:window.open('\/ext\/shared-jy\/redirect.htm'/i {url: \"$MyPage\", tabName: \"Uptime Monitoring\"}," /tmp/menuTree.js
+		sed -i "/url: \"javascript:window.open('\/ext\/shared-jy\/redirect.htm'/i {url: \"$MyPage\", tabName: \"connmon\"}," /tmp/menuTree.js
 		
 		umount /www/require/modules/menuTree.js 2>/dev/null
 		mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
@@ -562,6 +654,7 @@ ScriptStorageLocation(){
 			mkdir -p "/opt/share/$SCRIPT_NAME.d/"
 			mv "/jffs/addons/$SCRIPT_NAME.d/csv" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/config" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/jffs/addons/$SCRIPT_NAME.d/config.bak" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstatstext.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstats.db" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			SCRIPT_CONF="/opt/share/$SCRIPT_NAME.d/config"
@@ -572,6 +665,7 @@ ScriptStorageLocation(){
 			mkdir -p "/jffs/addons/$SCRIPT_NAME.d/"
 			mv "/opt/share/$SCRIPT_NAME.d/csv" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/config" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/opt/share/$SCRIPT_NAME.d/config.bak" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstatstext.js" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstats.db" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			SCRIPT_CONF="/jffs/addons/$SCRIPT_NAME.d/config"
@@ -665,16 +759,20 @@ Run_PingTest(){
 	
 	pingfile=/tmp/pingresult.txt
 	
-	Print_Output "false" "30 second ping test to $(ShowPingServer) starting..." "$PASS"
-	if ! Validate_IP "$(ShowPingServer)" >/dev/null 2>&1 && ! Validate_Domain "$(ShowPingServer)" >/dev/null 2>&1; then
-		Print_Output "true" "$(ShowPingServer) not valid, aborting test. Please correct ASAP" "$ERR"
+	Print_Output "false" "60 second ping test to $(PingServer "check") starting..." "$PASS"
+	if ! Validate_IP "$(PingServer "check")" >/dev/null 2>&1 && ! Validate_Domain "$(PingServer "check")" >/dev/null 2>&1; then
+		Print_Output "true" "$(PingServer "check") not valid, aborting test. Please correct ASAP" "$ERR"
 		Clear_Lock
 		return 1
 	fi
 	
+	Clear_Lock
 	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
-	ping -w 30 "$(ShowPingServer)" > "$pingfile"
+	ping -w "$(PingDuration "check")" "$(PingServer "check")" > "$pingfile"
 	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
+	Check_Lock
+	
+	ScriptStorageLocation "load"
 	
 	PREVPING=0
 	TOTALDIFF=0
@@ -858,14 +956,13 @@ ScriptHeader(){
 }
 
 MainMenu(){
-	OUTPUTDATAMODE_MENU="$(OutputDataMode "check")"
-	OUTPUTTIMEMODE_MENU="$(OutputTimeMode "check")"
-	SCRIPTSTORAGE_MENU="$(ScriptStorageLocation "check")"
 	printf "1.    Check connection now\\n\\n"
-	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(ShowPingServer)"
-	printf "3.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$OUTPUTDATAMODE_MENU"
-	printf "4.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$OUTPUTTIMEMODE_MENU"
-	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$SCRIPTSTORAGE_MENU"
+	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(PingServer "check")"
+	printf "3.    Set ping test duration\\n      Currently: %ss\\n\\n" "$(PingDuration "check")"
+	printf "4.    Set ping test frequency\\n      Currently: Every %s minutes\\n\\n" "$(PingFrequency "check")"
+	printf "5.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode "check")"
+	printf "6.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode "check")"
+	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$(ScriptStorageLocation "check")"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
 	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
@@ -894,23 +991,29 @@ MainMenu(){
 			;;
 			3)
 				printf "\\n"
-				if Check_Lock "menu"; then
-					Menu_ToggleOutputDataMode
-				fi
+				Menu_SetPingDuration
+				PressEnter
 				break
 			;;
 			4)
 				printf "\\n"
-				if Check_Lock "menu"; then
-					Menu_ToggleOutputTimeMode
-				fi
+				Menu_SetPingFrequency
+				PressEnter
+				break
+			;;
+			5)
+				printf "\\n"
+				Menu_ToggleOutputDataMode
+				break
+			;;
+			6)
+				printf "\\n"
+				Menu_ToggleOutputTimeMode
 				break
 			;;
 			s)
 				printf "\\n"
-				if Check_Lock "menu"; then
-					Menu_ToggleStorageLocation
-				fi
+				Menu_ToggleStorageLocation
 				break
 			;;
 			u)
@@ -1041,13 +1144,24 @@ Menu_GenerateStats(){
 	Clear_Lock
 }
 
+Menu_SetPingServer(){
+	PingServer "update"
+}
+
+Menu_SetPingDuration(){
+	PingDuration "update"
+}
+
+Menu_SetPingFrequency(){
+	PingFrequency "update"
+}
+
 Menu_ToggleOutputDataMode(){
 	if [ "$(OutputDataMode "check")" = "raw" ]; then
 		OutputDataMode "average"
 	elif [ "$(OutputDataMode "check")" = "average" ]; then
 		OutputDataMode "raw"
 	fi
-	Clear_Lock
 }
 
 Menu_ToggleOutputTimeMode(){
@@ -1056,7 +1170,6 @@ Menu_ToggleOutputTimeMode(){
 	elif [ "$(OutputTimeMode "check")" = "non-unix" ]; then
 		OutputTimeMode "unix"
 	fi
-	Clear_Lock
 }
 
 Menu_ToggleStorageLocation(){
@@ -1067,11 +1180,6 @@ Menu_ToggleStorageLocation(){
 		ScriptStorageLocation "jffs"
 		Create_Symlinks
 	fi
-	Clear_Lock
-}
-
-Menu_SetPingServer(){
-	SetPingServer
 }
 
 Menu_Update(){
@@ -1239,50 +1347,36 @@ case "$1" in
 			Menu_GenerateStats
 			exit 0
 		elif [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME""config" ]; then
-			Check_Lock
 			Conf_FromSettings
-			Clear_Lock
 			exit 0
 		elif [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME""checkupdate" ]; then
-			Check_Lock
 			updatecheckresult="$(Update_Check)"
-			Clear_Lock
 			exit 0
 		elif [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME""doupdate" ]; then
-			Check_Lock
 			Update_Version "force" "unattended"
-			Clear_Lock
 			exit 0
 		fi
 		exit 0
 	;;
 	update)
-		Check_Lock
 		Update_Version "unattended"
-		Clear_Lock
 		exit 0
 	;;
 	forceupdate)
-		Check_Lock
 		Update_Version "force" "unattended"
-		Clear_Lock
 		exit 0
 	;;
 	setversion)
-		Check_Lock
 		Set_Version_Custom_Settings "local"
 		Set_Version_Custom_Settings "server" "$SCRIPT_VERSION"
-		Clear_Lock
 		if [ -z "$2" ]; then
 			exec "$0"
 		fi
 		exit 0
 	;;
 	checkupdate)
-		Check_Lock
 		#shellcheck disable=SC2034
 		updatecheckresult="$(Update_Check)"
-		Clear_Lock
 		exit 0
 	;;
 	uninstall)
@@ -1291,23 +1385,17 @@ case "$1" in
 		exit 0
 	;;
 	develop)
-		Check_Lock
 		sed -i 's/^readonly SCRIPT_BRANCH.*$/readonly SCRIPT_BRANCH="develop"/' "/jffs/scripts/$SCRIPT_NAME"
-		Clear_Lock
 		exec "$0" "update"
 		exit 0
 	;;
 	stable)
-		Check_Lock
 		sed -i 's/^readonly SCRIPT_BRANCH.*$/readonly SCRIPT_BRANCH="master"/' "/jffs/scripts/$SCRIPT_NAME"
-		Clear_Lock
 		exec "$0" "update"
 		exit 0
 	;;
 	*)
-		Check_Lock
 		echo "Command not recognised, please try again"
-		Clear_Lock
 		exit 1
 	;;
 esac
