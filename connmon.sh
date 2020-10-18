@@ -358,56 +358,59 @@ Conf_Exists(){
 	fi
 }
 
-ShowPingServer(){
-	PINGSERVER=$(grep "PINGSERVER" "$SCRIPT_CONF" | cut -f2 -d"=")
-	echo "$PINGSERVER"
-}
-
-SetPingServer(){
-	while true; do
-		ScriptHeader
-		printf "\\n\\e[1mCurrent ping destination: %s\\e[0m\\n\\n" "$(ShowPingServer)"
-		printf "1.    Enter IP Address\\n"
-		printf "2.    Enter Domain\\n"
-		printf "\\ne.    Go back\\n"
-		printf "\\n\\e[1mChoose an option:\\e[0m    "
-		read -r "pingoption"
-		case "$pingoption" in
-			1)
-				while true; do
-					printf "\\n\\e[1mPlease enter an IP address, or enter e to go back:\\e[0m    "
-					read -r "ipoption"
-					if [ "$ipoption" = "e" ]; then
+PingServer(){
+	case "$1" in
+		update)
+			while true; do
+				ScriptHeader
+				printf "\\n\\e[1mCurrent ping destination: %s\\e[0m\\n\\n" "$(PingServer "check")"
+				printf "1.    Enter IP Address\\n"
+				printf "2.    Enter Domain\\n"
+				printf "\\ne.    Go back\\n"
+				printf "\\n\\e[1mChoose an option:\\e[0m    "
+				read -r "pingoption"
+				case "$pingoption" in
+					1)
+						while true; do
+							printf "\\n\\e[1mPlease enter an IP address, or enter e to go back:\\e[0m    "
+							read -r "ipoption"
+							if [ "$ipoption" = "e" ]; then
+								break
+							fi
+							if Validate_IP "$ipoption"; then
+								sed -i 's/^PINGSERVER.*$/PINGSERVER='"$ipoption"'/' "$SCRIPT_CONF"
+								break
+							fi
+						done
+					;;
+					2)
+						while true; do
+							printf "\\n\\e[1mPlease enter a domain name, or enter e to go back:\\e[0m    "
+							read -r "domainoption"
+							if [ "$domainoption" = "e" ]; then
+								break
+							fi
+							if Validate_Domain "$domainoption"; then
+								sed -i 's/^PINGSERVER.*$/PINGSERVER='"$domainoption"'/' "$SCRIPT_CONF"
+								break
+							fi
+						done
+					;;
+					e)
+						printf "\\n"
 						break
-					fi
-					if Validate_IP "$ipoption"; then
-						sed -i 's/^PINGSERVER.*$/PINGSERVER='"$ipoption"'/' "$SCRIPT_CONF"
-						break
-					fi
-				done
-			;;
-			2)
-				while true; do
-					printf "\\n\\e[1mPlease enter a domain name, or enter e to go back:\\e[0m    "
-					read -r "domainoption"
-					if [ "$domainoption" = "e" ]; then
-						break
-					fi
-					if Validate_Domain "$domainoption"; then
-						sed -i 's/^PINGSERVER.*$/PINGSERVER='"$domainoption"'/' "$SCRIPT_CONF"
-						break
-					fi
-				done
-			;;
-			e)
-				printf "\\n"
-				break
-			;;
-			*)
-				printf "\\nPlease choose a valid option\\n\\n"
-			;;
-		esac
-	done
+					;;
+					*)
+						printf "\\nPlease choose a valid option\\n\\n"
+					;;
+				esac
+			done
+		;;
+		check)
+			PINGSERVER=$(grep "PINGSERVER" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$PINGSERVER"
+		;;
+	esac
 }
 
 PingFrequency(){
@@ -690,16 +693,16 @@ Run_PingTest(){
 	
 	pingfile=/tmp/pingresult.txt
 	
-	Print_Output "false" "60 second ping test to $(ShowPingServer) starting..." "$PASS"
-	if ! Validate_IP "$(ShowPingServer)" >/dev/null 2>&1 && ! Validate_Domain "$(ShowPingServer)" >/dev/null 2>&1; then
-		Print_Output "true" "$(ShowPingServer) not valid, aborting test. Please correct ASAP" "$ERR"
+	Print_Output "false" "60 second ping test to $(PingServer "check") starting..." "$PASS"
+	if ! Validate_IP "$(PingServer "check")" >/dev/null 2>&1 && ! Validate_Domain "$(PingServer "check")" >/dev/null 2>&1; then
+		Print_Output "true" "$(PingServer "check") not valid, aborting test. Please correct ASAP" "$ERR"
 		Clear_Lock
 		return 1
 	fi
 	
 	Clear_Lock
 	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
-	ping -w "$(PingDuration "check")" "$(ShowPingServer)" > "$pingfile"
+	ping -w "$(PingDuration "check")" "$(PingServer "check")" > "$pingfile"
 	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
 	Check_Lock
 	
@@ -887,14 +890,11 @@ ScriptHeader(){
 }
 
 MainMenu(){
-	OUTPUTDATAMODE_MENU="$(OutputDataMode "check")"
-	OUTPUTTIMEMODE_MENU="$(OutputTimeMode "check")"
-	SCRIPTSTORAGE_MENU="$(ScriptStorageLocation "check")"
 	printf "1.    Check connection now\\n\\n"
-	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(ShowPingServer)"
-	printf "3.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$OUTPUTDATAMODE_MENU"
-	printf "4.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$OUTPUTTIMEMODE_MENU"
-	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$SCRIPTSTORAGE_MENU"
+	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(PingServer "check")"
+	printf "5.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode "check")"
+	printf "6.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode "check")"
+	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$(ScriptStorageLocation "check")"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
 	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
@@ -927,6 +927,12 @@ MainMenu(){
 				break
 			;;
 			4)
+			5)
+				printf "\\n"
+				Menu_ToggleOutputDataMode
+				break
+			;;
+			6)
 				printf "\\n"
 				Menu_ToggleOutputTimeMode
 				break
@@ -1064,6 +1070,10 @@ Menu_GenerateStats(){
 	Clear_Lock
 }
 
+Menu_SetPingServer(){
+	PingServer "update"
+}
+
 Menu_ToggleOutputDataMode(){
 	if [ "$(OutputDataMode "check")" = "raw" ]; then
 		OutputDataMode "average"
@@ -1088,10 +1098,6 @@ Menu_ToggleStorageLocation(){
 		ScriptStorageLocation "jffs"
 		Create_Symlinks
 	fi
-}
-
-Menu_SetPingServer(){
-	SetPingServer
 }
 
 Menu_Update(){
