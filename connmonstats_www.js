@@ -150,7 +150,6 @@ function Draw_Chart_NoData(txtchartname){
 }
 
 function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundcolourname){
-	txtchartname
 	var chartperiod = getChartPeriod($j("#" + txtchartname + "_Period option:selected").val());
 	var txtunitx = timeunitlist[$j("#" + txtchartname + "_Period option:selected").val()];
 	var numunitx = intervallist[$j("#" + txtchartname + "_Period option:selected").val()];
