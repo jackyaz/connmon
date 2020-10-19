@@ -35,14 +35,6 @@ thead.collapsible-jquery {
   cursor: pointer;
 }
 
-.collapsiblecontent {
-  padding: 0px;
-  max-height: 0;
-  overflow: hidden;
-  border: none;
-  transition: max-height 0.2s ease-out;
-}
-
 .invalid {
   background-color: darkred !important;
 }
@@ -126,7 +118,6 @@ var $j=jQuery.noConflict(),pingtestdur=60,maxNoCharts=9,currentNoCharts=0,ShowLi
 <thead class="collapsible-jquery" id="scripttools">
 <tr><td colspan="2">Utilities (click to expand/collapse)</td></tr>
 </thead>
-<div class="collapsiblecontent">
 <tr>
 <th width="20%">Version information</th>
 <td>
@@ -152,14 +143,12 @@ var $j=jQuery.noConflict(),pingtestdur=60,maxNoCharts=9,currentNoCharts=0,ShowLi
 <input type="button" onclick="ExportCSV();" value="Export to CSV" class="button_gen" name="btnExport">
 </td>
 </tr>
-</div>
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="2" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;" id="table_config">
 <thead class="collapsible-jquery" id="scriptconfig">
 <tr><td colspan="2">Configuration (click to expand/collapse)</td></tr>
 </thead>
-<div class="collapsiblecontent">
 <tr class="even">
 <th width="40%">Ping destination type</th>
 <td>
@@ -221,14 +210,12 @@ minutes <span style="color:#FFCC00;">(between 1 and 10, default: 3)</span>
 <input type="button" onclick="applyRule();" value="Save" class="button_gen" name="button">
 </td>
 </tr>
-</div>
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="2" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" style="border:0px;" id="table_buttons2">
 <thead class="collapsible-jquery" id="charttools">
 <tr><td colspan="2">Chart Display Options (click to expand/collapse)</td></tr>
 </thead>
-<div class="collapsiblecontent">
 <tr>
 <th width="20%"><span style="color:#FFFFFF;">Time format</span><br /><span style="color:#FFFFFF;">for tooltips and Last 24h chart axis</span></th>
 <td>
@@ -249,7 +236,6 @@ minutes <span style="color:#FFCC00;">(between 1 and 10, default: 3)</span>
 <input type="button" onclick="ToggleFill();" value="Toggle Fill" class="button_gen" name="btnToggleFill">
 </td>
 </tr>
-</div>
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 
@@ -259,7 +245,6 @@ minutes <span style="color:#FFCC00;">(between 1 and 10, default: 3)</span>
 <td>Charts (click to expand/collapse)</td>
 </tr>
 </thead>
-<div class="collapsiblecontent">
 <tr><td align="center" style="padding: 0px;">
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 <thead class="collapsible-jquery" id="chart_ping">
@@ -267,7 +252,6 @@ minutes <span style="color:#FFCC00;">(between 1 and 10, default: 3)</span>
 <td colspan="2">Ping (click to expand/collapse)</td>
 </tr>
 </thead>
-<div class="collapsiblecontent">
 <tr class="even">
 <th width="40%">Period to display</th>
 <td>
@@ -283,7 +267,6 @@ minutes <span style="color:#FFCC00;">(between 1 and 10, default: 3)</span>
 <div style="background-color:#2f3e44;border-radius:10px;width:730px;height:500px;padding-left:5px;"><canvas id="divLineChart_Ping" height="500" /></div>
 </td>
 </tr>
-</div>
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
@@ -292,7 +275,6 @@ minutes <span style="color:#FFCC00;">(between 1 and 10, default: 3)</span>
 <td colspan="2">Jitter (click to expand/collapse)</td>
 </tr>
 </thead>
-<div class="collapsiblecontent">
 <tr class="even">
 <th width="40%">Period to display</th>
 <td>
@@ -308,7 +290,6 @@ minutes <span style="color:#FFCC00;">(between 1 and 10, default: 3)</span>
 <div style="background-color:#2f3e44;border-radius:10px;width:730px;height:500px;padding-left:5px;"><canvas id="divLineChart_Jitter" height="500" /></div>
 </td>
 </tr>
-</div>
 </table>
 <div style="line-height:10px;">&nbsp;</div>
 <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
@@ -317,7 +298,6 @@ minutes <span style="color:#FFCC00;">(between 1 and 10, default: 3)</span>
 <td colspan="2">Quality (click to expand/collapse)</td>
 </tr>
 </thead>
-<div class="collapsiblecontent">
 <tr class="even">
 <th width="40%">Period to display</th>
 <td>
@@ -333,11 +313,9 @@ minutes <span style="color:#FFCC00;">(between 1 and 10, default: 3)</span>
 <div style="background-color:#2f3e44;border-radius:10px;width:730px;height:500px;padding-left:5px;"><canvas id="divLineChart_PacketLoss" height="500" /></div>
 </td>
 </tr>
-</div>
 </table>
 </td>
 </tr>
-</div>
 </table>
 
 </td>
