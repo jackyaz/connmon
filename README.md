@@ -28,7 +28,7 @@ Using your preferred SSH client/terminal, copy and paste the following command, 
 
 ## Usage
 ### WebUI
-Connmon can be configured via the WebUI, in the Addons section under Uptime Monitoring.
+Connmon can be configured via the WebUI, in the Addons section.
 
 ### Command Line
 To launch the connmon menu after installation, use:
