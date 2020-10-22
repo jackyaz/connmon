@@ -189,9 +189,9 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 				title: function (tooltipItem, data){ return (moment(tooltipItem[0].xLabel,"X").format(timetooltipformat)); },
 				label: function (tooltipItem, data){ return round(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y,3).toFixed(3) + ' ' + txtunity;}
 			},
-			mode: 'x',
-			position: 'nearest',
-			intersect: false
+			mode: 'point',
+			position: 'cursor',
+			intersect: true
 		},
 		scales: {
 			xAxes: [{
