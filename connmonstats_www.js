@@ -1,16 +1,3 @@
-var custom_settings;
-
-function LoadCustomSettings(){
-	custom_settings = <% get_custom_settings(); %>;
-	for (var prop in custom_settings){
-		if (Object.prototype.hasOwnProperty.call(custom_settings, prop)){
-			if(prop.indexOf("connmon") != -1 && prop.indexOf("connmon_version") == -1){
-				eval("delete custom_settings."+prop)
-			}
-		}
-	}
-}
-
 var $j = jQuery.noConflict(); //avoid conflicts on John's fork (state.js)
 
 var pingtestdur=60;
