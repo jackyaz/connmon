@@ -747,6 +747,7 @@ function update_conntest(){
 			else if (connmonstatus == "Done"){
 				document.getElementById("conntest_text").innerHTML = "Refreshing charts...";
 				setTimeout('PostConnTest();', 1000);
+				pingcount=0;
 				clearInterval(myinterval);
 			}
 			else if (connmonstatus == "LOCKED"){
