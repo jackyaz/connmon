@@ -115,7 +115,8 @@ function changePingType(forminput){
 	if(inputvalue == "0"){
 		document.getElementById("rowip").style.display = "";
 		document.getElementById("rowdomain").style.display = "none";
-	} else{
+	}
+	else{
 		document.getElementById("rowip").style.display = "none";
 		document.getElementById("rowdomain").style.display = "";
 	}
@@ -601,7 +602,7 @@ function update_status(){
 		url: '/ext/connmon/detect_update.js',
 		dataType: 'script',
 		timeout: 3000,
-		error:	function(xhr){
+		error: function(xhr){
 			setTimeout('update_status();', 1000);
 		},
 		success: function(){
@@ -628,8 +629,8 @@ function update_status(){
 
 function CheckUpdate(){
 	showhide("btnChkUpdate", false);
-	document.formChkVer.action_script.value="start_connmoncheckupdate"
-	document.formChkVer.submit();
+	document.formScriptActions.action_script.value="start_connmoncheckupdate"
+	document.formScriptActions.submit();
 	document.getElementById("imgChkUpdate").style.display = "";
 	setTimeout("update_status();", 2000);
 }
@@ -647,7 +648,8 @@ function applyRule(){
 	if(Validate_All()){
 		if(document.form.pingtype.value == 0){
 			document.form.connmon_pingserver.value = document.form.connmon_ipaddr.value;
-		} else if(document.form.pingtype.value == 1){
+		}
+		else if(document.form.pingtype.value == 1){
 			document.form.connmon_pingserver.value = document.form.connmon_domain.value;
 		}
 		document.getElementById('amng_custom').value = JSON.stringify($j('form').serializeObject())
@@ -663,8 +665,7 @@ function applyRule(){
 	}
 }
 
-function GetVersionNumber(versiontype)
-{
+function GetVersionNumber(versiontype){
 	var versionprop;
 	if(versiontype == "local"){
 		versionprop = custom_settings.connmon_version_local;
@@ -699,7 +700,8 @@ function get_conf_file(){
 					if(Validate_IP(document.form.connmon_pingserver)){
 						document.form.pingtype.value=0;
 						document.form.connmon_ipaddr.value=pingserver;
-					} else{
+					}
+					else{
 						document.form.pingtype.value=1;
 						document.form.connmon_domain.value=pingserver;
 					}
@@ -726,13 +728,75 @@ function get_conf_file(){
 	});
 }
 
+var pingcount=2;
+function update_conntest(){
+	pingcount++;
+	$j.ajax({
+		url: '/ext/connmon/detect_connmon.js',
+		dataType: 'script',
+		timeout: 1000,
+		error: function(xhr){
+			//do nothing
+		},
+		success: function(){
+			if (connmonstatus == "InProgress"){
+				showhide("imgConnTest", true);
+				showhide("conntest_text", true);
+				document.getElementById("conntest_text").innerHTML = "Ping test in progress - " + pingcount + "s elapsed";
+			}
+			else if (connmonstatus == "Done"){
+				document.getElementById("conntest_text").innerHTML = "Refreshing charts...";
+				setTimeout('PostConnTest();', 1000);
+				pingcount=0;
+				clearInterval(myinterval);
+			}
+			else if (connmonstatus == "LOCKED"){
+				showhide("imgConnTest", false);
+				document.getElementById("conntest_text").innerHTML = "Scheduled ping test already running!";
+				showhide("conntest_text", true);
+				showhide("btnRunPingtest", true);
+				clearInterval(myinterval);
+			}
+			else if (connmonstatus == "InvalidServer"){
+				showhide("imgConnTest", false);
+				document.getElementById("conntest_text").innerHTML = "Specified ping server is not valid";
+				showhide("conntest_text", true);
+				showhide("btnRunPingtest", true);
+				clearInterval(myinterval);
+			}
+		}
+	});
+}
+
+function PostConnTest(){
+	showhide("imgConnTest", false);
+	showhide("conntest_text", false);
+	showhide("btnRunPingtest", true);
+	currentNoCharts = 0;
+	reload_js('/ext/connmon/connstatstext.js');
+	$j("#Time_Format").val(GetCookie("Time_Format","number"));
+	RedrawAllCharts();
+	SetConnmonStatsTitle();
+	AddEventHandlers();
+}
+
 function runPingTest(){
-	var action_script_tmp = "start_connmon";
-	document.form.action_script.value = action_script_tmp;
-	var restart_time = pingtestdur;
-	document.form.action_wait.value = restart_time;
-	showLoading();
-	document.form.submit();
+	showhide("btnRunPingtest", false);
+	document.formScriptActions.action_script.value="start_connmon";
+	document.formScriptActions.submit();
+	showhide("imgConnTest", true);
+	showhide("conntest_text", false);
+	setTimeout('StartConnTestInterval();', 2000);
+}
+
+var myinterval;
+function StartConnTestInterval(){
+	myinterval = setInterval("update_conntest();", 1000);
+}
+
+function reload_js(src){
+	$j('script[src="' + src + '"]').remove();
+	$j('<script>').attr('src', src+'?cachebuster='+ new Date().getTime()).appendTo('head');
 }
 
 function changeAllCharts(e){
