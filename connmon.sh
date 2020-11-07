@@ -13,9 +13,9 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.7.0"
-readonly SCRIPT_BRANCH="master"
-readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/""$SCRIPT_NAME""/""$SCRIPT_BRANCH"
+readonly SCRIPT_VERSION="v2.7.1"
+readonly SCRIPT_BRANCH="develop"
+readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
 readonly SCRIPT_WEBPAGE_DIR="$(readlink /www/user)"
 readonly SCRIPT_WEB_DIR="$SCRIPT_WEBPAGE_DIR/$SCRIPT_NAME"
@@ -66,6 +66,10 @@ Check_Lock(){
 			if [ -z "$1" ]; then
 				exit 1
 			else
+				if [ "$1" = "webui" ]; then
+					echo 'var connmonstatus = "LOCKED";' > /tmp/detect_connmon.js
+					exit 1
+				fi
 				return 1
 			fi
 		fi
@@ -79,6 +83,8 @@ Clear_Lock(){
 	rm -f "/tmp/$SCRIPT_NAME.lock" 2>/dev/null
 	return 0
 }
+
+############################################################################
 
 Set_Version_Custom_Settings(){
 	SETTINGSFILE="/jffs/addons/custom_settings.txt"
@@ -186,7 +192,6 @@ Update_Version(){
 		exit 0
 	fi
 }
-############################################################################
 
 Update_File(){
 	if [ "$1" = "connmonstats_www.asp" ]; then
@@ -324,6 +329,7 @@ Create_Dirs(){
 Create_Symlinks(){
 	rm -rf "${SCRIPT_WEB_DIR:?}/"* 2>/dev/null
 	
+	ln -s /tmp/detect_connmon.js "$SCRIPT_WEB_DIR/detect_connmon.js" 2>/dev/null
 	ln -s "$SCRIPT_STORAGE_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
 	
 	ln -s "$SCRIPT_CONF" "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
@@ -760,18 +766,19 @@ Run_PingTest(){
 	
 	pingfile=/tmp/pingresult.txt
 	
+	echo 'var connmonstatus = "InProgress";' > /tmp/detect_connmon.js
+	
 	Print_Output "false" "60 second ping test to $(PingServer "check") starting..." "$PASS"
 	if ! Validate_IP "$(PingServer "check")" >/dev/null 2>&1 && ! Validate_Domain "$(PingServer "check")" >/dev/null 2>&1; then
 		Print_Output "true" "$(PingServer "check") not valid, aborting test. Please correct ASAP" "$ERR"
+		echo 'var connmonstatus = "InvalidServer";' > /tmp/detect_connmon.js
 		Clear_Lock
 		return 1
 	fi
 	
-	Clear_Lock
 	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
 	ping -w "$(PingDuration "check")" "$(PingServer "check")" > "$pingfile"
 	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
-	Check_Lock
 	
 	ScriptStorageLocation "load"
 	
@@ -826,6 +833,7 @@ Run_PingTest(){
 	
 	echo "Stats last updated: $timenowfriendly" > "/tmp/connstatstitle.txt"
 	WriteStats_ToJS "/tmp/connstatstitle.txt" "$SCRIPT_STORAGE_DIR/connstatstext.js" "SetConnmonStatsTitle" "statstitle"
+	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
 	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %%" "$PASS"
 	
 	rm -f "$pingfile"
@@ -1344,7 +1352,7 @@ case "$1" in
 	;;
 	service_event)
 		if [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME" ]; then
-			Check_Lock
+			Check_Lock "webui"
 			Menu_GenerateStats
 			exit 0
 		elif [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME""config" ]; then
