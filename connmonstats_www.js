@@ -644,7 +644,7 @@ function DoUpdate(){
 	document.form.submit();
 }
 
-function applyRule(){
+function SaveConfig(){
 	if(Validate_All()){
 		if(document.form.pingtype.value == 0){
 			document.form.connmon_pingserver.value = document.form.connmon_ipaddr.value;
