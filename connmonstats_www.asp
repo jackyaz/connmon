@@ -178,7 +178,7 @@ minutes <span style="color:#FFCC00;">(between 1 and 10, default: 3)</span>
 </td>
 </tr>
 <tr class="even" id="rowdataoutput">
-<th width="40%">Data Output Mode (for CSV export)</th>
+<th width="40%">Data Output Mode (for weekly and monthly charts)</th>
 <td class="settingvalue">
 <input autocomplete="off" autocapitalize="off" type="radio" name="connmon_outputdatamode" id="connmon_dataoutput_average" class="input" value="average" checked>Average
 <input autocomplete="off" autocapitalize="off" type="radio" name="connmon_outputdatamode" id="connmon_dataoutput_raw" class="input" value="raw">Raw
