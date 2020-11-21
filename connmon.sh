@@ -583,8 +583,14 @@ Auto_Cron(){
 			# shellcheck disable=SC2063
 			STARTUPLINECOUNTEX=$(cru l | grep "$SCRIPT_NAME" | grep -c "*/$pingfrequency")
 			if [ "$STARTUPLINECOUNTEX" -eq 0 ]; then
-				cru d "$SCRIPT_NAME"
-				cru a "$SCRIPT_NAME" "*/$pingfrequency * * * * /jffs/scripts/$SCRIPT_NAME generate"
+				SCHEDULESTART=$(grep "SCHEDULESTART" "$SCRIPT_CONF" | cut -f2 -d"=")
+				SCHEDULEEND=$(grep "SCHEDULEEND" "$SCRIPT_CONF" | cut -f2 -d"=")
+				
+				if [ "$SCHEDULESTART" -lt "$SCHEDULEEND" ]; then
+					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-$SCHEDULEEND * * * /jffs/scripts/$SCRIPT_NAME_LOWER generate"
+				else
+					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-23,0-$SCHEDULEEND * * * /jffs/scripts/$SCRIPT_NAME_LOWER generate"
+				fi
 			fi
 		;;
 		delete)
@@ -655,6 +661,22 @@ Mount_WebUI(){
 		umount /www/require/modules/menuTree.js 2>/dev/null
 		mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
 	fi
+}
+
+TestSchedule(){
+	case "$1" in
+		update)
+			sed -i 's/^'"SCHEDULESTART"'.*$/SCHEDULESTART='"$2"'/' "$SCRIPT_CONF"
+			sed -i 's/^'"SCHEDULEEND"'.*$/SCHEDULEEND='"$3"'/' "$SCRIPT_CONF"
+			Auto_Cron delete 2>/dev/null
+			Auto_Cron create 2>/dev/null
+		;;
+		check)
+			SCHEDULESTART=$(grep "SCHEDULESTART" "$SCRIPT_CONF" | cut -f2 -d"=")
+			SCHEDULEEND=$(grep "SCHEDULEEND" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$SCHEDULESTART,$SCHEDULEEND"
+		;;
+	esac
 }
 
 ScriptStorageLocation(){
