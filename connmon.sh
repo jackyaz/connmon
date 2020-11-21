@@ -587,9 +587,9 @@ Auto_Cron(){
 				SCHEDULEEND=$(grep "SCHEDULEEND" "$SCRIPT_CONF" | cut -f2 -d"=")
 				
 				if [ "$SCHEDULESTART" -lt "$SCHEDULEEND" ]; then
-					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-$SCHEDULEEND * * * /jffs/scripts/$SCRIPT_NAME_LOWER generate"
+					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-$SCHEDULEEND * * * /jffs/scripts/$SCRIPT_NAME generate"
 				else
-					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-23,0-$SCHEDULEEND * * * /jffs/scripts/$SCRIPT_NAME_LOWER generate"
+					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-23,0-$SCHEDULEEND * * * /jffs/scripts/$SCRIPT_NAME generate"
 				fi
 			fi
 		;;
