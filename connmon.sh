@@ -1038,6 +1038,12 @@ MainMenu(){
 				PressEnter
 				break
 			;;
+			5)
+				printf "\\n"
+				Menu_EditSchedule
+				PressEnter
+				break
+			;;
 			6)
 				printf "\\n"
 				Menu_ToggleOutputDataMode
@@ -1191,6 +1197,59 @@ Menu_SetPingDuration(){
 
 Menu_SetPingFrequency(){
 	PingFrequency update
+}
+
+Menu_EditSchedule(){
+	exitmenu="false"
+	starthour=""
+	endhour=""
+	ScriptHeader
+	
+	while true; do
+		printf "\\n\\e[1mPlease enter a start hour (0-23):\\e[0m\\n"
+		read -r hour
+		
+		if [ "$hour" = "e" ]; then
+			exitmenu="exit"
+			break
+		elif ! Validate_Number "" "$hour" silent; then
+			printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+		else
+			if [ "$hour" -lt 0 ] || [ "$hour" -gt 23 ]; then
+				printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
+			else
+				starthour="$hour"
+				printf "\\n"
+				break
+			fi
+		fi
+	done
+	
+	if [ "$exitmenu" != "exit" ]; then
+		while true; do
+			printf "\\n\\e[1mPlease enter an end hour (0-23):\\e[0m\\n"
+			read -r hour
+			
+			if [ "$hour" = "e" ]; then
+				exitmenu="exit"
+				break
+			elif ! Validate_Number "" "$hour" silent; then
+				printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+			else
+				if [ "$hour" -lt 0 ] || [ "$hour" -gt 23 ]; then
+					printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
+				else
+					endhour="$hour"
+					printf "\\n"
+					break
+				fi
+			fi
+		done
+	fi
+	
+	if [ "$exitmenu" != "exit" ]; then
+		TestSchedule "update" "$starthour" "$endhour"
+	fi
 }
 
 Menu_ToggleOutputDataMode(){
