@@ -690,7 +690,7 @@ ScriptStorageLocation(){
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstatstext.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstats.db" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			SCRIPT_CONF="/opt/share/$SCRIPT_NAME.d/config"
-			ScriptStorageLocation "load"
+			ScriptStorageLocation load
 		;;
 		jffs)
 			sed -i 's/^STORAGELOCATION.*$/STORAGELOCATION=jffs/' "$SCRIPT_CONF"
@@ -701,7 +701,7 @@ ScriptStorageLocation(){
 			mv "/opt/share/$SCRIPT_NAME.d/connstatstext.js" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstats.db" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			SCRIPT_CONF="/jffs/addons/$SCRIPT_NAME.d/config"
-			ScriptStorageLocation "load"
+			ScriptStorageLocation load
 		;;
 		check)
 			STORAGELOCATION=$(grep "STORAGELOCATION" "$SCRIPT_CONF" | cut -f2 -d"=")
@@ -920,17 +920,17 @@ Generate_CSVs(){
 	{
 		echo ".mode csv"
 		echo ".headers on"
-		echo ".output $CSV_OUTPUT_DIR/CompleteResults_$IFACE_NAME.htm"
-	} > /tmp/spd-complete.sql
-	echo "SELECT [Timestamp],[Ping],[Jitter],[Packet_Loss] FROM spdstats_$IFACE_NAME WHERE [Timestamp] >= ($timenow - 86400*30) ORDER BY [Timestamp] DESC;" >> /tmp/spd-complete.sql
-	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/spdstats.db" < /tmp/spd-complete.sql
-	rm -f /tmp/spd-complete.sql
+		echo ".output $CSV_OUTPUT_DIR/CompleteResults.htm"
+	} > /tmp/connmon-complete.sql
+	echo "SELECT [Timestamp],[Ping],[Jitter],[Packet_Loss] FROM connstats WHERE [Timestamp] >= ($timenow - 86400*30) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
+	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/spdstats.db" < /tmp/connmon-complete.sql
+	rm -f /tmp/connmon-complete.sql
 	
 	dos2unix "$CSV_OUTPUT_DIR/"*.htm
 	
 	tmpoutputdir="/tmp/${SCRIPT_NAME}results"
 	mkdir -p "$tmpoutputdir"
-	cp "$CSV_OUTPUT_DIR/"*.htm "$tmpoutputdir/."
+	mv "$CSV_OUTPUT_DIR/CompleteResults"*.htm "$tmpoutputdir/."
 	
 	if [ "$OUTPUTTIMEMODE" = "unix" ]; then
 		find "$tmpoutputdir/" -name '*.htm' -exec sh -c 'i="$1"; mv -- "$i" "${i%.htm}.csv"' _ {} \;
