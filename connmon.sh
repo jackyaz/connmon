@@ -87,7 +87,7 @@ Clear_Lock(){
 ############################################################################
 
 Set_Version_Custom_Settings(){
-	SETTINGSFILE="/jffs/addons/custom_settings.txt"
+	SETTINGSFILE=/jffs/addons/custom_settings.txt
 	case "$1" in
 		local)
 			if [ -f "$SETTINGSFILE" ]; then
@@ -857,7 +857,7 @@ Run_PingTest(){
 	Generate_CSVs
 	
 	echo "Stats last updated: $timenowfriendly" > "/tmp/connstatstitle.txt"
-	WriteStats_ToJS "/tmp/connstatstitle.txt" "$SCRIPT_STORAGE_DIR/connstatstext.js" "SetConnmonStatsTitle" "statstitle"
+	WriteStats_ToJS /tmp/connstatstitle.txt "$SCRIPT_STORAGE_DIR/connstatstext.js" SetConnmonStatsTitle statstitle
 	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
 	Print_Output false "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %%" "$PASS"
 	
@@ -880,8 +880,8 @@ Generate_CSVs(){
 		{
 			echo ".mode csv"
 			echo ".headers on"
-			echo ".output $CSV_OUTPUT_DIR/$metric""daily"".htm"
-			echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400);"
+			echo ".output $CSV_OUTPUT_DIR/${metric}daily.htm"
+			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400);"
 		} > /tmp/connmon-stats.sql
 		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 		rm -f /tmp/connmon-stats.sql
@@ -890,8 +890,8 @@ Generate_CSVs(){
 			{
 				echo ".mode csv"
 				echo ".headers on"
-				echo ".output $CSV_OUTPUT_DIR/$metric""weekly"".htm"
-				echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400*7);"
+				echo ".output $CSV_OUTPUT_DIR/${metric}weekly.htm"
+				echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400*7);"
 			} > /tmp/connmon-stats.sql
 			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 			rm -f /tmp/connmon-stats.sql
@@ -899,17 +899,17 @@ Generate_CSVs(){
 			{
 				echo ".mode csv"
 				echo ".headers on"
-				echo ".output $CSV_OUTPUT_DIR/$metric""monthly"".htm"
-				echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400*30);"
+				echo ".output $CSV_OUTPUT_DIR/${metric}monthly.htm"
+				echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400*30);"
 			} > /tmp/connmon-stats.sql
 			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 			rm -f /tmp/connmon-stats.sql
 		elif [ "$OUTPUTDATAMODE" = "average" ]; then
-			WriteSql_ToFile "$metric" "connstats" 1 7 "$CSV_OUTPUT_DIR/$metric" "weekly" "/tmp/connmon-stats.sql" "$timenow"
+			WriteSql_ToFile "$metric" connstats 1 7 "$CSV_OUTPUT_DIR/$metric" weekly /tmp/connmon-stats.sql "$timenow"
 			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 			rm -f /tmp/connmon-stats.sql
 			
-			WriteSql_ToFile "$metric" "connstats" 3 30 "$CSV_OUTPUT_DIR/$metric" "monthly" "/tmp/connmon-stats.sql" "$timenow"
+			WriteSql_ToFile "$metric" connstats 3 30 "$CSV_OUTPUT_DIR/$metric" monthly /tmp/connmon-stats.sql "$timenow"
 			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 			rm -f /tmp/connmon-stats.sql
 		fi
@@ -917,9 +917,18 @@ Generate_CSVs(){
 	
 	rm -f /tmp/connmon-stats.sql
 	
+	{
+		echo ".mode csv"
+		echo ".headers on"
+		echo ".output $CSV_OUTPUT_DIR/CompleteResults_$IFACE_NAME.htm"
+	} > /tmp/spd-complete.sql
+	echo "SELECT [Timestamp],[Ping],[Jitter],[Packet_Loss] FROM spdstats_$IFACE_NAME WHERE [Timestamp] >= ($timenow - 86400*30) ORDER BY [Timestamp] DESC;" >> /tmp/spd-complete.sql
+	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/spdstats.db" < /tmp/spd-complete.sql
+	rm -f /tmp/spd-complete.sql
+	
 	dos2unix "$CSV_OUTPUT_DIR/"*.htm
 	
-	tmpoutputdir="/tmp/""$SCRIPT_NAME""results"
+	tmpoutputdir="/tmp/${SCRIPT_NAME}results"
 	mkdir -p "$tmpoutputdir"
 	cp "$CSV_OUTPUT_DIR/"*.htm "$tmpoutputdir/."
 	
@@ -1156,8 +1165,8 @@ Menu_Install(){
 	ScriptStorageLocation load
 	Create_Symlinks
 	
-	Update_File "connmonstats_www.asp"
-	Update_File "shared-jy.tar.gz"
+	Update_File connmonstats_www.asp
+	Update_File shared-jy.tar.gz
 	
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
@@ -1248,7 +1257,7 @@ Menu_EditSchedule(){
 	fi
 	
 	if [ "$exitmenu" != "exit" ]; then
-		TestSchedule "update" "$starthour" "$endhour"
+		TestSchedule update "$starthour" "$endhour"
 	fi
 }
 
@@ -1332,14 +1341,14 @@ NTP_Ready(){
 	if [ "$(nvram get ntp_ready)" = "0" ]; then
 		ntpwaitcount="0"
 		Check_Lock
-		while [ "$(nvram get ntp_ready)" = "0" ] && [ "$ntpwaitcount" -lt "300" ]; do
+		while [ "$(nvram get ntp_ready)" = "0" ] && [ "$ntpwaitcount" -lt 300 ]; do
 			ntpwaitcount="$((ntpwaitcount + 1))"
 			if [ "$ntpwaitcount" = "60" ]; then
 				Print_Output true "Waiting for NTP to sync..." "$WARN"
 			fi
 			sleep 1
 		done
-		if [ "$ntpwaitcount" -ge "300" ]; then
+		if [ "$ntpwaitcount" -ge 300 ]; then
 			Print_Output true "NTP failed to sync after 5 minutes. Please resolve!" "$CRIT"
 			Clear_Lock
 			exit 1
