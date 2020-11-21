@@ -990,13 +990,16 @@ ScriptHeader(){
 }
 
 MainMenu(){
+	TEST_SCHEDULE="$(TestSchedule check)"
+	TEST_SCHEDULE_MENU="Start: $(echo "$TEST_SCHEDULE" | cut -f1 -d',')    -    End: $(echo "$TEST_SCHEDULE" | cut -f2 -d',')"
 	printf "1.    Check connection now\\n\\n"
-	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(PingServer "check")"
-	printf "3.    Set ping test duration\\n      Currently: %ss\\n\\n" "$(PingDuration "check")"
-	printf "4.    Set ping test frequency\\n      Currently: Every %s minutes\\n\\n" "$(PingFrequency "check")"
-	printf "5.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode "check")"
-	printf "6.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode "check")"
-	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$(ScriptStorageLocation "check")"
+	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(PingServer check)"
+	printf "3.    Set ping test duration\\n      Currently: %ss\\n\\n" "$(PingDuration check)"
+	printf "4.    Set ping test frequency\\n      Currently: Every %s minutes\\n\\n" "$(PingFrequency check)"
+	printf "5.    Set time range for ping tests\\n      %s\\n\\n" "$TEST_SCHEDULE_MENU"
+	printf "6.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode check)"
+	printf "7.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
+	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
 	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
@@ -1035,12 +1038,12 @@ MainMenu(){
 				PressEnter
 				break
 			;;
-			5)
+			6)
 				printf "\\n"
 				Menu_ToggleOutputDataMode
 				break
 			;;
-			6)
+			7)
 				printf "\\n"
 				Menu_ToggleOutputTimeMode
 				break
