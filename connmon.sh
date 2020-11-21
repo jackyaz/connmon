@@ -923,7 +923,7 @@ Generate_CSVs(){
 		echo ".output $CSV_OUTPUT_DIR/CompleteResults.htm"
 	} > /tmp/connmon-complete.sql
 	echo "SELECT [Timestamp],[Ping],[Jitter],[Packet_Loss] FROM connstats WHERE [Timestamp] >= ($timenow - 86400*30) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
-	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/spdstats.db" < /tmp/connmon-complete.sql
+	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-complete.sql
 	rm -f /tmp/connmon-complete.sql
 	
 	dos2unix "$CSV_OUTPUT_DIR/"*.htm
