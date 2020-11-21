@@ -1246,20 +1246,17 @@ Menu_Uninstall(){
 	
 	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null
 	
-	while true; do
-		printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
-		read -r confirm
-		case "$confirm" in
-			y|Y)
-				rm -rf "$SCRIPT_DIR" 2>/dev/null
-				rm -rf "$SCRIPT_STORAGE_DIR" 2>/dev/null
-				break
-			;;
-			*)
-				break
-			;;
-		esac
-	done
+	printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
+	read -r confirm
+	case "$confirm" in
+		y|Y)
+			rm -rf "$SCRIPT_DIR" 2>/dev/null
+			rm -rf "$SCRIPT_STORAGE_DIR" 2>/dev/null
+		;;
+		*)
+			:
+		;;
+	esac
 	
 	rm -rf "$SCRIPT_WEB_DIR" 2>/dev/null
 	rm -f "/jffs/scripts/$SCRIPT_NAME" 2>/dev/null
