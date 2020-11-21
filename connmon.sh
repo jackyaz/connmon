@@ -358,9 +358,12 @@ Conf_Exists(){
 		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 4 ]; then
 			{ echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; } >> "$SCRIPT_CONF"
 		fi
+		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 6 ]; then
+			{ echo "SCHEDULESTART=0"; echo "SCHEDULEEND=23"; } >> "$SCRIPT_CONF"
+		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; echo "SCHEDULESTART=0"; echo "SCHEDULEEND=23"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
