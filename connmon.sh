@@ -330,6 +330,7 @@ Create_Symlinks(){
 	rm -rf "${SCRIPT_WEB_DIR:?}/"* 2>/dev/null
 	
 	ln -s /tmp/detect_connmon.js "$SCRIPT_WEB_DIR/detect_connmon.js" 2>/dev/null
+	ln -s /tmp/ping-result.txt "$SCRIPT_WEB_DIR/ping-result.htm" 2>/dev/null
 	ln -s "$SCRIPT_STORAGE_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
 	
 	ln -s "$SCRIPT_CONF" "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
@@ -790,6 +791,8 @@ Run_PingTest(){
 	Create_Symlinks
 	
 	pingfile=/tmp/pingresult.txt
+	resultfile=/tmp/ping-result.txt
+	printf "" > "$resultfile"
 	
 	echo 'var connmonstatus = "InProgress";' > /tmp/detect_connmon.js
 	
@@ -860,6 +863,11 @@ Run_PingTest(){
 	WriteStats_ToJS /tmp/connstatstitle.txt "$SCRIPT_STORAGE_DIR/connstatstext.js" SetConnmonStatsTitle statstitle
 	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
 	Print_Output false "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %%" "$PASS"
+	
+	{
+		printf "Ping test result\\n"
+		printf "\\nPing %s ms - Jitter - %s ms - Line Quality %s %%\\n" "$ping" "$jitter" "$linequal"
+	} >> "$resultfile"
 	
 	rm -f "$pingfile"
 	rm -f /tmp/connstatstitle.txt
