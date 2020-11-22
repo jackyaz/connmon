@@ -800,6 +800,7 @@ function update_conntest(){
 
 function PostConnTest(){
 	currentNoCharts = 0;
+	$j("#resulttable_pings").remove();
 	reload_js('/ext/connmon/connjs.js');
 	reload_js('/ext/connmon/connstatstext.js');
 	$j("#Time_Format").val(GetCookie("Time_Format","number"));
@@ -856,8 +857,8 @@ function changeChart(e){
 
 function BuildLastXTable(){
 	var tablehtml = '<div style="line-height:10px;">&nbsp;</div>';
-	tablehtml+='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">';
-	tablehtml+='<thead class="collapsible-jquery" id="resulttable_pings">';
+	tablehtml+='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="resulttable_pings">';
+	tablehtml+='<thead class="collapsible-jquery" id="resultthead_pings">';
 	tablehtml+='<tr><td colspan="2">Last 10 ping test results (click to expand/collapse)</td></tr>';
 	tablehtml+='</thead>';
 	tablehtml+='<tr>';
