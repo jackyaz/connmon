@@ -332,6 +332,7 @@ Create_Symlinks(){
 	ln -s /tmp/detect_connmon.js "$SCRIPT_WEB_DIR/detect_connmon.js" 2>/dev/null
 	ln -s /tmp/ping-result.txt "$SCRIPT_WEB_DIR/ping-result.htm" 2>/dev/null
 	ln -s "$SCRIPT_STORAGE_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
+	ln -s "$SCRIPT_STORAGE_DIR/connjs.js" "$SCRIPT_WEB_DIR/connjs.js" 2>/dev/null
 	
 	ln -s "$SCRIPT_CONF" "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
 	
@@ -689,6 +690,7 @@ ScriptStorageLocation(){
 			mv "/jffs/addons/$SCRIPT_NAME.d/config" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/config.bak" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstatstext.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/jffs/addons/$SCRIPT_NAME.d/connjs.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstats.db" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			SCRIPT_CONF="/opt/share/$SCRIPT_NAME.d/config"
 			ScriptStorageLocation load
@@ -700,6 +702,7 @@ ScriptStorageLocation(){
 			mv "/opt/share/$SCRIPT_NAME.d/config" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/config.bak" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstatstext.js" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/opt/share/$SCRIPT_NAME.d/connjs.js" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstats.db" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			SCRIPT_CONF="/jffs/addons/$SCRIPT_NAME.d/config"
 			ScriptStorageLocation load
@@ -755,6 +758,22 @@ OutputTimeMode(){
 	esac
 }
 
+WritePlainData_ToJS(){
+	inputfile="$1"
+	outputfile="$2"
+	shift;shift
+	i="0"
+	for var in "$@"; do
+		i=$((i+1))
+		{
+			echo "var $var;"
+			echo "$var = [];"
+			echo "${var}.unshift('$(awk -v i=$i '{printf t $i} {t=","}' "$inputfile" | sed "s~,~\\',\\'~g")');"
+			echo
+		} >> "$outputfile"
+	done
+}
+
 WriteStats_ToJS(){
 	echo "function $3(){" > "$2"
 	html='document.getElementById("'"$4"'").innerHTML="'
@@ -778,6 +797,19 @@ WriteSql_ToFile(){
 	} >> "$7"
 	
 	echo "SELECT '$1' Metric, Min([Timestamp]) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= $timenow - ($multiplier*$maxcount)) GROUP BY ([Timestamp]/($multiplier));" >> "$7"
+}
+
+Generate_LastXResults(){
+	{
+		echo ".mode csv"
+		echo ".output /tmp/conn-lastx.csv"
+	} > /tmp/conn-lastx.sql
+	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats ORDER BY [Timestamp] DESC LIMIT 10;" >> /tmp/conn-lastx.sql
+	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
+	sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
+	WritePlainData_ToJS "/tmp/conn-lastx.csv" "$SCRIPT_STORAGE_DIR/connjs.js" "DataTimestamp" "DataPing" "DataJitter" "DataLineQuality"
+	rm -f /tmp/conn-lastx.sql
+	rm -f /tmp/conn-lastx.csv
 }
 
 Run_PingTest(){
@@ -848,8 +880,8 @@ Run_PingTest(){
 	fi
 	
 	{
-	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[Packet_Loss] REAL NOT NULL);"
-	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[Packet_Loss]) values($timenow,$ping,$jitter,$linequal);"
+	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[LineQuality] REAL NOT NULL);"
+	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[LineQuality]) values($timenow,$ping,$jitter,$linequal);"
 	} > /tmp/connmon-stats.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
@@ -873,6 +905,17 @@ Run_PingTest(){
 	rm -f /tmp/connstatstitle.txt
 }
 
+Process_Upgrade(){
+	if [ ! -f "$SCRIPT_STORAGE_DIR/.tableupgraded" ]; then
+		{
+			echo "ALTER TABLE connstats RENAME COLUMN [Packet_Loss] TO [LineQuality];"
+		} > /tmp/conn-stats.sql
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-stats.sql >/dev/null 2>&1
+		touch "$SCRIPT_STORAGE_DIR/.tableupgraded"
+	fi
+	rm -f /tmp/conn-stats.sql
+}
+
 Generate_CSVs(){
 	OUTPUTDATAMODE="$(OutputDataMode check)"
 	OUTPUTTIMEMODE="$(OutputTimeMode check)"
@@ -882,7 +925,7 @@ Generate_CSVs(){
 	timenow=$(date +"%s")
 	timenowfriendly=$(date +"%c")
 	
-	metriclist="Ping Jitter Packet_Loss"
+	metriclist="Ping Jitter LineQuality"
 	
 	for metric in $metriclist; do
 		{
@@ -924,13 +967,14 @@ Generate_CSVs(){
 	done
 	
 	rm -f /tmp/connmon-stats.sql
+	Generate_LastXResults
 	
 	{
 		echo ".mode csv"
 		echo ".headers on"
 		echo ".output $CSV_OUTPUT_DIR/CompleteResults.htm"
 	} > /tmp/connmon-complete.sql
-	echo "SELECT [Timestamp],[Ping],[Jitter],[Packet_Loss] FROM connstats WHERE [Timestamp] >= ($timenow - 86400*30) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
+	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats WHERE [Timestamp] >= ($timenow - 86400*30) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-complete.sql
 	rm -f /tmp/connmon-complete.sql
 	
@@ -1419,6 +1463,7 @@ if [ -z "$1" ]; then
 	Set_Version_Custom_Settings local
 	ScriptStorageLocation load
 	Create_Symlinks
+	Process_Upgrade
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
