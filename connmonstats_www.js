@@ -16,7 +16,7 @@ Chart.Tooltip.positioners.cursor = function(chartElements, coordinates){
 	return coordinates;
 };
 
-var metriclist = ["Ping","Jitter","PacketLoss"];
+var metriclist = ["Ping","Jitter","LineQuality"];
 var titlelist = ["Ping","Jitter","Quality"];
 var measureunitlist = ["ms","ms","%"];
 var chartlist = ["daily","weekly","monthly"];
@@ -93,12 +93,28 @@ function Validate_PingFrequency(forminput){
 	}
 }
 
+function Validate_ScheduleRange(forminput){
+	var inputname = forminput.name;
+	var inputvalue = forminput.value*1;
+	
+	if(inputvalue > 23 || inputvalue < 0 || forminput.value.length < 1){
+		$j(forminput).addClass("invalid");
+		return false;
+	}
+	else{
+		$j(forminput).removeClass("invalid");
+		return true;
+	}
+}
+
 function Validate_All(){
 	var validationfailed = false;
 	if(! Validate_IP(document.form.connmon_ipaddr)){validationfailed=true;}
 	if(! Validate_Domain(document.form.connmon_domain)){validationfailed=true;}
 	if(! Validate_PingDuration(document.form.connmon_pingduration)){validationfailed=true;}
 	if(! Validate_PingFrequency(document.form.connmon_pingfrequency)){validationfailed=true;}
+	if(! Validate_ScheduleRange(document.form.connmon_schedulestart)) validationfailed=true;
+	if(! Validate_ScheduleRange(document.form.connmon_scheduleend)) validationfailed=true;
 	
 	if(validationfailed){
 		alert("Validation for some fields failed. Please correct invalid values and try again.");
@@ -406,7 +422,7 @@ function ToggleFill(){
 function RedrawAllCharts(){
 	for(i = 0; i < metriclist.length; i++){
 		for (i2 = 0; i2 < chartlist.length; i2++){
-			d3.csv('/ext/connmon/csv/'+metriclist[i].replace("PacketLoss","Packet_Loss")+chartlist[i2]+'.htm').then(SetGlobalDataset.bind(null,metriclist[i]+chartlist[i2]));
+			d3.csv('/ext/connmon/csv/'+metriclist[i]+chartlist[i2]+'.htm').then(SetGlobalDataset.bind(null,metriclist[i]+chartlist[i2]));
 		}
 	}
 }
@@ -415,6 +431,10 @@ function SetGlobalDataset(txtchartname,dataobject){
 	window[txtchartname] = dataobject;
 	currentNoCharts++;
 	if(currentNoCharts == maxNoCharts){
+		showhide("imgConnTest", false);
+		showhide("conntest_text", false);
+		showhide("btnRunPingtest", true);
+		BuildLastXTable();
 		for(i = 0; i < metriclist.length; i++){
 			$j("#"+metriclist[i]+"_Period").val(GetCookie(metriclist[i]+"_Period","number"));
 			Draw_Chart(metriclist[i],titlelist[i],measureunitlist[i],bordercolourlist[i],backgroundcolourlist[i]);
@@ -682,6 +702,23 @@ function GetVersionNumber(versiontype){
 	}
 }
 
+function get_conntestresult_file(){
+	$j.ajax({
+		url: '/ext/connmon/ping-result.htm',
+		dataType: 'text',
+		timeout: 1000,
+		error: function(xhr){
+			setTimeout("get_conntestresult_file();", 500);
+		},
+		success: function(data){
+			var lines = data.trim().split('\n');
+			data = lines.join('\n');
+			$j("#conntest_output").html(data);
+			document.getElementById("conntest_output").parentElement.parentElement.style.display = "";
+		}
+	});
+}
+
 function get_conf_file(){
 	$j.ajax({
 		url: '/ext/connmon/config.htm',
@@ -694,6 +731,9 @@ function get_conf_file(){
 			configdata = configdata.filter(Boolean);
 			
 			for (var i = 0; i < configdata.length; i++){
+				if(configdata[i].indexOf("PINGSERVER") == -1){
+					eval("document.form.connmon_"+configdata[i].split("=")[0].toLowerCase()).value = configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
+				}
 				if (configdata[i].indexOf("PINGSERVER") != -1){
 					var pingserver=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
 					document.form.connmon_pingserver.value = pingserver;
@@ -708,20 +748,7 @@ function get_conf_file(){
 					document.form.pingtype.onchange();
 				}
 				else if (configdata[i].indexOf("PINGDURATION") != -1){
-					document.form.connmon_pingduration.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
 					pingtestdur=document.form.connmon_pingduration.value;
-				}
-				else if (configdata[i].indexOf("PINGFREQUENCY") != -1){
-					document.form.connmon_pingfrequency.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
-				}
-				else if (configdata[i].indexOf("OUTPUTDATAMODE") != -1){
-					document.form.connmon_outputdatamode.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
-				}
-				else if (configdata[i].indexOf("OUTPUTTIMEMODE") != -1){
-					document.form.connmon_outputtimemode.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
-				}
-				else if (configdata[i].indexOf("STORAGELOCATION") != -1){
-					document.form.connmon_storagelocation.value=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");
 				}
 			}
 		}
@@ -745,16 +772,18 @@ function update_conntest(){
 				document.getElementById("conntest_text").innerHTML = "Ping test in progress - " + pingcount + "s elapsed";
 			}
 			else if (connmonstatus == "Done"){
+				get_conntestresult_file();
 				document.getElementById("conntest_text").innerHTML = "Refreshing charts...";
-				setTimeout('PostConnTest();', 1000);
-				pingcount=0;
+				pingcount=2;
 				clearInterval(myinterval);
+				PostConnTest();
 			}
 			else if (connmonstatus == "LOCKED"){
 				showhide("imgConnTest", false);
 				document.getElementById("conntest_text").innerHTML = "Scheduled ping test already running!";
 				showhide("conntest_text", true);
 				showhide("btnRunPingtest", true);
+				document.getElementById("conntest_output").parentElement.parentElement.style.display = "none";
 				clearInterval(myinterval);
 			}
 			else if (connmonstatus == "InvalidServer"){
@@ -762,6 +791,7 @@ function update_conntest(){
 				document.getElementById("conntest_text").innerHTML = "Specified ping server is not valid";
 				showhide("conntest_text", true);
 				showhide("btnRunPingtest", true);
+				document.getElementById("conntest_output").parentElement.parentElement.style.display = "none";
 				clearInterval(myinterval);
 			}
 		}
@@ -769,19 +799,20 @@ function update_conntest(){
 }
 
 function PostConnTest(){
-	showhide("imgConnTest", false);
-	showhide("conntest_text", false);
-	showhide("btnRunPingtest", true);
 	currentNoCharts = 0;
+	$j("#resulttable_pings").remove();
+	reload_js('/ext/connmon/connjs.js');
 	reload_js('/ext/connmon/connstatstext.js');
 	$j("#Time_Format").val(GetCookie("Time_Format","number"));
-	RedrawAllCharts();
 	SetConnmonStatsTitle();
 	AddEventHandlers();
+	setTimeout('RedrawAllCharts();', 3000);
 }
 
 function runPingTest(){
 	showhide("btnRunPingtest", false);
+	$j("#conntest_output").html("");
+	document.getElementById("conntest_output").parentElement.parentElement.style.display = "none";
 	document.formScriptActions.action_script.value="start_connmon";
 	document.formScriptActions.submit();
 	showhide("imgConnTest", true);
@@ -819,7 +850,59 @@ function changeChart(e){
 	else if(name == "Jitter"){
 		Draw_Chart("Jitter",titlelist[1],measureunitlist[1],bordercolourlist[1],backgroundcolourlist[1]);
 	}
-	else if(name == "PacketLoss"){
-		Draw_Chart("PacketLoss",titlelist[2],measureunitlist[2],bordercolourlist[2],backgroundcolourlist[2]);
+	else if(name == "LineQuality"){
+		Draw_Chart("LineQuality",titlelist[2],measureunitlist[2],bordercolourlist[2],backgroundcolourlist[2]);
 	}
+}
+
+function BuildLastXTable(){
+	var tablehtml = '<div style="line-height:10px;">&nbsp;</div>';
+	tablehtml+='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="resulttable_pings">';
+	tablehtml+='<thead class="collapsible-jquery" id="resultthead_pings">';
+	tablehtml+='<tr><td colspan="2">Last 10 ping test results (click to expand/collapse)</td></tr>';
+	tablehtml+='</thead>';
+	tablehtml+='<tr>';
+	tablehtml+='<td colspan="2" align="center" style="padding: 0px;">';
+	tablehtml+='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable StatsTable">';
+	var nodata="";
+	var objdataname = window["DataTimestamp"];
+	if(typeof objdataname === 'undefined' || objdataname === null){nodata="true"}
+	else if(objdataname.length == 0){nodata="true"}
+	else if(objdataname.length == 1 && objdataname[0] == ""){nodata="true"}
+
+	if(nodata == "true"){
+		tablehtml+='<tr>';
+		tablehtml+='<td colspan="4" class="nodata">';
+		tablehtml+='No data to display';
+		tablehtml+='</td>';
+		tablehtml+='</tr>';
+	}
+	else{
+		tablehtml+='<col style="width:185px;">';
+		tablehtml+='<col style="width:185px;">';
+		tablehtml+='<col style="width:185px;">';
+		tablehtml+='<col style="width:185px;">';
+		tablehtml+='<thead>';
+		tablehtml+='<tr>';
+		tablehtml+='<th class="keystatsnumber">Time</th>';
+		tablehtml+='<th class="keystatsnumber">Ping (ms)</th>';
+		tablehtml+='<th class="keystatsnumber">Jitter (ms)</th>';
+		tablehtml+='<th class="keystatsnumber">Line Quality (%)</th>';
+		tablehtml+='</tr>';
+		tablehtml+='</thead>';
+		
+		for(i = 0; i < objdataname.length; i++){
+			tablehtml+='<tr>';
+			tablehtml+='<td>'+moment.unix(window["DataTimestamp"][i]).format('YYYY-MM-DD HH:mm:ss')+'</td>';
+			tablehtml+='<td>'+window["DataPing"][i]+'</td>';
+			tablehtml+='<td>'+window["DataJitter"][i]+'</td>';
+			tablehtml+='<td>'+window["DataLineQuality"][i].replace("null","")+'</td>';
+			tablehtml+='</tr>';
+		};
+	}
+	tablehtml+='</table>';
+	tablehtml+='</td>';
+	tablehtml+='</tr>';
+	tablehtml+='</table>';
+	$j("#table_buttons2").after(tablehtml);
 }

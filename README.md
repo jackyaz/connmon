@@ -2,8 +2,8 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/91af8db9cd354643a8ef6a7117be90fb)](https://www.codacy.com/app/jackyaz/connmon?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jackyaz/connmon&amp;utm_campaign=Badge_Grade)
 [![Build Status](https://travis-ci.com/jackyaz/connmon.svg?branch=master)](https://travis-ci.com/jackyaz/connmon)
 
-## v2.7.1
-### Updated on 2020-11-07
+## v2.8.0
+### Updated on 2020-11-22
 ## About
 connmon is an internet connection monitoring tool for AsusWRT Merlin with charts for daily, weekly and monthly summaries.
 
@@ -43,9 +43,9 @@ If this does not work, you will need to use the full path:
 
 ## Screenshots
 
-![WebUI](https://puu.sh/GEos0/886712d1f2.png)
+![WebUI](https://puu.sh/GQ5J7/8eade4cd91.png)
 
-![CLI UI](https://puu.sh/GEolp/0ccba82b9c.png)
+![CLI](https://puu.sh/GQ5BL/1cf6d4d059.png)
 
 ## Help
 Please post about any issues and problems here: [connmon on SNBForums](https://www.snbforums.com/threads/connmon-internet-connection-monitoring.56163/)

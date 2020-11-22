@@ -13,7 +13,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.7.1"
+readonly SCRIPT_VERSION="v2.8.0"
 readonly SCRIPT_BRANCH="master"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -56,13 +56,13 @@ Check_Lock(){
 	if [ -f "/tmp/$SCRIPT_NAME.lock" ]; then
 		ageoflock=$(($(date +%s) - $(date +%s -r /tmp/$SCRIPT_NAME.lock)))
 		if [ "$ageoflock" -gt 600 ]; then
-			Print_Output "true" "Stale lock file found (>600 seconds old) - purging lock" "$ERR"
+			Print_Output true "Stale lock file found (>600 seconds old) - purging lock" "$ERR"
 			kill "$(sed -n '1p' /tmp/$SCRIPT_NAME.lock)" >/dev/null 2>&1
 			Clear_Lock
 			echo "$$" > "/tmp/$SCRIPT_NAME.lock"
 			return 0
 		else
-			Print_Output "true" "Lock file found (age: $ageoflock seconds) - ping test likely currently running" "$ERR"
+			Print_Output true "Lock file found (age: $ageoflock seconds) - ping test likely currently running" "$ERR"
 			if [ -z "$1" ]; then
 				exit 1
 			else
@@ -87,7 +87,7 @@ Clear_Lock(){
 ############################################################################
 
 Set_Version_Custom_Settings(){
-	SETTINGSFILE="/jffs/addons/custom_settings.txt"
+	SETTINGSFILE=/jffs/addons/custom_settings.txt
 	case "$1" in
 		local)
 			if [ -f "$SETTINGSFILE" ]; then
@@ -122,18 +122,18 @@ Update_Check(){
 	echo 'var updatestatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_update.js"
 	doupdate="false"
 	localver=$(grep "SCRIPT_VERSION=" /jffs/scripts/"$SCRIPT_NAME" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
-	/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep -qF "jackyaz" || { Print_Output "true" "404 error detected - stopping update" "$ERR"; return 1; }
+	/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep -qF "jackyaz" || { Print_Output true "404 error detected - stopping update" "$ERR"; return 1; }
 	serverver=$(/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 	if [ "$localver" != "$serverver" ]; then
 		doupdate="version"
-		Set_Version_Custom_Settings "server" "$serverver"
+		Set_Version_Custom_Settings server "$serverver"
 		echo 'var updatestatus = "'"$serverver"'";'  > "$SCRIPT_WEB_DIR/detect_update.js"
 	else
 		localmd5="$(md5sum "/jffs/scripts/$SCRIPT_NAME" | awk '{print $1}')"
 		remotemd5="$(curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | md5sum | awk '{print $1}')"
 		if [ "$localmd5" != "$remotemd5" ]; then
 			doupdate="md5"
-			Set_Version_Custom_Settings "server" "$serverver-hotfix"
+			Set_Version_Custom_Settings server "$serverver-hotfix"
 			echo 'var updatestatus = "'"$serverver-hotfix"'";'  > "$SCRIPT_WEB_DIR/detect_update.js"
 		fi
 	fi
@@ -151,43 +151,43 @@ Update_Version(){
 		serverver="$(echo "$updatecheckresult" | cut -f3 -d',')"
 		
 		if [ "$isupdate" = "version" ]; then
-			Print_Output "true" "New version of $SCRIPT_NAME available - updating to $serverver" "$PASS"
+			Print_Output true "New version of $SCRIPT_NAME available - updating to $serverver" "$PASS"
 		elif [ "$isupdate" = "md5" ]; then
-			Print_Output "true" "MD5 hash of $SCRIPT_NAME does not match - downloading updated $serverver" "$PASS"
+			Print_Output true "MD5 hash of $SCRIPT_NAME does not match - downloading updated $serverver" "$PASS"
 		fi
 		
-		Update_File "shared-jy.tar.gz"
+		Update_File shared-jy.tar.gz
 		
 		if [ "$isupdate" != "false" ]; then
-			Update_File "connmonstats_www.asp"
+			Update_File connmonstats_www.asp
 			
-			/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output "true" "$SCRIPT_NAME successfully updated"
+			/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
 			chmod 0755 /jffs/scripts/"$SCRIPT_NAME"
 			Clear_Lock
 			if [ -z "$1" ]; then
-				exec "$0" "setversion"
+				exec "$0" setversion
 			elif [ "$1" = "unattended" ]; then
-				exec "$0" "setversion" "unattended"
+				exec "$0" setversion unattended
 			fi
 			exit 0
 		else
-			Print_Output "true" "No new version - latest is $localver" "$WARN"
+			Print_Output true "No new version - latest is $localver" "$WARN"
 			Clear_Lock
 		fi
 	fi
 	
 	if [ "$1" = "force" ]; then
 		serverver=$(/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
-		Print_Output "true" "Downloading latest version ($serverver) of $SCRIPT_NAME" "$PASS"
-		Update_File "connmonstats_www.asp"
-		Update_File "shared-jy.tar.gz"
-		/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output "true" "$SCRIPT_NAME successfully updated"
+		Print_Output true "Downloading latest version ($serverver) of $SCRIPT_NAME" "$PASS"
+		Update_File connmonstats_www.asp
+		Update_File shared-jy.tar.gz
+		/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
 		chmod 0755 /jffs/scripts/"$SCRIPT_NAME"
 		Clear_Lock
 		if [ -z "$2" ]; then
-			exec "$0" "setversion"
+			exec "$0" setversion
 		elif [ "$2" = "unattended" ]; then
-			exec "$0" "setversion" "unattended"
+			exec "$0" setversion unattended
 		fi
 		exit 0
 	fi
@@ -204,7 +204,7 @@ Update_File(){
 				rm -f "$SCRIPT_WEBPAGE_DIR/$MyPage" 2>/dev/null
 			fi
 			Download_File "$SCRIPT_REPO/$1" "$SCRIPT_DIR/$1"
-			Print_Output "true" "New version of $1 downloaded" "$PASS"
+			Print_Output true "New version of $1 downloaded" "$PASS"
 			Mount_WebUI
 		fi
 		rm -f "$tmpfile"
@@ -214,7 +214,7 @@ Update_File(){
 			Download_File "$SHARED_REPO/$1.md5" "$SHARED_DIR/$1.md5"
 			tar -xzf "$SHARED_DIR/$1" -C "$SHARED_DIR"
 			rm -f "$SHARED_DIR/$1"
-			Print_Output "true" "New version of $1 downloaded" "$PASS"
+			Print_Output true "New version of $1 downloaded" "$PASS"
 		else
 			localmd5="$(cat "$SHARED_DIR/$1.md5")"
 			remotemd5="$(curl -fsL --retry 3 "$SHARED_REPO/$1.md5")"
@@ -223,7 +223,7 @@ Update_File(){
 				Download_File "$SHARED_REPO/$1.md5" "$SHARED_DIR/$1.md5"
 				tar -xzf "$SHARED_DIR/$1" -C "$SHARED_DIR"
 				rm -f "$SHARED_DIR/$1"
-				Print_Output "true" "New version of $1 downloaded" "$PASS"
+				Print_Output true "New version of $1 downloaded" "$PASS"
 			fi
 		fi
 	else
@@ -237,7 +237,7 @@ Validate_Number(){
 	else
 		formatted="$(echo "$1" | sed -e 's/|/ /g')"
 		if [ -z "$3" ]; then
-			Print_Output "false" "$formatted - $2 is not a number" "$ERR"
+			Print_Output false "$formatted - $2 is not a number" "$ERR"
 		fi
 		return 1
 	fi
@@ -247,19 +247,19 @@ Validate_IP(){
 	if expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
 		for i in 1 2 3 4; do
 			if [ "$(echo "$1" | cut -d. -f$i)" -gt 255 ]; then
-				Print_Output "false" "Octet $i ($(echo "$1" | cut -d. -f$i)) - is invalid, must be less than 255" "$ERR"
+				Print_Output false "Octet $i ($(echo "$1" | cut -d. -f$i)) - is invalid, must be less than 255" "$ERR"
 				return 1
 			fi
 		done
 	else
-		Print_Output "false" "$1 - is not a valid IPv4 address, valid format is 1.2.3.4" "$ERR"
+		Print_Output false "$1 - is not a valid IPv4 address, valid format is 1.2.3.4" "$ERR"
 		return 1
 	fi
 }
 
 Validate_Domain(){
 	if ! nslookup "$1" >/dev/null 2>&1; then
-		Print_Output "false" "$1 cannot be resolved by nslookup, please ensure you enter a valid domain name" "$ERR"
+		Print_Output false "$1 cannot be resolved by nslookup, please ensure you enter a valid domain name" "$ERR"
 		return 1
 	else
 		return 0
@@ -271,7 +271,7 @@ Conf_FromSettings(){
 	TMPFILE="/tmp/connmon_settings.txt"
 	if [ -f "$SETTINGSFILE" ]; then
 		if [ "$(grep "connmon_" $SETTINGSFILE | grep -v "version" -c)" -gt 0 ]; then
-			Print_Output "true" "Updated settings from WebUI found, merging into $SCRIPT_CONF" "$PASS"
+			Print_Output true "Updated settings from WebUI found, merging into $SCRIPT_CONF" "$PASS"
 			cp -a "$SCRIPT_CONF" "$SCRIPT_CONF.bak"
 			grep "connmon_" "$SETTINGSFILE" | grep -v "version" > "$TMPFILE"
 			sed -i "s/connmon_//g;s/ /=/g" "$TMPFILE"
@@ -287,15 +287,15 @@ Conf_FromSettings(){
 			rm -f "$TMPFILE"
 			rm -f "$SETTINGSFILE.bak"
 			
-			ScriptStorageLocation "$(ScriptStorageLocation "check")"
+			ScriptStorageLocation "$(ScriptStorageLocation check)"
 			Create_Symlinks
 			
-			Auto_Cron "create"
+			Auto_Cron create
 			Generate_CSVs
 			
-			Print_Output "true" "Merge of updated settings from WebUI completed successfully" "$PASS"
+			Print_Output true "Merge of updated settings from WebUI completed successfully" "$PASS"
 		else
-			Print_Output "false" "No updated settings from WebUI found, no merge into $SCRIPT_CONF necessary" "$PASS"
+			Print_Output false "No updated settings from WebUI found, no merge into $SCRIPT_CONF necessary" "$PASS"
 		fi
 	fi
 }
@@ -330,7 +330,9 @@ Create_Symlinks(){
 	rm -rf "${SCRIPT_WEB_DIR:?}/"* 2>/dev/null
 	
 	ln -s /tmp/detect_connmon.js "$SCRIPT_WEB_DIR/detect_connmon.js" 2>/dev/null
+	ln -s /tmp/ping-result.txt "$SCRIPT_WEB_DIR/ping-result.htm" 2>/dev/null
 	ln -s "$SCRIPT_STORAGE_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
+	ln -s "$SCRIPT_STORAGE_DIR/connjs.js" "$SCRIPT_WEB_DIR/connjs.js" 2>/dev/null
 	
 	ln -s "$SCRIPT_CONF" "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
 	
@@ -358,9 +360,12 @@ Conf_Exists(){
 		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 4 ]; then
 			{ echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; } >> "$SCRIPT_CONF"
 		fi
+		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 6 ]; then
+			{ echo "SCHEDULESTART=0"; echo "SCHEDULEEND=23"; } >> "$SCRIPT_CONF"
+		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; echo "SCHEDULESTART=0"; echo "SCHEDULEEND=23"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -370,17 +375,17 @@ PingServer(){
 		update)
 			while true; do
 				ScriptHeader
-				printf "\\n\\e[1mCurrent ping destination: %s\\e[0m\\n\\n" "$(PingServer "check")"
+				printf "\\n\\e[1mCurrent ping destination: %s\\e[0m\\n\\n" "$(PingServer check)"
 				printf "1.    Enter IP Address\\n"
 				printf "2.    Enter Domain\\n"
 				printf "\\ne.    Go back\\n"
 				printf "\\n\\e[1mChoose an option:\\e[0m    "
-				read -r "pingoption"
+				read -r pingoption
 				case "$pingoption" in
 					1)
 						while true; do
 							printf "\\n\\e[1mPlease enter an IP address, or enter e to go back:\\e[0m    "
-							read -r "ipoption"
+							read -r ipoption
 							if [ "$ipoption" = "e" ]; then
 								break
 							fi
@@ -393,7 +398,7 @@ PingServer(){
 					2)
 						while true; do
 							printf "\\n\\e[1mPlease enter a domain name, or enter e to go back:\\e[0m    "
-							read -r "domainoption"
+							read -r domainoption
 							if [ "$domainoption" = "e" ]; then
 								break
 							fi
@@ -428,12 +433,12 @@ PingFrequency(){
 			ScriptHeader
 			while true; do
 				printf "\\n\\e[1mPlease enter the desired test frequency (every 1-10 minutes):\\e[0m    "
-				read -r "pingfreq_choice"
+				read -r pingfreq_choice
 				
 				if [ "$pingfreq_choice" = "e" ]; then
 					exitmenu="exit"
 					break
-				elif ! Validate_Number "" "$pingfreq_choice" "silent"; then
+				elif ! Validate_Number "" "$pingfreq_choice" silent; then
 					printf "\\n\\e[31mPlease enter a valid number (1-10)\\e[0m\\n"
 				else
 					if [ "$pingfreq_choice" -lt 1 ] || [ "$pingfreq_choice" -gt 10 ]; then
@@ -448,7 +453,7 @@ PingFrequency(){
 			
 			if [ "$exitmenu" != "exit" ]; then
 				sed -i 's/^PINGFREQUENCY.*$/PINGFREQUENCY='"$pingfreq"'/' "$SCRIPT_CONF"
-				Auto_Cron "create"
+				Auto_Cron create
 				return 0
 			else
 				printf "\\n"
@@ -470,12 +475,12 @@ PingDuration(){
 			ScriptHeader
 			while true; do
 				printf "\\n\\e[1mPlease enter the desired test duration (10-60 seconds):\\e[0m    "
-				read -r "pingdur_choice"
+				read -r pingdur_choice
 				
 				if [ "$pingdur_choice" = "e" ]; then
 					exitmenu="exit"
 					break
-				elif ! Validate_Number "" "$pingdur_choice" "silent"; then
+				elif ! Validate_Number "" "$pingdur_choice" silent; then
 					printf "\\n\\e[31mPlease enter a valid number (10-60)\\e[0m\\n"
 				else
 					if [ "$pingdur_choice" -lt 10 ] || [ "$pingdur_choice" -gt 60 ]; then
@@ -575,13 +580,19 @@ Auto_Startup(){
 Auto_Cron(){
 	case $1 in
 		create)
-			pingfrequency="$(PingFrequency "check")"
+			pingfrequency="$(PingFrequency check)"
 			
 			# shellcheck disable=SC2063
 			STARTUPLINECOUNTEX=$(cru l | grep "$SCRIPT_NAME" | grep -c "*/$pingfrequency")
 			if [ "$STARTUPLINECOUNTEX" -eq 0 ]; then
-				cru d "$SCRIPT_NAME"
-				cru a "$SCRIPT_NAME" "*/$pingfrequency * * * * /jffs/scripts/$SCRIPT_NAME generate"
+				SCHEDULESTART=$(grep "SCHEDULESTART" "$SCRIPT_CONF" | cut -f2 -d"=")
+				SCHEDULEEND=$(grep "SCHEDULEEND" "$SCRIPT_CONF" | cut -f2 -d"=")
+				
+				if [ "$SCHEDULESTART" -lt "$SCHEDULEEND" ]; then
+					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-$SCHEDULEEND * * * /jffs/scripts/$SCRIPT_NAME generate"
+				else
+					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-23,0-$SCHEDULEEND * * * /jffs/scripts/$SCRIPT_NAME generate"
+				fi
 			fi
 		;;
 		delete)
@@ -613,17 +624,17 @@ Get_WebUI_Page(){
 Mount_WebUI(){
 	Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp"
 	if [ "$MyPage" = "none" ]; then
-		Print_Output "true" "Unable to mount $SCRIPT_NAME WebUI page, exiting" "$CRIT"
+		Print_Output true "Unable to mount $SCRIPT_NAME WebUI page, exiting" "$CRIT"
 		Clear_Lock
 		exit 1
 	fi
-	Print_Output "true" "Mounting $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
+	Print_Output true "Mounting $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
 	cp -f "$SCRIPT_DIR/connmonstats_www.asp" "$SCRIPT_WEBPAGE_DIR/$MyPage"
 	echo "connmon" > "$SCRIPT_WEBPAGE_DIR/$(echo $MyPage | cut -f1 -d'.').title"
 	
 	if [ "$(uname -o)" = "ASUSWRT-Merlin" ]; then
-		if [ ! -f "/tmp/index_style.css" ]; then
-			cp -f "/www/index_style.css" "/tmp/"
+		if [ ! -f /tmp/index_style.css ]; then
+			cp -f /www/index_style.css /tmp/
 		fi
 		
 		if ! grep -q '.menu_Addons' /tmp/index_style.css ; then
@@ -633,8 +644,8 @@ Mount_WebUI(){
 		umount /www/index_style.css 2>/dev/null
 		mount -o bind /tmp/index_style.css /www/index_style.css
 		
-		if [ ! -f "/tmp/menuTree.js" ]; then
-			cp -f "/www/require/modules/menuTree.js" "/tmp/"
+		if [ ! -f /tmp/menuTree.js ]; then
+			cp -f /www/require/modules/menuTree.js /tmp/
 		fi
 		
 		sed -i "\\~$MyPage~d" /tmp/menuTree.js
@@ -654,6 +665,22 @@ Mount_WebUI(){
 	fi
 }
 
+TestSchedule(){
+	case "$1" in
+		update)
+			sed -i 's/^'"SCHEDULESTART"'.*$/SCHEDULESTART='"$2"'/' "$SCRIPT_CONF"
+			sed -i 's/^'"SCHEDULEEND"'.*$/SCHEDULEEND='"$3"'/' "$SCRIPT_CONF"
+			Auto_Cron delete 2>/dev/null
+			Auto_Cron create 2>/dev/null
+		;;
+		check)
+			SCHEDULESTART=$(grep "SCHEDULESTART" "$SCRIPT_CONF" | cut -f2 -d"=")
+			SCHEDULEEND=$(grep "SCHEDULEEND" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$SCHEDULESTART,$SCHEDULEEND"
+		;;
+	esac
+}
+
 ScriptStorageLocation(){
 	case "$1" in
 		usb)
@@ -663,9 +690,10 @@ ScriptStorageLocation(){
 			mv "/jffs/addons/$SCRIPT_NAME.d/config" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/config.bak" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstatstext.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/jffs/addons/$SCRIPT_NAME.d/connjs.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstats.db" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			SCRIPT_CONF="/opt/share/$SCRIPT_NAME.d/config"
-			ScriptStorageLocation "load"
+			ScriptStorageLocation load
 		;;
 		jffs)
 			sed -i 's/^STORAGELOCATION.*$/STORAGELOCATION=jffs/' "$SCRIPT_CONF"
@@ -674,9 +702,10 @@ ScriptStorageLocation(){
 			mv "/opt/share/$SCRIPT_NAME.d/config" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/config.bak" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstatstext.js" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/opt/share/$SCRIPT_NAME.d/connjs.js" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstats.db" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			SCRIPT_CONF="/jffs/addons/$SCRIPT_NAME.d/config"
-			ScriptStorageLocation "load"
+			ScriptStorageLocation load
 		;;
 		check)
 			STORAGELOCATION=$(grep "STORAGELOCATION" "$SCRIPT_CONF" | cut -f2 -d"=")
@@ -708,7 +737,7 @@ OutputDataMode(){
 		check)
 			OUTPUTDATAMODE=$(grep "OUTPUTDATAMODE" "$SCRIPT_CONF" | cut -f2 -d"=")
 			echo "$OUTPUTDATAMODE"
-			;;
+		;;
 	esac
 }
 
@@ -725,8 +754,24 @@ OutputTimeMode(){
 		check)
 			OUTPUTTIMEMODE=$(grep "OUTPUTTIMEMODE" "$SCRIPT_CONF" | cut -f2 -d"=")
 			echo "$OUTPUTTIMEMODE"
-			;;
+		;;
 	esac
+}
+
+WritePlainData_ToJS(){
+	inputfile="$1"
+	outputfile="$2"
+	shift;shift
+	i="0"
+	for var in "$@"; do
+		i=$((i+1))
+		{
+			echo "var $var;"
+			echo "$var = [];"
+			echo "${var}.unshift('$(awk -v i=$i '{printf t $i} {t=","}' "$inputfile" | sed "s~,~\\',\\'~g")');"
+			echo
+		} >> "$outputfile"
+	done
 }
 
 WriteStats_ToJS(){
@@ -754,33 +799,48 @@ WriteSql_ToFile(){
 	echo "SELECT '$1' Metric, Min([Timestamp]) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= $timenow - ($multiplier*$maxcount)) GROUP BY ([Timestamp]/($multiplier));" >> "$7"
 }
 
+Generate_LastXResults(){
+	{
+		echo ".mode csv"
+		echo ".output /tmp/conn-lastx.csv"
+	} > /tmp/conn-lastx.sql
+	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats ORDER BY [Timestamp] DESC LIMIT 10;" >> /tmp/conn-lastx.sql
+	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
+	sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
+	WritePlainData_ToJS "/tmp/conn-lastx.csv" "$SCRIPT_STORAGE_DIR/connjs.js" "DataTimestamp" "DataPing" "DataJitter" "DataLineQuality"
+	rm -f /tmp/conn-lastx.sql
+	rm -f /tmp/conn-lastx.csv
+}
+
 Run_PingTest(){
 	Create_Dirs
 	Conf_Exists
-	Set_Version_Custom_Settings "local"
+	Set_Version_Custom_Settings local
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
-	ScriptStorageLocation "load"
+	ScriptStorageLocation load
 	Create_Symlinks
 	
 	pingfile=/tmp/pingresult.txt
+	resultfile=/tmp/ping-result.txt
+	printf "" > "$resultfile"
 	
 	echo 'var connmonstatus = "InProgress";' > /tmp/detect_connmon.js
 	
-	Print_Output "false" "60 second ping test to $(PingServer "check") starting..." "$PASS"
-	if ! Validate_IP "$(PingServer "check")" >/dev/null 2>&1 && ! Validate_Domain "$(PingServer "check")" >/dev/null 2>&1; then
-		Print_Output "true" "$(PingServer "check") not valid, aborting test. Please correct ASAP" "$ERR"
+	Print_Output false "60 second ping test to $(PingServer check) starting..." "$PASS"
+	if ! Validate_IP "$(PingServer check)" >/dev/null 2>&1 && ! Validate_Domain "$(PingServer check)" >/dev/null 2>&1; then
+		Print_Output true "$(PingServer check) not valid, aborting test. Please correct ASAP" "$ERR"
 		echo 'var connmonstatus = "InvalidServer";' > /tmp/detect_connmon.js
 		Clear_Lock
 		return 1
 	fi
 	
 	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
-	ping -w "$(PingDuration "check")" "$(PingServer "check")" > "$pingfile"
+	ping -w "$(PingDuration check)" "$(PingServer check)" > "$pingfile"
 	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
 	
-	ScriptStorageLocation "load"
+	ScriptStorageLocation load
 	
 	PREVPING=0
 	TOTALDIFF=0
@@ -820,8 +880,8 @@ Run_PingTest(){
 	fi
 	
 	{
-	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[Packet_Loss] REAL NOT NULL);"
-	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[Packet_Loss]) values($timenow,$ping,$jitter,$linequal);"
+	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[LineQuality] REAL NOT NULL);"
+	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[LineQuality]) values($timenow,$ping,$jitter,$linequal);"
 	} > /tmp/connmon-stats.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
@@ -832,31 +892,47 @@ Run_PingTest(){
 	Generate_CSVs
 	
 	echo "Stats last updated: $timenowfriendly" > "/tmp/connstatstitle.txt"
-	WriteStats_ToJS "/tmp/connstatstitle.txt" "$SCRIPT_STORAGE_DIR/connstatstext.js" "SetConnmonStatsTitle" "statstitle"
+	WriteStats_ToJS /tmp/connstatstitle.txt "$SCRIPT_STORAGE_DIR/connstatstext.js" SetConnmonStatsTitle statstitle
 	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
-	Print_Output "false" "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %%" "$PASS"
+	Print_Output false "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %%" "$PASS"
+	
+	{
+		printf "Ping test result\\n"
+		printf "\\nPing %s ms - Jitter - %s ms - Line Quality %s %%\\n" "$ping" "$jitter" "$linequal"
+	} >> "$resultfile"
 	
 	rm -f "$pingfile"
-	rm -f "/tmp/connstatstitle.txt"
+	rm -f /tmp/connstatstitle.txt
+}
+
+Process_Upgrade(){
+	if [ ! -f "$SCRIPT_STORAGE_DIR/.tableupgraded" ]; then
+		{
+			echo "ALTER TABLE connstats RENAME COLUMN [Packet_Loss] TO [LineQuality];"
+		} > /tmp/conn-stats.sql
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-stats.sql >/dev/null 2>&1
+		touch "$SCRIPT_STORAGE_DIR/.tableupgraded"
+	fi
+	rm -f /tmp/conn-stats.sql
 }
 
 Generate_CSVs(){
-	OUTPUTDATAMODE="$(OutputDataMode "check")"
-	OUTPUTTIMEMODE="$(OutputTimeMode "check")"
+	OUTPUTDATAMODE="$(OutputDataMode check)"
+	OUTPUTTIMEMODE="$(OutputTimeMode check)"
 	TZ=$(cat /etc/TZ)
 	export TZ
 	
 	timenow=$(date +"%s")
 	timenowfriendly=$(date +"%c")
 	
-	metriclist="Ping Jitter Packet_Loss"
+	metriclist="Ping Jitter LineQuality"
 	
 	for metric in $metriclist; do
 		{
 			echo ".mode csv"
 			echo ".headers on"
-			echo ".output $CSV_OUTPUT_DIR/$metric""daily"".htm"
-			echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400);"
+			echo ".output $CSV_OUTPUT_DIR/${metric}daily.htm"
+			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400);"
 		} > /tmp/connmon-stats.sql
 		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 		rm -f /tmp/connmon-stats.sql
@@ -865,8 +941,8 @@ Generate_CSVs(){
 			{
 				echo ".mode csv"
 				echo ".headers on"
-				echo ".output $CSV_OUTPUT_DIR/$metric""weekly"".htm"
-				echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400*7);"
+				echo ".output $CSV_OUTPUT_DIR/${metric}weekly.htm"
+				echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400*7);"
 			} > /tmp/connmon-stats.sql
 			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 			rm -f /tmp/connmon-stats.sql
@@ -874,54 +950,64 @@ Generate_CSVs(){
 			{
 				echo ".mode csv"
 				echo ".headers on"
-				echo ".output $CSV_OUTPUT_DIR/$metric""monthly"".htm"
-				echo "select '$metric' Metric,[Timestamp] Time,[$metric] Value from connstats WHERE [Timestamp] >= ($timenow - 86400*30);"
+				echo ".output $CSV_OUTPUT_DIR/${metric}monthly.htm"
+				echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400*30);"
 			} > /tmp/connmon-stats.sql
 			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 			rm -f /tmp/connmon-stats.sql
 		elif [ "$OUTPUTDATAMODE" = "average" ]; then
-			WriteSql_ToFile "$metric" "connstats" 1 7 "$CSV_OUTPUT_DIR/$metric" "weekly" "/tmp/connmon-stats.sql" "$timenow"
+			WriteSql_ToFile "$metric" connstats 1 7 "$CSV_OUTPUT_DIR/$metric" weekly /tmp/connmon-stats.sql "$timenow"
 			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 			rm -f /tmp/connmon-stats.sql
 			
-			WriteSql_ToFile "$metric" "connstats" 3 30 "$CSV_OUTPUT_DIR/$metric" "monthly" "/tmp/connmon-stats.sql" "$timenow"
+			WriteSql_ToFile "$metric" connstats 3 30 "$CSV_OUTPUT_DIR/$metric" monthly /tmp/connmon-stats.sql "$timenow"
 			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 			rm -f /tmp/connmon-stats.sql
 		fi
 	done
 	
-	rm -f "/tmp/connmon-stats.sql"
+	rm -f /tmp/connmon-stats.sql
+	Generate_LastXResults
+	
+	{
+		echo ".mode csv"
+		echo ".headers on"
+		echo ".output $CSV_OUTPUT_DIR/CompleteResults.htm"
+	} > /tmp/connmon-complete.sql
+	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats WHERE [Timestamp] >= ($timenow - 86400*30) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
+	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-complete.sql
+	rm -f /tmp/connmon-complete.sql
 	
 	dos2unix "$CSV_OUTPUT_DIR/"*.htm
 	
-	tmpoutputdir="/tmp/""$SCRIPT_NAME""results"
+	tmpoutputdir="/tmp/${SCRIPT_NAME}results"
 	mkdir -p "$tmpoutputdir"
-	cp "$CSV_OUTPUT_DIR/"*.htm "$tmpoutputdir/."
+	mv "$CSV_OUTPUT_DIR/CompleteResults"*.htm "$tmpoutputdir/."
 	
 	if [ "$OUTPUTTIMEMODE" = "unix" ]; then
 		find "$tmpoutputdir/" -name '*.htm' -exec sh -c 'i="$1"; mv -- "$i" "${i%.htm}.csv"' _ {} \;
 	elif [ "$OUTPUTTIMEMODE" = "non-unix" ]; then
 		for i in "$tmpoutputdir/"*".htm"; do
-			awk -F"," 'NR==1 {OFS=","; print} NR>1 {OFS=","; $2=strftime("%Y-%m-%d %H:%M:%S", $2); print }' "$i" > "$i.out"
+			awk -F"," 'NR==1 {OFS=","; print} NR>1 {OFS=","; $1=strftime("%Y-%m-%d %H:%M:%S", $1); print }' "$i" > "$i.out"
 		done
 		
 		find "$tmpoutputdir/" -name '*.htm.out' -exec sh -c 'i="$1"; mv -- "$i" "${i%.htm.out}.csv"' _ {} \;
 		rm -f "$tmpoutputdir/"*.htm
 	fi
 	
-	if [ ! -f /opt/bin/7z ]; then
+	if [ ! -f /opt/bin/7za ]; then
 		opkg update
 		opkg install p7zip
 	fi
-	/opt/bin/7z a -y -bsp0 -bso0 -tzip "/tmp/""$SCRIPT_NAME""data.zip" "$tmpoutputdir/*"
-	mv "/tmp/""$SCRIPT_NAME""data.zip" "$CSV_OUTPUT_DIR"
+	/opt/bin/7za a -y -bsp0 -bso0 -tzip "/tmp/${SCRIPT_NAME}data.zip" "$tmpoutputdir/*"
+	mv "/tmp/${SCRIPT_NAME}data.zip" "$CSV_OUTPUT_DIR"
 	rm -rf "$tmpoutputdir"
 }
 
 Shortcut_connmon(){
 	case $1 in
 		create)
-			if [ -d "/opt/bin" ] && [ ! -f "/opt/bin/$SCRIPT_NAME" ] && [ -f "/jffs/scripts/$SCRIPT_NAME" ]; then
+			if [ -d /opt/bin ] && [ ! -f "/opt/bin/$SCRIPT_NAME" ] && [ -f "/jffs/scripts/$SCRIPT_NAME" ]; then
 				ln -s /jffs/scripts/"$SCRIPT_NAME" /opt/bin
 				chmod 0755 /opt/bin/"$SCRIPT_NAME"
 			fi
@@ -937,7 +1023,7 @@ Shortcut_connmon(){
 PressEnter(){
 	while true; do
 		printf "Press enter to continue..."
-		read -r "key"
+		read -r key
 		case "$key" in
 			*)
 				break
@@ -965,13 +1051,16 @@ ScriptHeader(){
 }
 
 MainMenu(){
+	TEST_SCHEDULE="$(TestSchedule check)"
+	TEST_SCHEDULE_MENU="Start: $(echo "$TEST_SCHEDULE" | cut -f1 -d',')    -    End: $(echo "$TEST_SCHEDULE" | cut -f2 -d',')"
 	printf "1.    Check connection now\\n\\n"
-	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(PingServer "check")"
-	printf "3.    Set ping test duration\\n      Currently: %ss\\n\\n" "$(PingDuration "check")"
-	printf "4.    Set ping test frequency\\n      Currently: Every %s minutes\\n\\n" "$(PingFrequency "check")"
-	printf "5.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode "check")"
-	printf "6.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode "check")"
-	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$(ScriptStorageLocation "check")"
+	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(PingServer check)"
+	printf "3.    Set ping test duration\\n      Currently: %ss\\n\\n" "$(PingDuration check)"
+	printf "4.    Set ping test frequency\\n      Currently: Every %s minutes\\n\\n" "$(PingFrequency check)"
+	printf "5.    Set time range for ping tests\\n      %s\\n\\n" "$TEST_SCHEDULE_MENU"
+	printf "6.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode check)"
+	printf "7.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
+	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
 	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
@@ -982,11 +1071,11 @@ MainMenu(){
 	
 	while true; do
 		printf "Choose an option:    "
-		read -r "menu"
+		read -r menu
 		case "$menu" in
 			1)
 				printf "\\n"
-				if Check_Lock "menu"; then
+				if Check_Lock menu; then
 					Menu_GenerateStats
 				fi
 				PressEnter
@@ -1012,10 +1101,16 @@ MainMenu(){
 			;;
 			5)
 				printf "\\n"
-				Menu_ToggleOutputDataMode
+				Menu_EditSchedule
+				PressEnter
 				break
 			;;
 			6)
+				printf "\\n"
+				Menu_ToggleOutputDataMode
+				break
+			;;
+			7)
 				printf "\\n"
 				Menu_ToggleOutputTimeMode
 				break
@@ -1027,7 +1122,7 @@ MainMenu(){
 			;;
 			u)
 				printf "\\n"
-				if Check_Lock "menu"; then
+				if Check_Lock menu; then
 					Menu_Update
 				fi
 				PressEnter
@@ -1035,7 +1130,7 @@ MainMenu(){
 			;;
 			uf)
 				printf "\\n"
-				if Check_Lock "menu"; then
+				if Check_Lock menu; then
 					Menu_ForceUpdate
 				fi
 				PressEnter
@@ -1049,7 +1144,7 @@ MainMenu(){
 			z)
 				while true; do
 					printf "\\n\\e[1mAre you sure you want to uninstall %s? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
-					read -r "confirm"
+					read -r confirm
 					case "$confirm" in
 						y|Y)
 							Menu_Uninstall
@@ -1077,22 +1172,22 @@ Check_Requirements(){
 	if [ "$(nvram get jffs2_scripts)" -ne 1 ]; then
 		nvram set jffs2_scripts=1
 		nvram commit
-		Print_Output "true" "Custom JFFS Scripts enabled" "$WARN"
+		Print_Output true "Custom JFFS Scripts enabled" "$WARN"
 	fi
 	
-	if [ ! -f "/opt/bin/opkg" ]; then
-		Print_Output "true" "Entware not detected!" "$ERR"
+	if [ ! -f /opt/bin/opkg ]; then
+		Print_Output true "Entware not detected!" "$ERR"
 		CHECKSFAILED="true"
 	fi
 	
 	if ! Firmware_Version_Check; then
-		Print_Output "true" "Unsupported firmware version detected" "$ERR"
-		Print_Output "true" "$SCRIPT_NAME requires Merlin 384.15/384.13_4 or Fork 43E5 (or later)" "$ERR"
+		Print_Output true "Unsupported firmware version detected" "$ERR"
+		Print_Output true "$SCRIPT_NAME requires Merlin 384.15/384.13_4 or Fork 43E5 (or later)" "$ERR"
 		CHECKSFAILED="true"
 	fi
 	
 	if [ "$CHECKSFAILED" = "false" ]; then
-		Print_Output "true" "Installing required packages from Entware" "$PASS"
+		Print_Output true "Installing required packages from Entware" "$PASS"
 		opkg update
 		opkg install sqlite3-cli
 		opkg install p7zip
@@ -1103,13 +1198,13 @@ Check_Requirements(){
 }
 
 Menu_Install(){
-	Print_Output "true" "Welcome to $SCRIPT_NAME $SCRIPT_VERSION, a script by JackYaz"
+	Print_Output true "Welcome to $SCRIPT_NAME $SCRIPT_VERSION, a script by JackYaz"
 	sleep 1
 	
-	Print_Output "true" "Checking your router meets the requirements for $SCRIPT_NAME"
+	Print_Output true "Checking your router meets the requirements for $SCRIPT_NAME"
 	
 	if ! Check_Requirements; then
-		Print_Output "true" "Requirements for $SCRIPT_NAME not met, please see above for the reason(s)" "$CRIT"
+		Print_Output true "Requirements for $SCRIPT_NAME not met, please see above for the reason(s)" "$CRIT"
 		PressEnter
 		Clear_Lock
 		rm -f "/jffs/scripts/$SCRIPT_NAME" 2>/dev/null
@@ -1118,12 +1213,12 @@ Menu_Install(){
 	
 	Create_Dirs
 	Conf_Exists
-	Set_Version_Custom_Settings "local"
-	ScriptStorageLocation "load"
+	Set_Version_Custom_Settings local
+	ScriptStorageLocation load
 	Create_Symlinks
 	
-	Update_File "connmonstats_www.asp"
-	Update_File "shared-jy.tar.gz"
+	Update_File connmonstats_www.asp
+	Update_File shared-jy.tar.gz
 	
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
@@ -1137,8 +1232,8 @@ Menu_Install(){
 Menu_Startup(){
 	Create_Dirs
 	Conf_Exists
-	Set_Version_Custom_Settings "local"
-	ScriptStorageLocation "load"
+	Set_Version_Custom_Settings local
+	ScriptStorageLocation load
 	Create_Symlinks
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
@@ -1154,39 +1249,92 @@ Menu_GenerateStats(){
 }
 
 Menu_SetPingServer(){
-	PingServer "update"
+	PingServer update
 }
 
 Menu_SetPingDuration(){
-	PingDuration "update"
+	PingDuration update
 }
 
 Menu_SetPingFrequency(){
-	PingFrequency "update"
+	PingFrequency update
+}
+
+Menu_EditSchedule(){
+	exitmenu="false"
+	starthour=""
+	endhour=""
+	ScriptHeader
+	
+	while true; do
+		printf "\\n\\e[1mPlease enter a start hour (0-23):\\e[0m\\n"
+		read -r hour
+		
+		if [ "$hour" = "e" ]; then
+			exitmenu="exit"
+			break
+		elif ! Validate_Number "" "$hour" silent; then
+			printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+		else
+			if [ "$hour" -lt 0 ] || [ "$hour" -gt 23 ]; then
+				printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
+			else
+				starthour="$hour"
+				printf "\\n"
+				break
+			fi
+		fi
+	done
+	
+	if [ "$exitmenu" != "exit" ]; then
+		while true; do
+			printf "\\n\\e[1mPlease enter an end hour (0-23):\\e[0m\\n"
+			read -r hour
+			
+			if [ "$hour" = "e" ]; then
+				exitmenu="exit"
+				break
+			elif ! Validate_Number "" "$hour" silent; then
+				printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+			else
+				if [ "$hour" -lt 0 ] || [ "$hour" -gt 23 ]; then
+					printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
+				else
+					endhour="$hour"
+					printf "\\n"
+					break
+				fi
+			fi
+		done
+	fi
+	
+	if [ "$exitmenu" != "exit" ]; then
+		TestSchedule update "$starthour" "$endhour"
+	fi
 }
 
 Menu_ToggleOutputDataMode(){
-	if [ "$(OutputDataMode "check")" = "raw" ]; then
-		OutputDataMode "average"
-	elif [ "$(OutputDataMode "check")" = "average" ]; then
-		OutputDataMode "raw"
+	if [ "$(OutputDataMode check)" = "raw" ]; then
+		OutputDataMode average
+	elif [ "$(OutputDataMode check)" = "average" ]; then
+		OutputDataMode raw
 	fi
 }
 
 Menu_ToggleOutputTimeMode(){
-	if [ "$(OutputTimeMode "check")" = "unix" ]; then
-		OutputTimeMode "non-unix"
-	elif [ "$(OutputTimeMode "check")" = "non-unix" ]; then
-		OutputTimeMode "unix"
+	if [ "$(OutputTimeMode check)" = "unix" ]; then
+		OutputTimeMode non-unix
+	elif [ "$(OutputTimeMode check)" = "non-unix" ]; then
+		OutputTimeMode unix
 	fi
 }
 
 Menu_ToggleStorageLocation(){
-	if [ "$(ScriptStorageLocation "check")" = "jffs" ]; then
-		ScriptStorageLocation "usb"
+	if [ "$(ScriptStorageLocation check)" = "jffs" ]; then
+		ScriptStorageLocation usb
 		Create_Symlinks
-	elif [ "$(ScriptStorageLocation "check")" = "usb" ]; then
-		ScriptStorageLocation "jffs"
+	elif [ "$(ScriptStorageLocation check)" = "usb" ]; then
+		ScriptStorageLocation jffs
 		Create_Symlinks
 	fi
 }
@@ -1202,14 +1350,14 @@ Menu_ForceUpdate(){
 }
 
 Menu_Uninstall(){
-	Print_Output "true" "Removing $SCRIPT_NAME..." "$PASS"
+	Print_Output true "Removing $SCRIPT_NAME..." "$PASS"
 	Auto_Startup delete 2>/dev/null
 	Auto_Cron delete 2>/dev/null
 	Auto_ServiceEvent delete 2>/dev/null
 	Shortcut_connmon delete
 	
 	Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp"
-	if [ -n "$MyPage" ] && [ "$MyPage" != "none" ] && [ -f "/tmp/menuTree.js" ]; then
+	if [ -n "$MyPage" ] && [ "$MyPage" != "none" ] && [ -f /tmp/menuTree.js ]; then
 		sed -i "\\~$MyPage~d" /tmp/menuTree.js
 		umount /www/require/modules/menuTree.js
 		mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
@@ -1218,25 +1366,22 @@ Menu_Uninstall(){
 	
 	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null
 	
-	while true; do
-		printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
-		read -r "confirm"
-		case "$confirm" in
-			y|Y)
-				rm -rf "$SCRIPT_DIR" 2>/dev/null
-				rm -rf "$SCRIPT_STORAGE_DIR" 2>/dev/null
-				break
-			;;
-			*)
-				break
-			;;
-		esac
-	done
+	printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
+	read -r confirm
+	case "$confirm" in
+		y|Y)
+			rm -rf "$SCRIPT_DIR" 2>/dev/null
+			rm -rf "$SCRIPT_STORAGE_DIR" 2>/dev/null
+		;;
+		*)
+			:
+		;;
+	esac
 	
 	rm -rf "$SCRIPT_WEB_DIR" 2>/dev/null
 	rm -f "/jffs/scripts/$SCRIPT_NAME" 2>/dev/null
 	Clear_Lock
-	Print_Output "true" "Uninstall completed" "$PASS"
+	Print_Output true "Uninstall completed" "$PASS"
 }
 
 NTP_Ready(){
@@ -1248,19 +1393,19 @@ NTP_Ready(){
 	if [ "$(nvram get ntp_ready)" = "0" ]; then
 		ntpwaitcount="0"
 		Check_Lock
-		while [ "$(nvram get ntp_ready)" = "0" ] && [ "$ntpwaitcount" -lt "300" ]; do
+		while [ "$(nvram get ntp_ready)" = "0" ] && [ "$ntpwaitcount" -lt 300 ]; do
 			ntpwaitcount="$((ntpwaitcount + 1))"
 			if [ "$ntpwaitcount" = "60" ]; then
-				Print_Output "true" "Waiting for NTP to sync..." "$WARN"
+				Print_Output true "Waiting for NTP to sync..." "$WARN"
 			fi
 			sleep 1
 		done
-		if [ "$ntpwaitcount" -ge "300" ]; then
-			Print_Output "true" "NTP failed to sync after 5 minutes. Please resolve!" "$CRIT"
+		if [ "$ntpwaitcount" -ge 300 ]; then
+			Print_Output true "NTP failed to sync after 5 minutes. Please resolve!" "$CRIT"
 			Clear_Lock
 			exit 1
 		else
-			Print_Output "true" "NTP synced, $SCRIPT_NAME will now continue" "$PASS"
+			Print_Output true "NTP synced, $SCRIPT_NAME will now continue" "$PASS"
 			Clear_Lock
 		fi
 	fi
@@ -1274,20 +1419,20 @@ Entware_Ready(){
 		fi
 	fi
 	
-	if [ ! -f "/opt/bin/opkg" ] && ! echo "$@" | grep -wqE "(install|uninstall|update|forceupdate)"; then
+	if [ ! -f /opt/bin/opkg ] && ! echo "$@" | grep -wqE "(install|uninstall|update|forceupdate)"; then
 		Check_Lock
 		sleepcount=1
-		while [ ! -f "/opt/bin/opkg" ] && [ "$sleepcount" -le 10 ]; do
-			Print_Output "true" "Entware not found, sleeping for 10s (attempt $sleepcount of 10)" "$ERR"
+		while [ ! -f /opt/bin/opkg ] && [ "$sleepcount" -le 10 ]; do
+			Print_Output true "Entware not found, sleeping for 10s (attempt $sleepcount of 10)" "$ERR"
 			sleepcount="$((sleepcount + 1))"
 			sleep 10
 		done
-		if [ ! -f "/opt/bin/opkg" ]; then
-			Print_Output "true" "Entware not found and is required for $SCRIPT_NAME to run, please resolve" "$CRIT"
+		if [ ! -f /opt/bin/opkg ]; then
+			Print_Output true "Entware not found and is required for $SCRIPT_NAME to run, please resolve" "$CRIT"
 			Clear_Lock
 			exit 1
 		else
-			Print_Output "true" "Entware found, $SCRIPT_NAME will now continue" "$PASS"
+			Print_Output true "Entware found, $SCRIPT_NAME will now continue" "$PASS"
 			Clear_Lock
 		fi
 	fi
@@ -1309,15 +1454,16 @@ CSV_OUTPUT_DIR="$SCRIPT_STORAGE_DIR/csv"
 
 if [ -z "$1" ]; then
 	if [ ! -f /opt/bin/sqlite3 ]; then
-		Print_Output "true" "Installing required version of sqlite3 from Entware" "$PASS"
+		Print_Output true "Installing required version of sqlite3 from Entware" "$PASS"
 		opkg update
 		opkg install sqlite3-cli
 	fi
 	Create_Dirs
 	Conf_Exists
-	Set_Version_Custom_Settings "local"
-	ScriptStorageLocation "load"
+	Set_Version_Custom_Settings local
+	ScriptStorageLocation load
 	Create_Symlinks
+	Process_Upgrade
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
@@ -1352,40 +1498,39 @@ case "$1" in
 	;;
 	service_event)
 		if [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME" ]; then
-			Check_Lock "webui"
+			Check_Lock webui
 			Menu_GenerateStats
 			exit 0
 		elif [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME""config" ]; then
 			Conf_FromSettings
 			exit 0
 		elif [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME""checkupdate" ]; then
-			updatecheckresult="$(Update_Check)"
+			Update_Check
 			exit 0
 		elif [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME""doupdate" ]; then
-			Update_Version "force" "unattended"
+			Update_Version force unattended
 			exit 0
 		fi
 		exit 0
 	;;
 	update)
-		Update_Version "unattended"
+		Update_Version unattended
 		exit 0
 	;;
 	forceupdate)
-		Update_Version "force" "unattended"
+		Update_Version force unattended
 		exit 0
 	;;
 	setversion)
-		Set_Version_Custom_Settings "local"
-		Set_Version_Custom_Settings "server" "$SCRIPT_VERSION"
+		Set_Version_Custom_Settings local
+		Set_Version_Custom_Settings server "$SCRIPT_VERSION"
 		if [ -z "$2" ]; then
 			exec "$0"
 		fi
 		exit 0
 	;;
 	checkupdate)
-		#shellcheck disable=SC2034
-		updatecheckresult="$(Update_Check)"
+		Update_Check
 		exit 0
 	;;
 	uninstall)
@@ -1395,12 +1540,12 @@ case "$1" in
 	;;
 	develop)
 		sed -i 's/^readonly SCRIPT_BRANCH.*$/readonly SCRIPT_BRANCH="develop"/' "/jffs/scripts/$SCRIPT_NAME"
-		exec "$0" "update"
+		exec "$0" update
 		exit 0
 	;;
 	stable)
 		sed -i 's/^readonly SCRIPT_BRANCH.*$/readonly SCRIPT_BRANCH="master"/' "/jffs/scripts/$SCRIPT_NAME"
-		exec "$0" "update"
+		exec "$0" update
 		exit 0
 	;;
 	*)
