@@ -434,6 +434,7 @@ function SetGlobalDataset(txtchartname,dataobject){
 		showhide("imgConnTest", false);
 		showhide("conntest_text", false);
 		showhide("btnRunPingtest", true);
+		BuildLastXTable();
 		for(i = 0; i < metriclist.length; i++){
 			$j("#"+metriclist[i]+"_Period").val(GetCookie(metriclist[i]+"_Period","number"));
 			Draw_Chart(metriclist[i],titlelist[i],measureunitlist[i],bordercolourlist[i],backgroundcolourlist[i]);
@@ -541,7 +542,6 @@ function initial(){
 	LoadCustomSettings();
 	show_menu();
 	get_conf_file();
-	BuildLastXTable();
 	$j("#Time_Format").val(GetCookie("Time_Format","number"));
 	RedrawAllCharts();
 	ScriptUpdateLayout();
