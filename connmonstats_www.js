@@ -623,11 +623,11 @@ function update_status(){
 		dataType: 'script',
 		timeout: 3000,
 		error: function(xhr){
-			setTimeout('update_status();', 1000);
+			setTimeout(update_status, 1000);
 		},
 		success: function(){
 			if (updatestatus == "InProgress"){
-				setTimeout('update_status();', 1000);
+				setTimeout(update_status, 1000);
 			}
 			else{
 				document.getElementById("imgChkUpdate").style.display = "none";
@@ -652,7 +652,7 @@ function CheckUpdate(){
 	document.formScriptActions.action_script.value="start_connmoncheckupdate"
 	document.formScriptActions.submit();
 	document.getElementById("imgChkUpdate").style.display = "";
-	setTimeout("update_status();", 2000);
+	setTimeout(update_status, 2000);
 }
 
 function DoUpdate(){
@@ -708,7 +708,7 @@ function get_conntestresult_file(){
 		dataType: 'text',
 		timeout: 1000,
 		error: function(xhr){
-			setTimeout("get_conntestresult_file();", 500);
+			setTimeout(get_conntestresult_file, 500);
 		},
 		success: function(data){
 			var lines = data.trim().split('\n');
@@ -724,7 +724,7 @@ function get_conf_file(){
 		url: '/ext/connmon/config.htm',
 		dataType: 'text',
 		error: function(xhr){
-			setTimeout("get_conf_file();", 1000);
+			setTimeout(get_conf_file, 1000);
 		},
 		success: function(data){
 			var configdata=data.split("\n");
@@ -806,7 +806,7 @@ function PostConnTest(){
 	$j("#Time_Format").val(GetCookie("Time_Format","number"));
 	SetConnmonStatsTitle();
 	AddEventHandlers();
-	setTimeout('RedrawAllCharts();', 3000);
+	setTimeout(RedrawAllCharts, 3000);
 }
 
 function runPingTest(){
@@ -817,7 +817,7 @@ function runPingTest(){
 	document.formScriptActions.submit();
 	showhide("imgConnTest", true);
 	showhide("conntest_text", false);
-	setTimeout('StartConnTestInterval();', 2000);
+	setTimeout(StartConnTestInterval, 2000);
 }
 
 var myinterval;
