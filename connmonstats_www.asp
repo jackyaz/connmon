@@ -261,7 +261,7 @@ minutes <span style="color:#FFCC00;">(between 1 and 10, default: 3)</span>
 </td>
 </tr>
 <tr class="even" id="rowschedule">
-<th width="40%">Schedule for automatic speedtests</th>
+<th width="40%">Schedule for automatic ping tests</th>
 <td class="settingvalue"><span class="schedulespan">Start hour</span>
 <input autocomplete="off" type="text" maxlength="2" class="input_3_table removespacing" name="connmon_schedulestart" value="0" onkeypress="return validator.isNumber(this, event)" onkeyup="Validate_ScheduleRange(this)" onblur="Validate_ScheduleRange(this)" />
 <span style="color:#FFCC00;">(between 0 and 23, default: 0)</span><br /><span class="schedulespan">End hour</span>
