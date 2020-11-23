@@ -1501,13 +1501,13 @@ case "$1" in
 			Check_Lock webui
 			Menu_GenerateStats
 			exit 0
-		elif [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME""config" ]; then
+		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}config" ]; then
 			Conf_FromSettings
 			exit 0
-		elif [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME""checkupdate" ]; then
+		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}checkupdate" ]; then
 			Update_Check
 			exit 0
-		elif [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME""doupdate" ]; then
+		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}doupdate" ]; then
 			Update_Version force unattended
 			exit 0
 		fi
