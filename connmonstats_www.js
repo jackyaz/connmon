@@ -822,7 +822,7 @@ function runPingTest(){
 
 var myinterval;
 function StartConnTestInterval(){
-	myinterval = setInterval("update_conntest();", 1000);
+	myinterval = setInterval(update_conntest, 1000);
 }
 
 function reload_js(src){
