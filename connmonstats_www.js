@@ -612,11 +612,6 @@ function ToggleDragZoom(button){
 }
 }
 
-function ExportCSV(){
-	location.href = "/ext/connmon/csv/connmondata.zip";
-	return 0;
-}
-
 function update_status(){
 	$j.ajax({
 		url: '/ext/connmon/detect_update.js',
