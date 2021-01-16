@@ -439,6 +439,7 @@ function SetGlobalDataset(txtchartname,dataobject){
 			$j("#"+metriclist[i]+"_Period").val(GetCookie(metriclist[i]+"_Period","number"));
 			Draw_Chart(metriclist[i],titlelist[i],measureunitlist[i],bordercolourlist[i],backgroundcolourlist[i]);
 		}
+		AddEventHandlers();
 	}
 }
 
@@ -546,7 +547,6 @@ function initial(){
 	RedrawAllCharts();
 	ScriptUpdateLayout();
 	SetConnmonStatsTitle();
-	AddEventHandlers();
 }
 
 function ScriptUpdateLayout(){
@@ -800,7 +800,6 @@ function PostConnTest(){
 	reload_js('/ext/connmon/connstatstext.js');
 	$j("#Time_Format").val(GetCookie("Time_Format","number"));
 	SetConnmonStatsTitle();
-	AddEventHandlers();
 	setTimeout(RedrawAllCharts, 3000);
 }
 
