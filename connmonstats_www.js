@@ -610,12 +610,16 @@ function ParseCSVExport(data){
 	document.getElementById("aExport").href="data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
 }
 
+function ErrorCSVExport(){
+	document.getElementById("aExport").href="javascript:alert(\"Error exporting CSV, please refresh the page and try again\")";
+}
+
 function initial(){
 	SetCurrentPage();
 	LoadCustomSettings();
 	show_menu();
 	get_conf_file();
-	d3.csv('/ext/connmon/csv/CompleteResults.htm').then(function(data){ParseCSVExport(data);});
+	d3.csv('/ext/connmon/csv/CompleteResults.htm').then(function(data){ParseCSVExport(data);}).catch(function(){ErrorCSVExport();});
 	$j("#Time_Format").val(GetCookie("Time_Format","number"));
 	RedrawAllCharts();
 	ScriptUpdateLayout();
