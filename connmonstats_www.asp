@@ -228,7 +228,7 @@ var $j=jQuery.noConflict(),pingtestdur=60,maxNoCharts=9,currentNoCharts=0,ShowLi
 <tr class="even">
 <th width="40%">Ping destination type</th>
 <td class="settingvalue">
-<select style="width:250px" class="input_option" onchange="changePingType(this)" id="pingtype">
+<select style="width:125px" class="input_option" onchange="changePingType(this)" id="pingtype">
 <option value="0">IP Address</option>
 <option value="1">Domain</option>
 </select>
