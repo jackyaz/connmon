@@ -1011,7 +1011,7 @@ Generate_CSVs(){
 	fi
 	
 	mv "$tmpoutputdir/CompleteResults.csv" "$CSV_OUTPUT_DIR/CompleteResults.htm"
-	
+	rm -f "$CSV_OUTPUT_DIR/connmondata.zip"
 	rm -rf "$tmpoutputdir"
 }
 
