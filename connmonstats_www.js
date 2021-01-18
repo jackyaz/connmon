@@ -191,7 +191,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 		tooltips: {
 			callbacks: {
 				title: function (tooltipItem, data){ return (moment(tooltipItem[0].xLabel,"X").format(timetooltipformat)); },
-				label: function (tooltipItem, data){ return round(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y,3).toFixed(3) + ' ' + txtunity;}
+				label: function (tooltipItem, data){ return round(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y,2).toFixed(2) + ' ' + txtunity;}
 			},
 			mode: 'point',
 			position: 'cursor',
@@ -213,13 +213,19 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 				}
 			}],
 			yAxes: [{
+				type: getChartScale($j("#" + txtchartname + "_Scale option:selected").val()),
 				gridLines: { display: false, color: "#282828" },
 				scaleLabel: { display: false, labelString: txttitle },
 				ticks: {
 					display: true,
 					beginAtZero: true,
+					max: getYAxisMax(txtchartname),
+					labels: {
+						index:  ['min', 'max'],
+						removeEmptyLines: true,
+					},
 					callback: function (value, index, values){
-						return round(value,3).toFixed(3) + ' ' + txtunity;
+						return LogarithmicFormatter(value, index, values) + ' ' + txtunity;
 					}
 				},
 			}]
@@ -278,7 +284,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 					enabled: true,
 					xAdjust: 0,
 					yAdjust: 0,
-					content: "Avg=" + round(getAverage(chartData),3).toFixed(3)+txtunity,
+					content: "Avg=" + round(getAverage(chartData),2).toFixed(2)+txtunity,
 				}
 			},
 			{
@@ -303,7 +309,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 					enabled: true,
 					xAdjust: 15,
 					yAdjust: 0,
-					content: "Max=" + round(getLimit(chartData,"y","max",true),3).toFixed(3)+txtunity,
+					content: "Max=" + round(getLimit(chartData,"y","max",true),2).toFixed(2)+txtunity,
 				}
 			},
 			{
@@ -328,7 +334,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 					enabled: true,
 					xAdjust: 15,
 					yAdjust: 0,
-					content: "Min=" + round(getLimit(chartData,"y","min",true),3).toFixed(3)+txtunity,
+					content: "Min=" + round(getLimit(chartData,"y","min",true),2).toFixed(2)+txtunity,
 				}
 			}]
 		}
@@ -352,6 +358,45 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 	window["LineChart_"+txtchartname]=objchartname;
 }
 
+function LogarithmicFormatter(tickValue, index, ticks){
+	if(this.type != "logarithmic"){
+		if(! isNaN(tickValue)){
+			return round(tickValue,2).toFixed(2);
+		}
+		else{
+			return tickValue;
+		}
+	}
+	else{
+		var labelOpts =  this.options.ticks.labels || {};
+		var labelIndex = labelOpts.index || ['min', 'max'];
+		var labelSignificand = labelOpts.significand || [1,2,5];
+		var significand = tickValue / (Math.pow(10, Math.floor(Chart.helpers.log10(tickValue))));
+		var emptyTick = labelOpts.removeEmptyLines === true ? undefined : '';
+		var namedIndex = '';
+		if(index === 0){
+			namedIndex = 'min';
+		}
+		else if(index === ticks.length - 1){
+			namedIndex = 'max';
+		}
+		if(labelOpts === 'all' || labelSignificand.indexOf(significand) !== -1 || labelIndex.indexOf(index) !== -1 || labelIndex.indexOf(namedIndex) !== -1){
+			if(tickValue === 0){
+				return '0';
+			}
+			else{
+				if(! isNaN(tickValue)){
+					return round(tickValue,2).toFixed(2);
+				}
+				else{
+					return tickValue;
+				}
+			}
+		}
+		return emptyTick;
+	}
+};
+
 function getLimit(datasetname,axis,maxmin,isannotation){
 	var limit=0;
 	var values;
@@ -372,6 +417,12 @@ function getLimit(datasetname,axis,maxmin,isannotation){
 		limit = 1;
 	}
 	return limit;
+}
+
+function getYAxisMax(chartname){
+	if(chartname == "LineQuality"){
+		return 100;
+	}
 }
 
 function getAverage(datasetname){
@@ -437,9 +488,22 @@ function SetGlobalDataset(txtchartname,dataobject){
 		BuildLastXTable();
 		for(i = 0; i < metriclist.length; i++){
 			$j("#"+metriclist[i]+"_Period").val(GetCookie(metriclist[i]+"_Period","number"));
+			$j("#"+metriclist[i]+"_Scale").val(GetCookie(metriclist[i]+"_Scale","number"));
 			Draw_Chart(metriclist[i],titlelist[i],measureunitlist[i],bordercolourlist[i],backgroundcolourlist[i]);
 		}
+		AddEventHandlers();
 	}
+}
+
+function getChartScale(scale){
+	var chartscale = "";
+	if(scale == 0){
+		chartscale = "linear";
+	}
+	else if(scale == 1){
+		chartscale = "logarithmic";
+	}
+	return chartscale;
 }
 
 function getTimeFormat(value,format){
@@ -537,16 +601,25 @@ function SetCurrentPage(){
 	document.form.current_page.value = window.location.pathname.substring(1);
 }
 
+function ParseCSVExport(data){
+	var csvContent = "Timestamp,Ping,Jitter,LineQuality\n";
+	for(var i = 0; i < data.length; i++){
+		var dataString = data[i].Timestamp+","+data[i].Ping+","+data[i].Jitter+","+data[i].LineQuality;
+		csvContent += i < data.length-1 ? dataString + '\n' : dataString;
+	}
+	document.getElementById("aExport").href="data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+}
+
 function initial(){
 	SetCurrentPage();
 	LoadCustomSettings();
 	show_menu();
 	get_conf_file();
+	d3.csv('/ext/connmon/csv/CompleteResults.htm').then(function(data){ParseCSVExport(data);});
 	$j("#Time_Format").val(GetCookie("Time_Format","number"));
 	RedrawAllCharts();
 	ScriptUpdateLayout();
 	SetConnmonStatsTitle();
-	AddEventHandlers();
 }
 
 function ScriptUpdateLayout(){
@@ -609,12 +682,7 @@ function ToggleDragZoom(button){
 		chartobj.options.plugins.zoom.pan.enabled = pan;
 		button.value = buttonvalue;
 		chartobj.update();
-}
-}
-
-function ExportCSV(){
-	location.href = "/ext/connmon/csv/connmondata.zip";
-	return 0;
+	}
 }
 
 function update_status(){
@@ -805,7 +873,6 @@ function PostConnTest(){
 	reload_js('/ext/connmon/connstatstext.js');
 	$j("#Time_Format").val(GetCookie("Time_Format","number"));
 	SetConnmonStatsTitle();
-	AddEventHandlers();
 	setTimeout(RedrawAllCharts, 3000);
 }
 

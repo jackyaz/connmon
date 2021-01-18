@@ -13,7 +13,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.8.1"
+readonly SCRIPT_VERSION="v2.8.2"
 readonly SCRIPT_BRANCH="master"
 readonly SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -997,7 +997,7 @@ Generate_CSVs(){
 	
 	tmpoutputdir="/tmp/${SCRIPT_NAME}results"
 	mkdir -p "$tmpoutputdir"
-	mv "$CSV_OUTPUT_DIR/CompleteResults"*.htm "$tmpoutputdir/."
+	mv "$CSV_OUTPUT_DIR/CompleteResults.htm" "$tmpoutputdir/CompleteResults.htm"
 	
 	if [ "$OUTPUTTIMEMODE" = "unix" ]; then
 		find "$tmpoutputdir/" -name '*.htm' -exec sh -c 'i="$1"; mv -- "$i" "${i%.htm}.csv"' _ {} \;
@@ -1010,12 +1010,8 @@ Generate_CSVs(){
 		rm -f "$tmpoutputdir/"*.htm
 	fi
 	
-	if [ ! -f /opt/bin/7za ]; then
-		opkg update
-		opkg install p7zip
-	fi
-	/opt/bin/7za a -y -bsp0 -bso0 -tzip "/tmp/${SCRIPT_NAME}data.zip" "$tmpoutputdir/*"
-	mv "/tmp/${SCRIPT_NAME}data.zip" "$CSV_OUTPUT_DIR"
+	mv "$tmpoutputdir/CompleteResults.csv" "$CSV_OUTPUT_DIR/CompleteResults.htm"
+	rm -f "$CSV_OUTPUT_DIR/connmondata.zip"
 	rm -rf "$tmpoutputdir"
 }
 
@@ -1205,7 +1201,6 @@ Check_Requirements(){
 		Print_Output true "Installing required packages from Entware" "$PASS"
 		opkg update
 		opkg install sqlite3-cli
-		opkg install p7zip
 		return 0
 	else
 		return 1
