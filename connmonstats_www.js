@@ -601,11 +601,21 @@ function SetCurrentPage(){
 	document.form.current_page.value = window.location.pathname.substring(1);
 }
 
+function ParseCSVExport(data){
+	var csvContent = "Timestamp,Ping,Jitter,LineQuality\n";
+	for(var i = 0; i < data.length; i++){
+		var dataString = data[i].Timestamp+","+data[i].Ping+","+data[i].Jitter+","+data[i].LineQuality;
+		csvContent += i < data.length-1 ? dataString + '\n' : dataString;
+	}
+	document.getElementById("aExport").href="data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+}
+
 function initial(){
 	SetCurrentPage();
 	LoadCustomSettings();
 	show_menu();
 	get_conf_file();
+	d3.csv('/ext/connmon/csv/CompleteResults.htm').then(function(data){ParseCSVExport(data);});
 	$j("#Time_Format").val(GetCookie("Time_Format","number"));
 	RedrawAllCharts();
 	ScriptUpdateLayout();
