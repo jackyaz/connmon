@@ -215,7 +215,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 			yAxes: [{
 				type: getChartScale($j("#" + txtchartname + "_Scale option:selected").val()),
 				gridLines: { display: false, color: "#282828" },
-				scaleLabel: { display: false, labelString: txttitle },
+				scaleLabel: { display: false, labelString: txtunity },
 				ticks: {
 					display: true,
 					beginAtZero: true,
@@ -224,9 +224,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 						index:  ['min', 'max'],
 						removeEmptyLines: true,
 					},
-					callback: function (value, index, values){
-						return LogarithmicFormatter(value, index, values) + ' ' + txtunity;
-					}
+					userCallback: LogarithmicFormatter
 				},
 			}]
 		},
@@ -359,12 +357,13 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 }
 
 function LogarithmicFormatter(tickValue, index, ticks){
+	var unit = this.options.scaleLabel.labelString;
 	if(this.type != "logarithmic"){
 		if(! isNaN(tickValue)){
-			return round(tickValue,2).toFixed(2);
+			return round(tickValue,2).toFixed(2) + ' ' + unit;
 		}
 		else{
-			return tickValue;
+			return tickValue + ' ' + unit;
 		}
 	}
 	else{
@@ -382,14 +381,14 @@ function LogarithmicFormatter(tickValue, index, ticks){
 		}
 		if(labelOpts === 'all' || labelSignificand.indexOf(significand) !== -1 || labelIndex.indexOf(index) !== -1 || labelIndex.indexOf(namedIndex) !== -1){
 			if(tickValue === 0){
-				return '0';
+				return '0' + ' ' + unit;
 			}
 			else{
 				if(! isNaN(tickValue)){
-					return round(tickValue,2).toFixed(2);
+					return round(tickValue,2).toFixed(2) + ' ' + unit;
 				}
 				else{
-					return tickValue;
+					return tickValue + ' ' + unit;
 				}
 			}
 		}
