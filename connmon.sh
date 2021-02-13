@@ -13,7 +13,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.8.3"
+readonly SCRIPT_VERSION="v2.8.4"
 SCRIPT_BRANCH="master"
 SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -635,14 +635,19 @@ Get_WebUI_Page(){
 	done
 }
 
+### locking mechanism code credit to Martineau (@MartineauUK) ###
+
 Mount_WebUI(){
+	LOCKFILE=/tmp/addonwebui.lock
+	FD=386
+	eval exec "$FD>$LOCKFILE"
+	flock -x "$FD"
 	Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp"
 	if [ "$MyPage" = "none" ]; then
 		Print_Output true "Unable to mount $SCRIPT_NAME WebUI page, exiting" "$CRIT"
-		Clear_Lock
-		exit 1
+		flock -u "$FD"
+		return 1
 	fi
-	Print_Output true "Mounting $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
 	cp -f "$SCRIPT_DIR/connmonstats_www.asp" "$SCRIPT_WEBPAGE_DIR/$MyPage"
 	echo "connmon" > "$SCRIPT_WEBPAGE_DIR/$(echo $MyPage | cut -f1 -d'.').title"
 	
@@ -677,6 +682,8 @@ Mount_WebUI(){
 		umount /www/require/modules/menuTree.js 2>/dev/null
 		mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
 	fi
+	flock -u "$FD"
+	Print_Output true "Mounted $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
 }
 
 TestSchedule(){
@@ -1408,6 +1415,10 @@ Menu_Uninstall(){
 			:
 		;;
 	esac
+	
+	SETTINGSFILE=/jffs/addons/custom_settings.txt
+	sed -i '/connmon_version_local/d' "$SETTINGSFILE"
+	sed -i '/connmon_version_server/d' "$SETTINGSFILE"
 	
 	rm -rf "$SCRIPT_WEB_DIR" 2>/dev/null
 	rm -f "/jffs/scripts/$SCRIPT_NAME" 2>/dev/null
