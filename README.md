@@ -21,7 +21,6 @@ You must be running firmware Merlin 384.15/384.13_4 or Fork 43E5 (or later) [Asu
 
 ## Installation
 Using your preferred SSH client/terminal, copy and paste the following command, then press Enter:
-
 ```sh
 /usr/sbin/curl --retry 3 "https://raw.githubusercontent.com/jackyaz/connmon/master/connmon.sh" -o "/jffs/scripts/connmon" && chmod 0755 /jffs/scripts/connmon && /jffs/scripts/connmon install
 ```
@@ -42,18 +41,9 @@ If this does not work, you will need to use the full path:
 ```
 
 ## Screenshots
-
 ![WebUI](https://puu.sh/GQ5J7/8eade4cd91.png)
 
 ![CLI](https://puu.sh/GQ5BL/1cf6d4d059.png)
 
 ## Help
 Please post about any issues and problems here: [connmon on SNBForums](https://www.snbforums.com/threads/connmon-internet-connection-monitoring.56163/)
-
-## FAQs
-### I haven't used scripts before on AsusWRT-Merlin
-If this is the first time you are using scripts, don't panic! In your router's WebUI, go to the Administration area of the left menu, and then the System tab. Set Enable JFFS custom scripts and configs to Yes.
-
-Further reading about scripts is available here: [AsusWRT-Merlin User-scripts](https://github.com/RMerl/asuswrt-merlin/wiki/User-scripts)
-
-![WebUI enable scripts](https://puu.sh/A3wnG/00a43283ed.png)
