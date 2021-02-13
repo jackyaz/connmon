@@ -1409,6 +1409,10 @@ Menu_Uninstall(){
 		;;
 	esac
 	
+	SETTINGSFILE=/jffs/addons/custom_settings.txt
+	sed -i '/connmon_version_local/d' "$SETTINGSFILE"
+	sed -i '/connmon_version_server/d' "$SETTINGSFILE"
+	
 	rm -rf "$SCRIPT_WEB_DIR" 2>/dev/null
 	rm -f "/jffs/scripts/$SCRIPT_NAME" 2>/dev/null
 	Clear_Lock
