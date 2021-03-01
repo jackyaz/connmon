@@ -1026,6 +1026,7 @@ Generate_CSVs(){
 	rm -rf "$tmpoutputdir"
 }
 
+# shellcheck disable=SC2012
 Reset_DB(){
 	SIZEAVAIL="$(df -P -k "$SCRIPT_STORAGE_DIR" | awk '{print $4}' | tail -n 1)"
 	SIZEDB="$(ls -l "$SCRIPT_STORAGE_DIR/connstats.db" | awk '{print $5}')"
@@ -1421,7 +1422,7 @@ Menu_ForceUpdate(){
 }
 
 Menu_ResetDB(){
-	printf "\\e[1m${WARN}WARNING: This will reset the %s database by deleting all database records.\\n" "$SCRIPT_NAME"
+	printf "\\e[1m\\e[33mWARNING: This will reset the %s database by deleting all database records.\\n" "$SCRIPT_NAME"
 	printf "A backup of the database will be created if you change your mind.\\e[0m\\n"
 	printf "\\n\\e[1mDo you want to continue? (y/n)\\e[0m\\n"
 	read -r confirm
@@ -1431,7 +1432,7 @@ Menu_ResetDB(){
 			Reset_DB
 		;;
 		*)
-			printf "\\n\\e[1m${WARN}Database reset cancelled\\e[0m\\n\\n"
+			printf "\\n\\e[1m\\e[33mDatabase reset cancelled\\e[0m\\n\\n"
 		;;
 	esac
 	
