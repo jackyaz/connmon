@@ -1026,6 +1026,26 @@ Generate_CSVs(){
 	rm -rf "$tmpoutputdir"
 }
 
+Reset_DB(){
+	SIZEAVAIL="$(df -P -k "$SCRIPT_STORAGE_DIR" | awk '{print $4}' | tail -n 1)"
+	SIZEDB="$(ls -l "$SCRIPT_STORAGE_DIR/connstats.db" | awk '{print $5}')"
+	if [ "$SIZEDB" -gt "$SIZEAVAIL" ]; then
+		Print_Output true "Database size exceeds available space. $(ls -lh "$SCRIPT_STORAGE_DIR/connstats.db" | awk '{print $5}')B is required to create backup." "$ERR"
+		return 1
+	else
+		Print_Output true "Sufficient free space to back up database, proceeding..." "$PASS"
+		if ! cp -a "$SCRIPT_STORAGE_DIR/connstats.db" "$SCRIPT_STORAGE_DIR/connstats.db.bak"; then
+			Print_Output true "Database backup failed, please check storage device" "$WARN"
+		fi
+		
+		echo "DELETE FROM [connstats];" > /tmp/connmon-stats.sql
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		rm -f /tmp/connmon-stats.sql
+		
+		Print_Output true "Database reset complete" "$WARN"
+	fi
+}
+
 Shortcut_Script(){
 	case $1 in
 		create)
@@ -1085,6 +1105,7 @@ MainMenu(){
 	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
+	printf "r.    Reset %s database / delete all data\\n\\n" "$SCRIPT_NAME"
 	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
 	printf "z.    Uninstall %s\\n" "$SCRIPT_NAME"
 	printf "\\n"
@@ -1154,6 +1175,14 @@ MainMenu(){
 				printf "\\n"
 				if Check_Lock menu; then
 					Menu_ForceUpdate
+				fi
+				PressEnter
+				break
+			;;
+			r)
+				printf "\\n"
+				if Check_Lock menu; then
+					Menu_ResetDB
 				fi
 				PressEnter
 				break
@@ -1388,6 +1417,24 @@ Menu_Update(){
 
 Menu_ForceUpdate(){
 	Update_Version force
+	Clear_Lock
+}
+
+Menu_ResetDB(){
+	printf "\\e[1m${WARN}WARNING: This will reset the %s database by deleting all database records.\\n" "$SCRIPT_NAME"
+	printf "A backup of the database will be created if you change your mind.\\e[0m\\n"
+	printf "\\n\\e[1mDo you want to continue? (y/n)\\e[0m\\n"
+	read -r confirm
+	case "$confirm" in
+		y|Y)
+			printf "\\n"
+			Reset_DB
+		;;
+		*)
+			printf "\\n\\e[1m${WARN}Database reset cancelled\\e[0m\\n\\n"
+		;;
+	esac
+	
 	Clear_Lock
 }
 
