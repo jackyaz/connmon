@@ -850,7 +850,7 @@ Run_PingTest(){
 	
 	echo 'var connmonstatus = "InProgress";' > /tmp/detect_connmon.js
 	
-	Print_Output false "60 second ping test to $(PingServer check) starting..." "$PASS"
+	Print_Output false "$(PingDuration check) second ping test to $(PingServer check) starting..." "$PASS"
 	if ! Validate_IP "$(PingServer check)" >/dev/null 2>&1 && ! Validate_Domain "$(PingServer check)" >/dev/null 2>&1; then
 		Print_Output true "$(PingServer check) not valid, aborting test. Please correct ASAP" "$ERR"
 		echo 'var connmonstatus = "InvalidServer";' > /tmp/detect_connmon.js
