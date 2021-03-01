@@ -858,9 +858,13 @@ Run_PingTest(){
 		return 1
 	fi
 	
-	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
+	iptables -I OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+	iptables -t mangle -I OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+	iptables -t mangle -I POSTROUTING -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
 	ping -w "$(PingDuration check)" "$(PingServer check)" > "$pingfile"
-	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
+	iptables -D OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+	iptables -t mangle -D OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+	iptables -t mangle -D POSTROUTING -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
 	
 	ScriptStorageLocation load
 	
