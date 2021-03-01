@@ -83,7 +83,7 @@ function Validate_PingFrequency(forminput){
 	var inputname = forminput.name;
 	var inputvalue = forminput.value*1;
 	
-	if(inputvalue > 10 || inputvalue < 1){
+	if(inputvalue > 30 || inputvalue < 1){
 		$j(forminput).addClass("invalid");
 		return false;
 	}

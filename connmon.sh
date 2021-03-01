@@ -432,17 +432,17 @@ PingFrequency(){
 			exitmenu=""
 			ScriptHeader
 			while true; do
-				printf "\\n\\e[1mPlease enter the desired test frequency (every 1-10 minutes):\\e[0m    "
+				printf "\\n\\e[1mPlease enter the desired test frequency (every 1-30 minutes):\\e[0m    "
 				read -r pingfreq_choice
 				
 				if [ "$pingfreq_choice" = "e" ]; then
 					exitmenu="exit"
 					break
 				elif ! Validate_Number "" "$pingfreq_choice" silent; then
-					printf "\\n\\e[31mPlease enter a valid number (1-10)\\e[0m\\n"
+					printf "\\n\\e[31mPlease enter a valid number (1-30)\\e[0m\\n"
 				else
-					if [ "$pingfreq_choice" -lt 1 ] || [ "$pingfreq_choice" -gt 10 ]; then
-						printf "\\n\\e[31mPlease enter a number between 1 and 10\\e[0m\\n"
+					if [ "$pingfreq_choice" -lt 1 ] || [ "$pingfreq_choice" -gt 30 ]; then
+						printf "\\n\\e[31mPlease enter a number between 1 and 30\\e[0m\\n"
 					else
 						pingfreq="$pingfreq_choice"
 						printf "\\n"
