@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/jackyaz/connmon.svg?branch=master)](https://travis-ci.com/jackyaz/connmon)
 
 ## v2.8.5
-### Updated on 2021-03-01
+### Updated on 2021-03-06
 ## About
 connmon is an internet connection monitoring tool for AsusWRT Merlin with charts for daily, weekly and monthly summaries.
 
