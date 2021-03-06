@@ -1446,6 +1446,10 @@ Menu_Uninstall(){
 	Auto_ServiceEvent delete 2>/dev/null
 	Shortcut_Script delete
 	
+	LOCKFILE=/tmp/addonwebui.lock
+	FD=386
+	eval exec "$FD>$LOCKFILE"
+	flock -x "$FD"
 	Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp"
 	if [ -n "$MyPage" ] && [ "$MyPage" != "none" ] && [ -f /tmp/menuTree.js ]; then
 		sed -i "\\~$MyPage~d" /tmp/menuTree.js
@@ -1453,6 +1457,7 @@ Menu_Uninstall(){
 		mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
 		rm -rf "{$SCRIPT_WEBPAGE_DIR:?}/$MyPage"
 	fi
+	flock -u "$FD"
 	
 	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null
 	
