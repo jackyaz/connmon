@@ -13,7 +13,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.8.4"
+readonly SCRIPT_VERSION="v2.8.5"
 SCRIPT_BRANCH="master"
 SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -432,17 +432,17 @@ PingFrequency(){
 			exitmenu=""
 			ScriptHeader
 			while true; do
-				printf "\\n\\e[1mPlease enter the desired test frequency (every 1-10 minutes):\\e[0m    "
+				printf "\\n\\e[1mPlease enter the desired test frequency (every 1-30 minutes):\\e[0m    "
 				read -r pingfreq_choice
 				
 				if [ "$pingfreq_choice" = "e" ]; then
 					exitmenu="exit"
 					break
 				elif ! Validate_Number "" "$pingfreq_choice" silent; then
-					printf "\\n\\e[31mPlease enter a valid number (1-10)\\e[0m\\n"
+					printf "\\n\\e[31mPlease enter a valid number (1-30)\\e[0m\\n"
 				else
-					if [ "$pingfreq_choice" -lt 1 ] || [ "$pingfreq_choice" -gt 10 ]; then
-						printf "\\n\\e[31mPlease enter a number between 1 and 10\\e[0m\\n"
+					if [ "$pingfreq_choice" -lt 1 ] || [ "$pingfreq_choice" -gt 30 ]; then
+						printf "\\n\\e[31mPlease enter a number between 1 and 30\\e[0m\\n"
 					else
 						pingfreq="$pingfreq_choice"
 						printf "\\n"
@@ -850,7 +850,7 @@ Run_PingTest(){
 	
 	echo 'var connmonstatus = "InProgress";' > /tmp/detect_connmon.js
 	
-	Print_Output false "60 second ping test to $(PingServer check) starting..." "$PASS"
+	Print_Output false "$(PingDuration check) second ping test to $(PingServer check) starting..." "$PASS"
 	if ! Validate_IP "$(PingServer check)" >/dev/null 2>&1 && ! Validate_Domain "$(PingServer check)" >/dev/null 2>&1; then
 		Print_Output true "$(PingServer check) not valid, aborting test. Please correct ASAP" "$ERR"
 		echo 'var connmonstatus = "InvalidServer";' > /tmp/detect_connmon.js
@@ -858,9 +858,13 @@ Run_PingTest(){
 		return 1
 	fi
 	
-	iptables -I OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
+	iptables -I OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+	iptables -t mangle -I OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+	iptables -t mangle -I POSTROUTING -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
 	ping -w "$(PingDuration check)" "$(PingServer check)" > "$pingfile"
-	iptables -D OUTPUT -t mangle -p icmp -j MARK --set-mark 0x40090001
+	iptables -D OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+	iptables -t mangle -D OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+	iptables -t mangle -D POSTROUTING -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
 	
 	ScriptStorageLocation load
 	
@@ -1022,6 +1026,27 @@ Generate_CSVs(){
 	rm -rf "$tmpoutputdir"
 }
 
+# shellcheck disable=SC2012
+Reset_DB(){
+	SIZEAVAIL="$(df -P -k "$SCRIPT_STORAGE_DIR" | awk '{print $4}' | tail -n 1)"
+	SIZEDB="$(ls -l "$SCRIPT_STORAGE_DIR/connstats.db" | awk '{print $5}')"
+	if [ "$SIZEDB" -gt "$SIZEAVAIL" ]; then
+		Print_Output true "Database size exceeds available space. $(ls -lh "$SCRIPT_STORAGE_DIR/connstats.db" | awk '{print $5}')B is required to create backup." "$ERR"
+		return 1
+	else
+		Print_Output true "Sufficient free space to back up database, proceeding..." "$PASS"
+		if ! cp -a "$SCRIPT_STORAGE_DIR/connstats.db" "$SCRIPT_STORAGE_DIR/connstats.db.bak"; then
+			Print_Output true "Database backup failed, please check storage device" "$WARN"
+		fi
+		
+		echo "DELETE FROM [connstats];" > /tmp/connmon-stats.sql
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		rm -f /tmp/connmon-stats.sql
+		
+		Print_Output true "Database reset complete" "$WARN"
+	fi
+}
+
 Shortcut_Script(){
 	case $1 in
 		create)
@@ -1081,6 +1106,7 @@ MainMenu(){
 	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
+	printf "r.    Reset %s database / delete all data\\n\\n" "$SCRIPT_NAME"
 	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
 	printf "z.    Uninstall %s\\n" "$SCRIPT_NAME"
 	printf "\\n"
@@ -1150,6 +1176,14 @@ MainMenu(){
 				printf "\\n"
 				if Check_Lock menu; then
 					Menu_ForceUpdate
+				fi
+				PressEnter
+				break
+			;;
+			r)
+				printf "\\n"
+				if Check_Lock menu; then
+					Menu_ResetDB
 				fi
 				PressEnter
 				break
@@ -1387,6 +1421,24 @@ Menu_ForceUpdate(){
 	Clear_Lock
 }
 
+Menu_ResetDB(){
+	printf "\\e[1m\\e[33mWARNING: This will reset the %s database by deleting all database records.\\n" "$SCRIPT_NAME"
+	printf "A backup of the database will be created if you change your mind.\\e[0m\\n"
+	printf "\\n\\e[1mDo you want to continue? (y/n)\\e[0m\\n"
+	read -r confirm
+	case "$confirm" in
+		y|Y)
+			printf "\\n"
+			Reset_DB
+		;;
+		*)
+			printf "\\n\\e[1m\\e[33mDatabase reset cancelled\\e[0m\\n\\n"
+		;;
+	esac
+	
+	Clear_Lock
+}
+
 Menu_Uninstall(){
 	Print_Output true "Removing $SCRIPT_NAME..." "$PASS"
 	Auto_Startup delete 2>/dev/null
@@ -1394,6 +1446,10 @@ Menu_Uninstall(){
 	Auto_ServiceEvent delete 2>/dev/null
 	Shortcut_Script delete
 	
+	LOCKFILE=/tmp/addonwebui.lock
+	FD=386
+	eval exec "$FD>$LOCKFILE"
+	flock -x "$FD"
 	Get_WebUI_Page "$SCRIPT_DIR/connmonstats_www.asp"
 	if [ -n "$MyPage" ] && [ "$MyPage" != "none" ] && [ -f /tmp/menuTree.js ]; then
 		sed -i "\\~$MyPage~d" /tmp/menuTree.js
@@ -1401,6 +1457,7 @@ Menu_Uninstall(){
 		mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
 		rm -rf "{$SCRIPT_WEBPAGE_DIR:?}/$MyPage"
 	fi
+	flock -u "$FD"
 	
 	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null
 	
