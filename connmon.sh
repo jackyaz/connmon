@@ -37,9 +37,9 @@ readonly PASS="\\e[32m"
 Print_Output(){
 	if [ "$1" = "true" ]; then
 		logger -t "$SCRIPT_NAME" "$2"
-		printf "\\e[1m$3%s: $2\\e[0m\\n\\n" "$SCRIPT_NAME"
+		printf "\\e[1m${3}%s: ${2}\\e[0m\\n\\n" "$SCRIPT_NAME"
 	else
-		printf "\\e[1m$3%s: $2\\e[0m\\n\\n" "$SCRIPT_NAME"
+		printf "\\e[1m${3}${2}\\e[0m\\n\\n"
 	fi
 }
 
