@@ -181,7 +181,6 @@ Update_Version(){
 			esac
 		else
 			Print_Output true "No updates available - latest is $localver" "$WARN"
-			PressEnter
 			Clear_Lock
 		fi
 	fi
