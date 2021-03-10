@@ -1120,26 +1120,27 @@ MainMenu(){
 			1)
 				printf "\\n"
 				if Check_Lock menu; then
-					Menu_GenerateStats
+					Run_PingTest
+					Clear_Lock
 				fi
 				PressEnter
 				break
 			;;
 			2)
 				printf "\\n"
-				Menu_SetPingServer
+				PingServer update
 				PressEnter
 				break
 			;;
 			3)
 				printf "\\n"
-				Menu_SetPingDuration
+				PingDuration update
 				PressEnter
 				break
 			;;
 			4)
 				printf "\\n"
-				Menu_SetPingFrequency
+				PingFrequency update
 				PressEnter
 				break
 			;;
@@ -1151,23 +1152,38 @@ MainMenu(){
 			;;
 			6)
 				printf "\\n"
-				Menu_ToggleOutputDataMode
+				if [ "$(OutputDataMode check)" = "raw" ]; then
+					OutputDataMode average
+				elif [ "$(OutputDataMode check)" = "average" ]; then
+					OutputDataMode raw
+				fi
 				break
 			;;
 			7)
 				printf "\\n"
-				Menu_ToggleOutputTimeMode
+				if [ "$(OutputTimeMode check)" = "unix" ]; then
+					OutputTimeMode non-unix
+				elif [ "$(OutputTimeMode check)" = "non-unix" ]; then
+					OutputTimeMode unix
+				fi
 				break
 			;;
 			s)
 				printf "\\n"
-				Menu_ToggleStorageLocation
+				if [ "$(ScriptStorageLocation check)" = "jffs" ]; then
+					ScriptStorageLocation usb
+					Create_Symlinks
+				elif [ "$(ScriptStorageLocation check)" = "usb" ]; then
+					ScriptStorageLocation jffs
+					Create_Symlinks
+				fi
 				break
 			;;
 			u)
 				printf "\\n"
 				if Check_Lock menu; then
-					Menu_Update
+					Update_Version
+					Clear_Lock
 				fi
 				PressEnter
 				break
@@ -1175,7 +1191,8 @@ MainMenu(){
 			uf)
 				printf "\\n"
 				if Check_Lock menu; then
-					Menu_ForceUpdate
+					Update_Version force
+					Clear_Lock
 				fi
 				PressEnter
 				break
@@ -1275,7 +1292,7 @@ Menu_Install(){
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
-	Menu_GenerateStats
+	Run_PingTest
 	
 	Clear_Lock
 }
@@ -1313,23 +1330,6 @@ Menu_Startup(){
 	Mount_WebUI
 	
 	Clear_Lock
-}
-
-Menu_GenerateStats(){
-	Run_PingTest
-	Clear_Lock
-}
-
-Menu_SetPingServer(){
-	PingServer update
-}
-
-Menu_SetPingDuration(){
-	PingDuration update
-}
-
-Menu_SetPingFrequency(){
-	PingFrequency update
 }
 
 Menu_EditSchedule(){
@@ -1385,42 +1385,6 @@ Menu_EditSchedule(){
 	fi
 }
 
-Menu_ToggleOutputDataMode(){
-	if [ "$(OutputDataMode check)" = "raw" ]; then
-		OutputDataMode average
-	elif [ "$(OutputDataMode check)" = "average" ]; then
-		OutputDataMode raw
-	fi
-}
-
-Menu_ToggleOutputTimeMode(){
-	if [ "$(OutputTimeMode check)" = "unix" ]; then
-		OutputTimeMode non-unix
-	elif [ "$(OutputTimeMode check)" = "non-unix" ]; then
-		OutputTimeMode unix
-	fi
-}
-
-Menu_ToggleStorageLocation(){
-	if [ "$(ScriptStorageLocation check)" = "jffs" ]; then
-		ScriptStorageLocation usb
-		Create_Symlinks
-	elif [ "$(ScriptStorageLocation check)" = "usb" ]; then
-		ScriptStorageLocation jffs
-		Create_Symlinks
-	fi
-}
-
-Menu_Update(){
-	Update_Version
-	Clear_Lock
-}
-
-Menu_ForceUpdate(){
-	Update_Version force
-	Clear_Lock
-}
-
 Menu_ResetDB(){
 	printf "\\e[1m\\e[33mWARNING: This will reset the %s database by deleting all database records.\\n" "$SCRIPT_NAME"
 	printf "A backup of the database will be created if you change your mind.\\e[0m\\n"
@@ -1458,7 +1422,6 @@ Menu_Uninstall(){
 		rm -rf "{$SCRIPT_WEBPAGE_DIR:?}/$MyPage"
 	fi
 	flock -u "$FD"
-	
 	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null
 	
 	printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
@@ -1574,7 +1537,8 @@ case "$1" in
 		NTP_Ready
 		Entware_Ready
 		Check_Lock
-		Menu_GenerateStats
+		Run_PingTest
+		Clear_Lock
 		exit 0
 	;;
 	outputcsv)
@@ -1588,7 +1552,8 @@ case "$1" in
 	service_event)
 		if [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME" ]; then
 			Check_Lock webui
-			Menu_GenerateStats
+			Run_PingTest
+			Clear_Lock
 			exit 0
 		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}config" ]; then
 			Conf_FromSettings
