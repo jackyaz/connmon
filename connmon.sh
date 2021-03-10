@@ -1575,6 +1575,7 @@ Available commands:
   $SCRIPT_NAME develop            switch to development branch
   $SCRIPT_NAME stable             switch to stable branch
 EOF
+	printf "\\n"
 }
 ### ###
 
