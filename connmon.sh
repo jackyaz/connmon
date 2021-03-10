@@ -87,7 +87,7 @@ Clear_Lock(){
 ############################################################################
 
 Set_Version_Custom_Settings(){
-	SETTINGSFILE=/jffs/addons/custom_settings.txt
+	SETTINGSFILE="/jffs/addons/custom_settings.txt"
 	case "$1" in
 		local)
 			if [ -f "$SETTINGSFILE" ]; then
@@ -121,7 +121,7 @@ Set_Version_Custom_Settings(){
 Update_Check(){
 	echo 'var updatestatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_update.js"
 	doupdate="false"
-	localver=$(grep "SCRIPT_VERSION=" /jffs/scripts/"$SCRIPT_NAME" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
+	localver=$(grep "SCRIPT_VERSION=" "/jffs/scripts/$SCRIPT_NAME" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 	/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep -qF "jackyaz" || { Print_Output true "404 error detected - stopping update" "$ERR"; return 1; }
 	serverver=$(/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 	if [ "$localver" != "$serverver" ]; then
@@ -783,7 +783,7 @@ WritePlainData_ToJS(){
 	inputfile="$1"
 	outputfile="$2"
 	shift;shift
-	i="0"
+	i=0
 	for var in "$@"; do
 		i=$((i+1))
 		{
@@ -814,7 +814,7 @@ WriteSql_ToFile(){
 	{
 		echo ".mode csv"
 		echo ".headers on"
-		echo ".output $5$6.htm"
+		echo ".output ${5}${6}.htm"
 	} >> "$7"
 	
 	echo "SELECT '$1' Metric, Min([Timestamp]) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= $timenow - ($multiplier*$maxcount)) GROUP BY ([Timestamp]/($multiplier));" >> "$7"
@@ -829,7 +829,7 @@ Generate_LastXResults(){
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
 	sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
 	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
-	WritePlainData_ToJS "/tmp/conn-lastx.csv" "$SCRIPT_STORAGE_DIR/connjs.js" "DataTimestamp" "DataPing" "DataJitter" "DataLineQuality"
+	WritePlainData_ToJS /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/connjs.js" DataTimestamp DataPing DataJitter DataLineQuality
 	rm -f /tmp/conn-lastx.sql
 	rm -f /tmp/conn-lastx.csv
 }
@@ -895,14 +895,14 @@ Run_PingTest(){
 	timenow=$(date +"%s")
 	timenowfriendly=$(date +"%c")
 	
-	ping="0"
-	jitter="0"
-	linequal="0"
+	ping=0
+	jitter=0
+	linequal=0
 	
 	if [ "$PINGCOUNT" -gt 1 ]; then
 		ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
 		jitter="$(echo "$TOTALDIFF" "$DIFFCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
-		linequal="$(echo "100" "$(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" | awk '{printf "%4.3f\n",$1-$2}')"
+		linequal="$(echo 100 "$(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" | awk '{printf "%4.3f\n",$1-$2}')"
 	fi
 	
 	{
@@ -1051,13 +1051,13 @@ Shortcut_Script(){
 	case $1 in
 		create)
 			if [ -d /opt/bin ] && [ ! -f "/opt/bin/$SCRIPT_NAME" ] && [ -f "/jffs/scripts/$SCRIPT_NAME" ]; then
-				ln -s /jffs/scripts/"$SCRIPT_NAME" /opt/bin
-				chmod 0755 /opt/bin/"$SCRIPT_NAME"
+				ln -s "/jffs/scripts/$SCRIPT_NAME" /opt/bin
+				chmod 0755 "/opt/bin/$SCRIPT_NAME"
 			fi
 		;;
 		delete)
 			if [ -f "/opt/bin/$SCRIPT_NAME" ]; then
-				rm -f /opt/bin/"$SCRIPT_NAME"
+				rm -f "/opt/bin/$SCRIPT_NAME"
 			fi
 		;;
 	esac
