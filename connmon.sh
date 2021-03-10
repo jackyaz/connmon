@@ -307,7 +307,7 @@ Conf_FromSettings(){
 			ScriptStorageLocation "$(ScriptStorageLocation check)"
 			Create_Symlinks
 			
-			Auto_Cron create
+			if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 			Generate_CSVs
 			
 			Print_Output true "Merge of updated settings from WebUI completed successfully" "$PASS"
@@ -365,24 +365,12 @@ Conf_Exists(){
 		dos2unix "$SCRIPT_CONF"
 		chmod 0644 "$SCRIPT_CONF"
 		sed -i -e 's/"//g' "$SCRIPT_CONF"
-		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 1 ]; then
-			echo "OUTPUTDATAMODE=raw" >> "$SCRIPT_CONF"
-		fi
-		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 2 ]; then
-			echo "OUTPUTTIMEMODE=unix" >> "$SCRIPT_CONF"
-		fi
-		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 3 ]; then
-			echo "STORAGELOCATION=jffs" >> "$SCRIPT_CONF"
-		fi
-		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 4 ]; then
-			{ echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; } >> "$SCRIPT_CONF"
-		fi
-		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 6 ]; then
-			{ echo "SCHEDULESTART=0"; echo "SCHEDULEEND=23"; } >> "$SCRIPT_CONF"
+		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 8 ]; then
+			echo "AUTOMATED=true" >> "$SCRIPT_CONF"
 		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; echo "SCHEDULESTART=0"; echo "SCHEDULEEND=23"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; echo "SCHEDULESTART=0"; echo "SCHEDULEEND=23"; echo "AUTOMATED=true"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -470,7 +458,7 @@ PingFrequency(){
 			
 			if [ "$exitmenu" != "exit" ]; then
 				sed -i 's/^PINGFREQUENCY.*$/PINGFREQUENCY='"$pingfreq"'/' "$SCRIPT_CONF"
-				Auto_Cron create
+				if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 				return 0
 			else
 				printf "\\n"
@@ -735,6 +723,23 @@ Mount_WebUI(){
 	Print_Output true "Mounted $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
 }
 
+AutomaticMode(){
+	case "$1" in
+		enable)
+			sed -i 's/^AUTOMATED.*$/AUTOMATED=true/' "$SCRIPT_CONF"
+			Auto_Cron create 2>/dev/null
+		;;
+		disable)
+			sed -i 's/^AUTOMATED.*$/AUTOMATED=false/' "$SCRIPT_CONF"
+			Auto_Cron delete 2>/dev/null
+		;;
+		check)
+			AUTOMATED=$(grep "AUTOMATED" "$SCRIPT_CONF" | cut -f2 -d"=")
+			if [ "$AUTOMATED" = "true" ]; then return 0; else return 1; fi
+		;;
+	esac
+}
+
 TestSchedule(){
 	case "$1" in
 		update)
@@ -887,7 +892,7 @@ Run_PingTest(){
 	Create_Dirs
 	Conf_Exists
 	Auto_Startup create 2>/dev/null
-	Auto_Cron create 2>/dev/null
+	if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 	Auto_ServiceEvent create 2>/dev/null
 	ScriptStorageLocation load
 	Create_Symlinks
@@ -1142,6 +1147,8 @@ ScriptHeader(){
 }
 
 MainMenu(){
+	AUTOMATIC_ENABLED=""
+	if AutomaticMode check; then AUTOMATIC_ENABLED="Enabled"; else AUTOMATIC_ENABLED="Disabled"; fi
 	TEST_SCHEDULE="$(TestSchedule check)"
 	TEST_SCHEDULE_MENU="Start: $(echo "$TEST_SCHEDULE" | cut -f1 -d',')    -    End: $(echo "$TEST_SCHEDULE" | cut -f2 -d',')"
 	
@@ -1149,10 +1156,11 @@ MainMenu(){
 	printf "1.    Check connection now\\n\\n"
 	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(PingServer check)"
 	printf "3.    Set ping test duration\\n      Currently: %ss\\n\\n" "$(PingDuration check)"
-	printf "4.    Set ping test frequency\\n      Currently: Every %s minutes\\n\\n" "$(PingFrequency check)"
-	printf "5.    Set time range for ping tests\\n      %s\\n\\n" "$TEST_SCHEDULE_MENU"
-	printf "6.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode check)"
-	printf "7.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
+	printf "4.    Toggle automatic ping tests\\n      Currently \\e[1m%s\\e[0m\\n\\n" "$AUTOMATIC_ENABLED"
+	printf "5.    Set automatic ping test frequency\\n      Currently: Every %s minutes\\n\\n" "$(PingFrequency check)"
+	printf "6.    Set time range for automatic ping tests\\n      %s\\n\\n" "$TEST_SCHEDULE_MENU"
+	printf "7.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode check)"
+	printf "8.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
 	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
@@ -1190,17 +1198,26 @@ MainMenu(){
 			;;
 			4)
 				printf "\\n"
+				if AutomaticMode check; then
+					AutomaticMode disable
+				else
+					AutomaticMode enable
+				fi
+				break
+			;;
+			5)
+				printf "\\n"
 				PingFrequency update
 				PressEnter
 				break
 			;;
-			5)
+			6)
 				printf "\\n"
 				Menu_EditSchedule
 				PressEnter
 				break
 			;;
-			6)
+			7)
 				printf "\\n"
 				if [ "$(OutputDataMode check)" = "raw" ]; then
 					OutputDataMode average
@@ -1209,7 +1226,7 @@ MainMenu(){
 				fi
 				break
 			;;
-			7)
+			8)
 				printf "\\n"
 				if [ "$(OutputTimeMode check)" = "unix" ]; then
 					OutputTimeMode non-unix
@@ -1340,7 +1357,7 @@ Menu_Install(){
 	Update_File shared-jy.tar.gz
 	
 	Auto_Startup create 2>/dev/null
-	Auto_Cron create 2>/dev/null
+	if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
 	Run_PingTest
@@ -1374,7 +1391,7 @@ Menu_Startup(){
 	ScriptStorageLocation load
 	Create_Symlinks
 	Auto_Startup create 2>/dev/null
-	Auto_Cron create 2>/dev/null
+	if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
 	Mount_WebUI
@@ -1572,6 +1589,8 @@ Available commands:
   $SCRIPT_NAME uninstall          uninstalls script
   $SCRIPT_NAME generate           run ping test and save to database. also runs outputcsv
   $SCRIPT_NAME outputcsv          create CSVs from database, used by WebUI and export
+  $SCRIPT_NAME enable             enable automatic ping tests
+  $SCRIPT_NAME disable            disable automatic ping tests
   $SCRIPT_NAME develop            switch to development branch
   $SCRIPT_NAME stable             switch to stable branch
 EOF
@@ -1603,7 +1622,7 @@ if [ -z "$1" ]; then
 	Create_Symlinks
 	Process_Upgrade
 	Auto_Startup create 2>/dev/null
-	Auto_Cron create 2>/dev/null
+	if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
 	ScriptHeader
@@ -1635,6 +1654,16 @@ case "$1" in
 		Check_Lock
 		Generate_CSVs
 		Clear_Lock
+		exit 0
+	;;
+	enable)
+		Entware_Ready
+		AutomaticMode enable
+		exit 0
+	;;
+	disable)
+		Entware_Ready
+		AutomaticMode disable
 		exit 0
 	;;
 	service_event)
@@ -1670,7 +1699,7 @@ case "$1" in
 		Create_Symlinks
 		Process_Upgrade
 		Auto_Startup create 2>/dev/null
-		Auto_Cron create 2>/dev/null
+		if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 		Auto_ServiceEvent create 2>/dev/null
 		Shortcut_Script create
 		exit 0
