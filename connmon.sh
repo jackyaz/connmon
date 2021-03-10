@@ -672,9 +672,9 @@ Get_WebUI_URL(){
 	fi
 	
 	if echo "$urlpage" | grep -qE "user[0-9]+\.asp"; then
-		echo "${urlproto}://${urldomain}${urlport}/${urlpage}"
+		echo "${urlproto}://${urldomain}${urlport}/${urlpage}" | tr "A-Z" "a-z"
 	else
-		echo "Not found"
+		echo "WebUI page not found"
 	fi
 }
 ### ###
