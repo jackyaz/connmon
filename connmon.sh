@@ -1538,6 +1538,46 @@ Entware_Ready(){
 }
 ### ###
 
+### function based on @dave14305's FlexQoS about function ###
+Show_About(){
+	cat <<EOF
+About
+  $SCRIPT_NAME is an internet connection monitoring tool for
+  AsusWRT Merlin with charts for daily, weekly and monthly
+  summaries.
+
+License
+  $SCRIPT_NAME is free to use under the GNU General Public License
+  version 3 (GPL-3.0) https://opensource.org/licenses/GPL-3.0
+
+Help & Support
+  https://www.snbforums.com/forums/asuswrt-merlin-addons.60/
+
+Source code
+  https://github.com/jackyaz/$SCRIPT_NAME
+EOF
+	printf "\\n"
+}
+### ###
+
+### function based on @dave14305's FlexQoS show_help function ###
+Show_Help(){
+	cat <<EOF
+Available commands:
+  $SCRIPT_NAME about              explains functionality
+  $SCRIPT_NAME update             checks for updates
+  $SCRIPT_NAME forceupdate        updates to latest version (force update)
+  $SCRIPT_NAME startup force      runs startup actions such as mount WebUI tab
+  $SCRIPT_NAME install            installs script
+  $SCRIPT_NAME uninstall          uninstalls script
+  $SCRIPT_NAME generate           run ping test and save to database. also runs outputcsv
+  $SCRIPT_NAME outputcsv          create CSVs from database, used by WebUI and export
+  $SCRIPT_NAME develop            switch to development branch
+  $SCRIPT_NAME stable             switch to stable branch
+EOF
+}
+### ###
+
 if [ -f "/opt/share/$SCRIPT_NAME.d/config" ]; then
 	SCRIPT_CONF="/opt/share/$SCRIPT_NAME.d/config"
 	SCRIPT_STORAGE_DIR="/opt/share/$SCRIPT_NAME.d"
@@ -1651,8 +1691,20 @@ case "$1" in
 		Update_Version force
 		exit 0
 	;;
+	about)
+		ScriptHeader
+		Show_About
+		exit 0
+	;;
+	help)
+		ScriptHeader
+		Show_Help
+		exit 0
+	;;
 	*)
-		echo "Command not recognised, please try again"
+		ScriptHeader
+		Print_Output false "Command not recognised." "$ERR"
+		Print_Output false "For a list of available commands run: $SCRIPT_NAME help"
 		exit 1
 	;;
 esac
