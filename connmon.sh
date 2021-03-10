@@ -92,14 +92,14 @@ Set_Version_Custom_Settings(){
 		local)
 			if [ -f "$SETTINGSFILE" ]; then
 				if [ "$(grep -c "connmon_version_local" $SETTINGSFILE)" -gt 0 ]; then
-					if [ "$SCRIPT_VERSION" != "$(grep "connmon_version_local" /jffs/addons/custom_settings.txt | cut -f2 -d' ')" ]; then
-						sed -i "s/connmon_version_local.*/connmon_version_local $SCRIPT_VERSION/" "$SETTINGSFILE"
+					if [ "$2" != "$(grep "connmon_version_local" /jffs/addons/custom_settings.txt | cut -f2 -d' ')" ]; then
+						sed -i "s/connmon_version_local.*/connmon_version_local $2/" "$SETTINGSFILE"
 					fi
 				else
-					echo "connmon_version_local $SCRIPT_VERSION" >> "$SETTINGSFILE"
+					echo "connmon_version_local $2" >> "$SETTINGSFILE"
 				fi
 			else
-				echo "connmon_version_local $SCRIPT_VERSION" >> "$SETTINGSFILE"
+				echo "connmon_version_local $2" >> "$SETTINGSFILE"
 			fi
 		;;
 		server)
@@ -182,12 +182,14 @@ Update_Version(){
 		Update_File connmonstats_www.asp
 		Update_File shared-jy.tar.gz
 		/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
-		chmod 0755 /jffs/scripts/"$SCRIPT_NAME"
+		chmod 0755 "/jffs/scripts/$SCRIPT_NAME"
 		Clear_Lock
+		Set_Version_Custom_Settings local "$serverver"
+		Set_Version_Custom_Settings server "$serverver"
 		if [ -z "$2" ]; then
-			exec "$0" setversion
+			exec "$0"
 		elif [ "$2" = "unattended" ]; then
-			exec "$0" setversion unattended
+			exec "$0" postupdate
 		fi
 		exit 0
 	fi
@@ -869,7 +871,6 @@ Generate_LastXResults(){
 Run_PingTest(){
 	Create_Dirs
 	Conf_Exists
-	Set_Version_Custom_Settings local
 	Auto_Startup create 2>/dev/null
 	Auto_Cron create 2>/dev/null
 	Auto_ServiceEvent create 2>/dev/null
@@ -1313,7 +1314,8 @@ Menu_Install(){
 	
 	Create_Dirs
 	Conf_Exists
-	Set_Version_Custom_Settings local
+	Set_Version_Custom_Settings local "$SCRIPT_VERSION"
+	Set_Version_Custom_Settings server "$SCRIPT_VERSION"
 	ScriptStorageLocation load
 	Create_Symlinks
 	
@@ -1352,7 +1354,6 @@ Menu_Startup(){
 	
 	Create_Dirs
 	Conf_Exists
-	Set_Version_Custom_Settings local
 	ScriptStorageLocation load
 	Create_Symlinks
 	Auto_Startup create 2>/dev/null
@@ -1540,7 +1541,6 @@ if [ -z "$1" ]; then
 	fi
 	Create_Dirs
 	Conf_Exists
-	Set_Version_Custom_Settings local
 	ScriptStorageLocation load
 	Create_Symlinks
 	Process_Upgrade
