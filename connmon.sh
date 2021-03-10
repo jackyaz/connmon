@@ -11,6 +11,11 @@
 ##                                                        ##
 ############################################################
 
+#############        Shellcheck directives      ############
+# shellcheck disable=SC2018
+# shellcheck disable=SC2019
+############################################################
+
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
 readonly SCRIPT_VERSION="v2.8.6"
