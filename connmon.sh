@@ -34,10 +34,11 @@ readonly PASS="\\e[32m"
 ### End of output format variables ###
 
 # $1 = print to syslog, $2 = message to print, $3 = log level
+# shellcheck disable=SC2059
 Print_Output(){
 	if [ "$1" = "true" ]; then
 		logger -t "$SCRIPT_NAME" "$2"
-		printf "\\e[1m${3}%s: ${2}\\e[0m\\n\\n" "$SCRIPT_NAME"
+		printf "\\e[1m${3}${SCRIPT_NAME}: ${2}\\e[0m\\n\\n"
 	else
 		printf "\\e[1m${3}${2}\\e[0m\\n\\n"
 	fi
