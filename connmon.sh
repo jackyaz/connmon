@@ -1139,6 +1139,8 @@ ScriptHeader(){
 MainMenu(){
 	TEST_SCHEDULE="$(TestSchedule check)"
 	TEST_SCHEDULE_MENU="Start: $(echo "$TEST_SCHEDULE" | cut -f1 -d',')    -    End: $(echo "$TEST_SCHEDULE" | cut -f2 -d',')"
+	
+	printf "WebUI for %s is available at:\\n\\e[1m%s\\e[0m\\n\\n" "$SCRIPT_NAME" "$(Get_WebUI_URL)"
 	printf "1.    Check connection now\\n\\n"
 	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(PingServer check)"
 	printf "3.    Set ping test duration\\n      Currently: %ss\\n\\n" "$(PingDuration check)"
