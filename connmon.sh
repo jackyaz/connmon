@@ -43,10 +43,8 @@ readonly PASS="\\e[32m"
 Print_Output(){
 	if [ "$1" = "true" ]; then
 		logger -t "$SCRIPT_NAME" "$2"
-		printf "\\e[1m${3}${SCRIPT_NAME}: ${2}\\e[0m\\n\\n"
-	else
-		printf "\\e[1m${3}${2}\\e[0m\\n\\n"
 	fi
+	printf "\\e[1m${3}${2}\\e[0m\\n\\n"
 }
 
 Firmware_Version_Check(){
