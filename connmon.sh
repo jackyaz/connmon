@@ -1690,6 +1690,9 @@ case "$1" in
 		Update_Version force
 		exit 0
 	;;
+	setversion)
+		postupdate
+	;;
 	postupdate)
 		Create_Dirs
 		Conf_Exists
