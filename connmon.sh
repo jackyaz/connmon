@@ -14,6 +14,7 @@
 #############        Shellcheck directives      ############
 # shellcheck disable=SC2018
 # shellcheck disable=SC2019
+# shellcheck disable=SC2059
 ############################################################
 
 ### Start of script variables ###
@@ -36,6 +37,7 @@ readonly CRIT="\\e[41m"
 readonly ERR="\\e[31m"
 readonly WARN="\\e[33m"
 readonly PASS="\\e[32m"
+readonly SETTING="\\e[1m\\e[36m"
 ### End of output format variables ###
 
 # $1 = print to syslog, $2 = message to print, $3 = log level
@@ -1146,20 +1148,20 @@ ScriptHeader(){
 
 MainMenu(){
 	AUTOMATIC_ENABLED=""
-	if AutomaticMode check; then AUTOMATIC_ENABLED="Enabled"; else AUTOMATIC_ENABLED="Disabled"; fi
+	if AutomaticMode check; then AUTOMATIC_ENABLED="${PASS}Enabled"; else AUTOMATIC_ENABLED="${ERR}Disabled"; fi
 	TEST_SCHEDULE="$(TestSchedule check)"
 	TEST_SCHEDULE_MENU="Start: $(echo "$TEST_SCHEDULE" | cut -f1 -d',')    -    End: $(echo "$TEST_SCHEDULE" | cut -f2 -d',')"
 	
-	printf "WebUI for %s is available at:\\n\\e[1m%s\\e[0m\\n\\n" "$SCRIPT_NAME" "$(Get_WebUI_URL)"
+	printf "WebUI for %s is available at:\\n${SETTING}%s\\e[0m\\n\\n" "$SCRIPT_NAME" "$(Get_WebUI_URL)"
 	printf "1.    Check connection now\\n\\n"
-	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(PingServer check)"
-	printf "3.    Set ping test duration\\n      Currently: %ss\\n\\n" "$(PingDuration check)"
-	printf "4.    Toggle automatic ping tests\\n      Currently \\e[1m%s\\e[0m\\n\\n" "$AUTOMATIC_ENABLED"
-	printf "5.    Set automatic ping test frequency\\n      Currently: Every %s minutes\\n\\n" "$(PingFrequency check)"
-	printf "6.    Set time range for automatic ping tests\\n      %s\\n\\n" "$TEST_SCHEDULE_MENU"
-	printf "7.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode check)"
-	printf "8.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
-	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
+	printf "2.    Set preferred ping server\\n      Currently: ${SETTING}%s\\e[0m\\n\\n" "$(PingServer check)"
+	printf "3.    Set ping test duration\\n      Currently: ${SETTING}%ss\\e[0m\\n\\n" "$(PingDuration check)"
+	printf "4.    Toggle automatic ping tests\\n      Currently \\e[1m$AUTOMATIC_ENABLED\\e[0m\\n\\n"
+	printf "5.    Set automatic ping test frequency\\n      Currently: Every ${SETTING}%s\\e[0m minutes\\n\\n" "$(PingFrequency check)"
+	printf "6.    Set time range for automatic ping tests\\n      ${SETTING}%s\\e[0m\\n\\n" "$TEST_SCHEDULE_MENU"
+	printf "7.    Toggle data output mode\\n      Currently ${SETTING}%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode check)"
+	printf "8.    Toggle time output mode\\n      Currently ${SETTING}%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
+	printf "s.    Toggle storage location for stats and config\\n      Current location is ${SETTING}%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
 	printf "r.    Reset %s database / delete all data\\n\\n" "$SCRIPT_NAME"
