@@ -1691,7 +1691,16 @@ case "$1" in
 		exit 0
 	;;
 	setversion)
-		postupdate
+		Create_Dirs
+		Conf_Exists
+		ScriptStorageLocation load
+		Create_Symlinks
+		Process_Upgrade
+		Auto_Startup create 2>/dev/null
+		if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
+		Auto_ServiceEvent create 2>/dev/null
+		Shortcut_Script create
+		exit 0
 	;;
 	postupdate)
 		Create_Dirs
