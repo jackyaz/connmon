@@ -44,7 +44,7 @@ Print_Output(){
 	if [ "$1" = "true" ]; then
 		logger -t "$SCRIPT_NAME" "$2"
 	fi
-	printf "\\e[1m${3}${2}\\e[0m\\n\\n"
+	printf "\\e[1m${3}%s\\e[0m\\n\\n" "$2"
 }
 
 Firmware_Version_Check(){
@@ -971,7 +971,7 @@ Run_PingTest(){
 	echo "Stats last updated: $timenowfriendly" > "/tmp/connstatstitle.txt"
 	WriteStats_ToJS /tmp/connstatstitle.txt "$SCRIPT_STORAGE_DIR/connstatstext.js" SetConnmonStatsTitle statstitle
 	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
-	Print_Output false "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %%" "$PASS"
+	Print_Output false "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %" "$PASS"
 	
 	{
 		printf "Ping test result\\n"
