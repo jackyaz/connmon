@@ -1138,7 +1138,7 @@ ScriptHeader(){
 	printf "\\e[1m## | (__ | (_) || | | || | | || | | | | || (_) || | | |   ##\\e[0m\\n"
 	printf "\\e[1m##  \___| \___/ |_| |_||_| |_||_| |_| |_| \___/ |_| |_|   ##\\e[0m\\n"
 	printf "\\e[1m##                                                        ##\\e[0m\\n"
-	printf "\\e[1m##                  %s on %-9s                   ##\\e[0m\\n" "$SCRIPT_VERSION" "$ROUTER_MODEL"
+	printf "\\e[1m##                  %s on %-11s                 ##\\e[0m\\n" "$SCRIPT_VERSION" "$ROUTER_MODEL"
 	printf "\\e[1m##                                                        ##\\e[0m\\n"
 	printf "\\e[1m##          https://github.com/jackyaz/connmon            ##\\e[0m\\n"
 	printf "\\e[1m##                                                        ##\\e[0m\\n"
