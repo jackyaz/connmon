@@ -743,8 +743,8 @@ AutomaticMode(){
 TestSchedule(){
 	case "$1" in
 		update)
-			sed -i 's/^'"SCHEDULESTART"'.*$/SCHEDULESTART='"$2"'/' "$SCRIPT_CONF"
-			sed -i 's/^'"SCHEDULEEND"'.*$/SCHEDULEEND='"$3"'/' "$SCRIPT_CONF"
+			sed -i 's/^SCHEDULESTART.*$/SCHEDULESTART='"$2"'/' "$SCRIPT_CONF"
+			sed -i 's/^SCHEDULEEND.*$/SCHEDULEEND='"$3"'/' "$SCRIPT_CONF"
 			Auto_Cron delete 2>/dev/null
 			Auto_Cron create 2>/dev/null
 		;;
