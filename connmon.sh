@@ -167,6 +167,7 @@ Update_Version(){
 			read -r confirm
 			case "$confirm" in
 				y|Y)
+					printf "\\n"
 					Update_File shared-jy.tar.gz
 					Update_File connmonstats_www.asp
 					/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
