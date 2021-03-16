@@ -46,4 +46,4 @@ If this does not work, you will need to use the full path:
 ![CLI](https://puu.sh/GQ5BL/1cf6d4d059.png)
 
 ## Help
-Please post about any issues and problems here: [Asuswrt-Merlin AddOns on SNBForums](https://www.snbforums.com/forums/asuswrt-merlin-addons.60/)
+Please post about any issues and problems here: [Asuswrt-Merlin AddOns on SNBForums](https://www.snbforums.com/forums/asuswrt-merlin-addons.60/?prefix_id=18)
