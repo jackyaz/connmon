@@ -1702,6 +1702,8 @@ case "$1" in
 		if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 		Auto_ServiceEvent create 2>/dev/null
 		Shortcut_Script create
+		Set_Version_Custom_Settings local "$SCRIPT_VERSION"
+		Set_Version_Custom_Settings server "$SCRIPT_VERSION"
 		exit 0
 	;;
 	postupdate)
