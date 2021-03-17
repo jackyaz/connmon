@@ -163,7 +163,7 @@ Update_Version(){
 		fi
 		
 		if [ "$isupdate" != "false" ]; then
-			printf "\\n\\e[1mDo you want to continue with the update? (y/n)\\e[0m\\n"
+			printf "\\n\\e[1mDo you want to continue with the update? (y/n)\\e[0m  "
 			read -r confirm
 			case "$confirm" in
 				y|Y)
@@ -385,12 +385,12 @@ PingServer(){
 				printf "1.    Enter IP Address\\n"
 				printf "2.    Enter Domain\\n"
 				printf "\\ne.    Go back\\n"
-				printf "\\n\\e[1mChoose an option:\\e[0m    "
+				printf "\\n\\e[1mChoose an option:\\e[0m  "
 				read -r pingoption
 				case "$pingoption" in
 					1)
 						while true; do
-							printf "\\n\\e[1mPlease enter an IP address, or enter e to go back:\\e[0m    "
+							printf "\\n\\e[1mPlease enter an IP address, or enter e to go back:\\e[0m  "
 							read -r ipoption
 							if [ "$ipoption" = "e" ]; then
 								break
@@ -403,7 +403,7 @@ PingServer(){
 					;;
 					2)
 						while true; do
-							printf "\\n\\e[1mPlease enter a domain name, or enter e to go back:\\e[0m    "
+							printf "\\n\\e[1mPlease enter a domain name, or enter e to go back:\\e[0m  "
 							read -r domainoption
 							if [ "$domainoption" = "e" ]; then
 								break
@@ -438,7 +438,7 @@ PingFrequency(){
 			exitmenu=""
 			ScriptHeader
 			while true; do
-				printf "\\n\\e[1mPlease enter the desired test frequency (every 1-30 minutes):\\e[0m    "
+				printf "\\n\\e[1mPlease enter the desired test frequency (every 1-30 minutes):\\e[0m  "
 				read -r pingfreq_choice
 				
 				if [ "$pingfreq_choice" = "e" ]; then
@@ -480,7 +480,7 @@ PingDuration(){
 			exitmenu=""
 			ScriptHeader
 			while true; do
-				printf "\\n\\e[1mPlease enter the desired test duration (10-60 seconds):\\e[0m    "
+				printf "\\n\\e[1mPlease enter the desired test duration (10-60 seconds):\\e[0m  "
 				read -r pingdur_choice
 				
 				if [ "$pingdur_choice" = "e" ]; then
@@ -1173,7 +1173,7 @@ MainMenu(){
 	printf "\\n"
 	
 	while true; do
-		printf "Choose an option:    "
+		printf "Choose an option:  "
 		read -r menu
 		case "$menu" in
 			1)
@@ -1280,7 +1280,7 @@ MainMenu(){
 			;;
 			z)
 				while true; do
-					printf "\\n\\e[1mAre you sure you want to uninstall %s? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
+					printf "\\n\\e[1mAre you sure you want to uninstall %s? (y/n)\\e[0m  " "$SCRIPT_NAME"
 					read -r confirm
 					case "$confirm" in
 						y|Y)
@@ -1407,7 +1407,7 @@ Menu_EditSchedule(){
 	ScriptHeader
 	
 	while true; do
-		printf "\\n\\e[1mPlease enter a start hour (0-23):\\e[0m\\n"
+		printf "\\n\\e[1mPlease enter a start hour (0-23):\\e[0m  "
 		read -r hour
 		
 		if [ "$hour" = "e" ]; then
@@ -1428,7 +1428,7 @@ Menu_EditSchedule(){
 	
 	if [ "$exitmenu" != "exit" ]; then
 		while true; do
-			printf "\\n\\e[1mPlease enter an end hour (0-23):\\e[0m\\n"
+			printf "\\n\\e[1mPlease enter an end hour (0-23):\\e[0m  "
 			read -r hour
 			
 			if [ "$hour" = "e" ]; then
@@ -1456,7 +1456,7 @@ Menu_EditSchedule(){
 Menu_ResetDB(){
 	printf "\\e[1m\\e[33mWARNING: This will reset the %s database by deleting all database records.\\n" "$SCRIPT_NAME"
 	printf "A backup of the database will be created if you change your mind.\\e[0m\\n"
-	printf "\\n\\e[1mDo you want to continue? (y/n)\\e[0m\\n"
+	printf "\\n\\e[1mDo you want to continue? (y/n)\\e[0m  "
 	read -r confirm
 	case "$confirm" in
 		y|Y)
@@ -1492,7 +1492,7 @@ Menu_Uninstall(){
 	flock -u "$FD"
 	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null
 	
-	printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
+	printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m  " "$SCRIPT_NAME"
 	read -r confirm
 	case "$confirm" in
 		y|Y)
