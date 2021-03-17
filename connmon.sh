@@ -369,9 +369,12 @@ Conf_Exists(){
 		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 8 ]; then
 			echo "AUTOMATED=true" >> "$SCRIPT_CONF"
 		fi
+		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 9 ]; then
+			echo "SCHDAYS=*" >> "$SCRIPT_CONF"
+		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; echo "SCHEDULESTART=0"; echo "SCHEDULEEND=23"; echo "AUTOMATED=true"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; echo "SCHEDULESTART=0"; echo "SCHEDULEEND=23"; echo "AUTOMATED=true"; 	echo "SCHDAYS=*"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -607,11 +610,12 @@ Auto_Cron(){
 			if [ "$STARTUPLINECOUNTEX" -eq 0 ]; then
 				SCHEDULESTART=$(grep "SCHEDULESTART" "$SCRIPT_CONF" | cut -f2 -d"=")
 				SCHEDULEEND=$(grep "SCHEDULEEND" "$SCRIPT_CONF" | cut -f2 -d"=")
+				SCHDAYS="$(grep "SCHDAYS" "$SCRIPT_CONF" | cut -f2 -d"=" | sed 's/Sun/0/;s/Mon/1/;s/Tues/2/;s/Wed/3/;s/Thurs/4/;s/Fri/5/;s/Sat/6/;')"
 				
 				if [ "$SCHEDULESTART" -lt "$SCHEDULEEND" ]; then
-					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-$SCHEDULEEND * * * /jffs/scripts/$SCRIPT_NAME generate"
+					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-$SCHEDULEEND * * $SCHDAYS /jffs/scripts/$SCRIPT_NAME generate"
 				else
-					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-23,0-$SCHEDULEEND * * * /jffs/scripts/$SCRIPT_NAME generate"
+					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-23,0-$SCHEDULEEND * * $SCHDAYS /jffs/scripts/$SCRIPT_NAME generate"
 				fi
 			fi
 		;;
@@ -746,13 +750,15 @@ TestSchedule(){
 		update)
 			sed -i 's/^SCHEDULESTART.*$/SCHEDULESTART='"$2"'/' "$SCRIPT_CONF"
 			sed -i 's/^SCHEDULEEND.*$/SCHEDULEEND='"$3"'/' "$SCRIPT_CONF"
+			sed -i 's/^SCHDAYS.*$/SCHDAYS='"$(echo "$4" | sed 's/0/Sun/;s/1/Mon/;s/2/Tues/;s/3/Wed/;s/4/Thurs/;s/5/Fri/;s/6/Sat/;')"'/' "$SCRIPT_CONF"
 			Auto_Cron delete 2>/dev/null
 			Auto_Cron create 2>/dev/null
 		;;
 		check)
 			SCHEDULESTART=$(grep "SCHEDULESTART" "$SCRIPT_CONF" | cut -f2 -d"=")
 			SCHEDULEEND=$(grep "SCHEDULEEND" "$SCRIPT_CONF" | cut -f2 -d"=")
-			echo "$SCHEDULESTART,$SCHEDULEEND"
+			SCHDAYS=$(grep "SCHDAYS" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$SCHEDULESTART,$SCHEDULEEND,$SCHDAYS"
 		;;
 	esac
 }
@@ -1404,6 +1410,8 @@ Menu_EditSchedule(){
 	exitmenu="false"
 	starthour=""
 	endhour=""
+	crudays=""
+	crudaysvalidated=""
 	ScriptHeader
 	
 	while true; do
@@ -1449,7 +1457,47 @@ Menu_EditSchedule(){
 	fi
 	
 	if [ "$exitmenu" != "exit" ]; then
-		TestSchedule update "$starthour" "$endhour"
+		while true; do
+			printf "\\n\\e[1mPlease choose which day(s) to run ping tests (0-6 - 0 = Sunday, * for every day, or comma separated days):\\e[0m  "
+			read -r day_choice
+			
+			if [ "$day_choice" = "e" ]; then
+				exitmenu="exit"
+				break
+			elif [ "$day_choice" = "*" ]; then
+				crudays="$day_choice"
+				printf "\\n"
+				break
+			elif [ -z "$day_choice" ]; then
+				printf "\\n\\e[31mPlease enter a valid number (0-6) or comma separated values\\e[0m\\n"
+			else
+				crudaystmp="$(echo "$day_choice" | sed "s/,/ /g")"
+				crudaysvalidated="true"
+				for i in $crudaystmp; do
+					if ! Validate_Number "" "$i" silent; then
+						printf "\\n\\e[31mPlease enter a valid number (0-6) or comma separated values\\e[0m\\n"
+						crudaysvalidated="false"
+						break
+					else
+						if [ "$i" -lt 0 ] || [ "$i" -gt 6 ]; then
+							printf "\\n\\e[31mPlease enter a number between 0 and 6 or comma separated values\\e[0m\\n"
+							crudaysvalidated="false"
+							break
+						fi
+					fi
+				done
+				if [ "$crudaysvalidated" = "true" ]; then
+					crudays="$day_choice"
+					printf "\\n"
+					break
+				fi
+			fi
+		done
+	fi
+	
+	
+	if [ "$exitmenu" != "exit" ]; then
+		TestSchedule update "$starthour" "$endhour" "$crudays"
 	fi
 }
 
