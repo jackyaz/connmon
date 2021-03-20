@@ -79,6 +79,113 @@ function Validate_PingDuration(forminput){
 	}
 }
 
+
+function Validate_Schedule(forminput,hoursmins){
+	var inputname = forminput.name;
+	var inputvalues = forminput.value.split(',');
+	var upperlimit = 0;
+	
+	if(hoursmins == "hours"){
+		upperlimit = 23;
+	}
+	else if (hoursmins == "mins"){
+		upperlimit = 59;
+	}
+	
+	var validationfailed = "false";
+	for(var i=0; i < inputvalues.length; i++){
+		if(inputvalues[i] == "*" && i == 0){
+			validationfailed = "false";
+		}
+		else if(inputvalues[i] == "*" && i != 0){
+			validationfailed = "true";
+		}
+		else if(inputvalues[0] == "*" && i > 0){
+			validationfailed = "true";
+		}
+		else if(inputvalues[i] == ""){
+			validationfailed = "true";
+		}
+		else if(inputvalues[i].startsWith("*/")){
+			if(! isNaN(inputvalues[i].replace("*/","")*1)){
+				if((inputvalues[i].replace("*/","")*1) > upperlimit || (inputvalues[i].replace("*/","")*1) < 0){
+					validationfailed = "true";
+				}
+			}
+			else{
+				validationfailed = "true";
+			}
+		}
+		else if(inputvalues[i].indexOf("-") != -1){
+			if(inputvalues[i].startsWith("-")){
+				validationfailed = "true";
+			}
+			else{
+				var inputvalues2 = inputvalues[i].split('-');
+				for(var i2=0; i2 < inputvalues2.length; i2++){
+					if(inputvalues2[i2] == ""){
+						validationfailed = "true";
+					}
+					else if(! isNaN(inputvalues2[i2]*1)){
+						if((inputvalues2[i2]*1) > upperlimit || (inputvalues2[i2]*1) < 0){
+							validationfailed = "true";
+						}
+						else if((inputvalues2[i2+1]*1) <= (inputvalues2[i2]*1)){
+							validationfailed = "true";
+						}
+					}
+					else{
+						validationfailed = "true";
+					}
+				}
+			}
+		}
+		else if(! isNaN(inputvalues[i]*1)){
+			if((inputvalues[i]*1) > upperlimit || (inputvalues[i]*1) < 0){
+				validationfailed = "true";
+			}
+		}
+		else{
+			validationfailed = "true";
+		}
+	}
+	
+	if(validationfailed == "true"){
+		$j(forminput).addClass("invalid");
+		return false;
+	}
+	else{
+		$j(forminput).removeClass("invalid");
+		return true;
+	}
+}
+
+function Validate_ScheduleValue(forminput){
+	var inputname = forminput.name;
+	var inputvalue = forminput.value*1;
+	
+	var upperlimit = 0;
+	var lowerlimit = 1;
+	
+	var unittype = $j("#everyxselect").val();
+	
+	if(unittype == "hours"){
+		upperlimit = 24;
+	}
+	else if(unittype == "minutes"){
+		upperlimit = 30;
+	}
+	
+	if(inputvalue > upperlimit || inputvalue < lowerlimit || forminput.value.length < 1){
+		$j(forminput).addClass("invalid");
+		return false;
+	}
+	else{
+		$j(forminput).removeClass("invalid");
+		return true;
+	}
+}
+
 function Validate_All(){
 	var validationfailed = false;
 	if(! Validate_IP(document.form.connmon_ipaddr)){validationfailed=true;}
@@ -935,112 +1042,6 @@ function EveryXToggle(forminput){
 	}
 	
 	Validate_ScheduleValue($j("[name=everyxvalue]")[0]);
-}
-
-function Validate_Schedule(forminput,hoursmins){
-	var inputname = forminput.name;
-	var inputvalues = forminput.value.split(',');
-	var upperlimit = 0;
-	
-	if(hoursmins == "hours"){
-		upperlimit = 23;
-	}
-	else if (hoursmins == "mins"){
-		upperlimit = 59;
-	}
-	
-	var validationfailed = "false";
-	for(var i=0; i < inputvalues.length; i++){
-		if(inputvalues[i] == "*" && i == 0){
-			validationfailed = "false";
-		}
-		else if(inputvalues[i] == "*" && i != 0){
-			validationfailed = "true";
-		}
-		else if(inputvalues[0] == "*" && i > 0){
-			validationfailed = "true";
-		}
-		else if(inputvalues[i] == ""){
-			validationfailed = "true";
-		}
-		else if(inputvalues[i].startsWith("*/")){
-			if(! isNaN(inputvalues[i].replace("*/","")*1)){
-				if((inputvalues[i].replace("*/","")*1) > upperlimit || (inputvalues[i].replace("*/","")*1) < 0){
-					validationfailed = "true";
-				}
-			}
-			else{
-				validationfailed = "true";
-			}
-		}
-		else if(inputvalues[i].indexOf("-") != -1){
-			if(inputvalues[i].startsWith("-")){
-				validationfailed = "true";
-			}
-			else{
-				var inputvalues2 = inputvalues[i].split('-');
-				for(var i2=0; i2 < inputvalues2.length; i2++){
-					if(inputvalues2[i2] == ""){
-						validationfailed = "true";
-					}
-					else if(! isNaN(inputvalues2[i2]*1)){
-						if((inputvalues2[i2]*1) > upperlimit || (inputvalues2[i2]*1) < 0){
-							validationfailed = "true";
-						}
-						else if((inputvalues2[i2+1]*1) <= (inputvalues2[i2]*1)){
-							validationfailed = "true";
-						}
-					}
-					else{
-						validationfailed = "true";
-					}
-				}
-			}
-		}
-		else if(! isNaN(inputvalues[i]*1)){
-			if((inputvalues[i]*1) > upperlimit || (inputvalues[i]*1) < 0){
-				validationfailed = "true";
-			}
-		}
-		else{
-			validationfailed = "true";
-		}
-	}
-	
-	if(validationfailed == "true"){
-		$j(forminput).addClass("invalid");
-		return false;
-	}
-	else{
-		$j(forminput).removeClass("invalid");
-		return true;
-	}
-}
-
-function Validate_ScheduleValue(forminput){
-	var inputname = forminput.name;
-	var inputvalue = forminput.value*1;
-	
-	var upperlimit = 0;
-	var lowerlimit = 1;
-	
-	var unittype = $j("#everyxselect").val();
-	
-	if(unittype == "hours"){
-		upperlimit = 24;
-	}
-	else if(unittype == "minutes"){
-		upperlimit = 30;
-	}
-	
-	if(inputvalue > upperlimit || inputvalue < lowerlimit || forminput.value.length < 1){
-		$j(forminput).addClass("invalid");
-		return false;
-	}
-	else{
-		$j(forminput).removeClass("invalid");
-		return true;
-	}
 }
 
 var pingcount=2;
