@@ -366,15 +366,22 @@ Conf_Exists(){
 		dos2unix "$SCRIPT_CONF"
 		chmod 0644 "$SCRIPT_CONF"
 		sed -i -e 's/"//g' "$SCRIPT_CONF"
-		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 8 ]; then
-			echo "AUTOMATED=true" >> "$SCRIPT_CONF"
-		fi
-		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 9 ]; then
-			echo "SCHDAYS=*" >> "$SCRIPT_CONF"
+		
+		if grep -q "SCHEDULESTART" "$SCRIPT_CONF"; then
+			if [ "$(wc -l < "$SCRIPT_CONF")" -eq 8 ]; then
+				echo "AUTOMATED=true" >> "$SCRIPT_CONF"
+			fi
+			if [ "$(wc -l < "$SCRIPT_CONF")" -eq 9 ]; then
+				echo "SCHDAYS=*" >> "$SCRIPT_CONF"
+			fi
+			echo "SCHHOURS=*" >> "$SCRIPT_CONF"
+			PINGFREQUENCY=$(grep "PINGFREQUENCY" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "SCHMINS=*/$PINGFREQUENCY" >> "$SCRIPT_CONF"
+			sed -i '/SCHEDULESTART/d;/SCHEDULEEND/d;/PINGFREQUENCY/d;' "$SCRIPT_CONF"
 		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; echo "SCHEDULESTART=0"; echo "SCHEDULEEND=23"; echo "AUTOMATED=true"; 	echo "SCHDAYS=*"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -430,48 +437,6 @@ PingServer(){
 		check)
 			PINGSERVER=$(grep "PINGSERVER" "$SCRIPT_CONF" | cut -f2 -d"=")
 			echo "$PINGSERVER"
-		;;
-	esac
-}
-
-PingFrequency(){
-	case "$1" in
-		update)
-			pingfreq=0
-			exitmenu=""
-			ScriptHeader
-			while true; do
-				printf "\\n\\e[1mPlease enter the desired test frequency (every 1-30 minutes):\\e[0m  "
-				read -r pingfreq_choice
-				
-				if [ "$pingfreq_choice" = "e" ]; then
-					exitmenu="exit"
-					break
-				elif ! Validate_Number "" "$pingfreq_choice" silent; then
-					printf "\\n\\e[31mPlease enter a valid number (1-30)\\e[0m\\n"
-				else
-					if [ "$pingfreq_choice" -lt 1 ] || [ "$pingfreq_choice" -gt 30 ]; then
-						printf "\\n\\e[31mPlease enter a number between 1 and 30\\e[0m\\n"
-					else
-						pingfreq="$pingfreq_choice"
-						printf "\\n"
-						break
-					fi
-				fi
-			done
-			
-			if [ "$exitmenu" != "exit" ]; then
-				sed -i 's/^PINGFREQUENCY.*$/PINGFREQUENCY='"$pingfreq"'/' "$SCRIPT_CONF"
-				if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
-				return 0
-			else
-				printf "\\n"
-				return 1
-			fi
-		;;
-		check)
-			PINGFREQUENCY=$(grep "PINGFREQUENCY" "$SCRIPT_CONF" | cut -f2 -d"=")
-			echo "$PINGFREQUENCY"
 		;;
 	esac
 }
@@ -603,20 +568,14 @@ Auto_Startup(){
 Auto_Cron(){
 	case $1 in
 		create)
-			pingfrequency="$(PingFrequency check)"
+			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
 			
-			# shellcheck disable=SC2063
-			STARTUPLINECOUNTEX=$(cru l | grep "$SCRIPT_NAME" | grep -c "*/$pingfrequency")
-			if [ "$STARTUPLINECOUNTEX" -eq 0 ]; then
-				SCHEDULESTART=$(grep "SCHEDULESTART" "$SCRIPT_CONF" | cut -f2 -d"=")
-				SCHEDULEEND=$(grep "SCHEDULEEND" "$SCRIPT_CONF" | cut -f2 -d"=")
-				SCHDAYS="$(grep "SCHDAYS" "$SCRIPT_CONF" | cut -f2 -d"=" | sed 's/Sun/0/;s/Mon/1/;s/Tues/2/;s/Wed/3/;s/Thurs/4/;s/Fri/5/;s/Sat/6/;')"
+			if [ "$STARTUPLINECOUNT" -eq 0 ]; then
+				CRU_DAYNUMBERS="$(grep "SCHDAYS" "$SCRIPT_CONF" | cut -f2 -d"=" | sed 's/Sun/0/;s/Mon/1/;s/Tues/2/;s/Wed/3/;s/Thurs/4/;s/Fri/5/;s/Sat/6/;')"
+				CRU_HOURS="$(grep "SCHHOURS" "$SCRIPT_CONF" | cut -f2 -d"=")"
+				CRU_MINUTES="$(grep "SCHMINS" "$SCRIPT_CONF" | cut -f2 -d"=")"
 				
-				if [ "$SCHEDULESTART" -lt "$SCHEDULEEND" ]; then
-					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-$SCHEDULEEND * * $SCHDAYS /jffs/scripts/$SCRIPT_NAME generate"
-				else
-					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-23,0-$SCHEDULEEND * * $SCHDAYS /jffs/scripts/$SCRIPT_NAME generate"
-				fi
+				cru a "$SCRIPT_NAME" "$CRU_MINUTES $CRU_HOURS * * $CRU_DAYNUMBERS /jffs/scripts/$SCRIPT_NAME generate"
 			fi
 		;;
 		delete)
@@ -748,17 +707,18 @@ AutomaticMode(){
 TestSchedule(){
 	case "$1" in
 		update)
-			sed -i 's/^SCHEDULESTART.*$/SCHEDULESTART='"$2"'/' "$SCRIPT_CONF"
-			sed -i 's/^SCHEDULEEND.*$/SCHEDULEEND='"$3"'/' "$SCRIPT_CONF"
-			sed -i 's/^SCHDAYS.*$/SCHDAYS='"$(echo "$4" | sed 's/0/Sun/;s/1/Mon/;s/2/Tues/;s/3/Wed/;s/4/Thurs/;s/5/Fri/;s/6/Sat/;')"'/' "$SCRIPT_CONF"
+			sed -i 's/^SCHDAYS.*$/SCHDAYS='"$(echo "$2" | sed 's/0/Sun/;s/1/Mon/;s/2/Tues/;s/3/Wed/;s/4/Thurs/;s/5/Fri/;s/6/Sat/;')"'/' "$SCRIPT_CONF"
+			sed -i 's~^SCHHOURS.*$~SCHHOURS='"$3"'~' "$SCRIPT_CONF"
+			sed -i 's~^SCHMINS.*$~SCHMINS='"$4"'~' "$SCRIPT_CONF"
+			
 			Auto_Cron delete 2>/dev/null
 			Auto_Cron create 2>/dev/null
 		;;
 		check)
-			SCHEDULESTART=$(grep "SCHEDULESTART" "$SCRIPT_CONF" | cut -f2 -d"=")
-			SCHEDULEEND=$(grep "SCHEDULEEND" "$SCRIPT_CONF" | cut -f2 -d"=")
 			SCHDAYS=$(grep "SCHDAYS" "$SCRIPT_CONF" | cut -f2 -d"=")
-			echo "$SCHEDULESTART|$SCHEDULEEND|$SCHDAYS"
+			SCHHOURS=$(grep "SCHHOURS" "$SCRIPT_CONF" | cut -f2 -d"=")
+			SCHMINS=$(grep "SCHMINS" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$SCHDAYS|$SCHHOURS|$SCHMINS"
 		;;
 	esac
 }
@@ -1157,11 +1117,18 @@ MainMenu(){
 	AUTOMATIC_ENABLED=""
 	if AutomaticMode check; then AUTOMATIC_ENABLED="${PASS}Enabled"; else AUTOMATIC_ENABLED="${ERR}Disabled"; fi
 	TEST_SCHEDULE="$(TestSchedule check)"
-	TEST_SCHEDULE_MENU="Start: $(echo "$TEST_SCHEDULE" | cut -f1 -d'|')    -    End: $(echo "$TEST_SCHEDULE" | cut -f2 -d'|')"
-	if [ "$(echo "$TEST_SCHEDULE" | cut -f3 -d'|')" = "*" ]; then
+	if [ "$(echo "$(echo "$TEST_SCHEDULE" | cut -f2 -d'|')" | grep -c "/")" -gt 0 ]; then
+		TEST_SCHEDULE_MENU="Every $(echo "$TEST_SCHEDULE" | cut -f2 -d'|' | cut -f2 -d'/') hours"
+	elif [ "$(echo "$(echo "$TEST_SCHEDULE" | cut -f3 -d'|')" | grep -c "/")" -gt 0 ]; then
+		TEST_SCHEDULE_MENU="Every $(echo "$TEST_SCHEDULE" | cut -f3 -d'|' | cut -f2 -d'/') minutes"
+	else
+		TEST_SCHEDULE_MENU="Hours: $(echo "$TEST_SCHEDULE" | cut -f2 -d'|')    -    Minutes: $(echo "$TEST_SCHEDULE" | cut -f3 -d'|')"
+	fi
+	
+	if [ "$(echo "$TEST_SCHEDULE" | cut -f1 -d'|')" = "*" ]; then
 		TEST_SCHEDULE_MENU2="Days of week: All"
 	else
-		TEST_SCHEDULE_MENU2="Days of week: $(echo "$TEST_SCHEDULE" | cut -f3 -d'|')"
+		TEST_SCHEDULE_MENU2="Days of week: $(echo "$TEST_SCHEDULE" | cut -f1 -d'|')"
 	fi
 	
 	printf "WebUI for %s is available at:\\n${SETTING}%s\\e[0m\\n\\n" "$SCRIPT_NAME" "$(Get_WebUI_URL)"
@@ -1169,10 +1136,9 @@ MainMenu(){
 	printf "2.    Set preferred ping server\\n      Currently: ${SETTING}%s\\e[0m\\n\\n" "$(PingServer check)"
 	printf "3.    Set ping test duration\\n      Currently: ${SETTING}%ss\\e[0m\\n\\n" "$(PingDuration check)"
 	printf "4.    Toggle automatic ping tests\\n      Currently \\e[1m$AUTOMATIC_ENABLED\\e[0m\\n\\n"
-	printf "5.    Set automatic ping test frequency\\n      Currently: Every ${SETTING}%s\\e[0m minutes\\n\\n" "$(PingFrequency check)"
-	printf "6.    Set schedule for automatic ping tests\\n      ${SETTING}%s\\n      %s\\e[0m\\n\\n" "$TEST_SCHEDULE_MENU" "$TEST_SCHEDULE_MENU2"
-	printf "7.    Toggle data output mode\\n      Currently ${SETTING}%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode check)"
-	printf "8.    Toggle time output mode\\n      Currently ${SETTING}%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
+	printf "5.    Set schedule for automatic ping tests\\n      ${SETTING}%s\\n      %s\\e[0m\\n\\n" "$TEST_SCHEDULE_MENU" "$TEST_SCHEDULE_MENU2"
+	printf "6.    Toggle data output mode\\n      Currently ${SETTING}%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode check)"
+	printf "7.    Toggle time output mode\\n      Currently ${SETTING}%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
 	printf "s.    Toggle storage location for stats and config\\n      Current location is ${SETTING}%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
@@ -1219,17 +1185,11 @@ MainMenu(){
 			;;
 			5)
 				printf "\\n"
-				PingFrequency update
-				PressEnter
-				break
-			;;
-			6)
-				printf "\\n"
 				Menu_EditSchedule
 				PressEnter
 				break
 			;;
-			7)
+			6)
 				printf "\\n"
 				if [ "$(OutputDataMode check)" = "raw" ]; then
 					OutputDataMode average
@@ -1238,7 +1198,7 @@ MainMenu(){
 				fi
 				break
 			;;
-			8)
+			7)
 				printf "\\n"
 				if [ "$(OutputTimeMode check)" = "unix" ]; then
 					OutputTimeMode non-unix
@@ -1412,27 +1372,44 @@ Menu_Startup(){
 }
 
 Menu_EditSchedule(){
-	exitmenu="false"
-	starthour=""
-	endhour=""
+	exitmenu=""
+	formattype=""
 	crudays=""
 	crudaysvalidated=""
-	ScriptHeader
+	cruhours=""
+	crumins=""
 	
 	while true; do
-		printf "\\n\\e[1mPlease enter a start hour (0-23):\\e[0m  "
-		read -r hour
+		printf "\\n\\e[1mPlease choose which day(s) to run ping test (0-6 - 0 = Sunday, * for every day, or comma separated days):\\e[0m    "
+		read -r day_choice
 		
-		if [ "$hour" = "e" ]; then
+		if [ "$day_choice" = "e" ]; then
 			exitmenu="exit"
 			break
-		elif ! Validate_Number "" "$hour" silent; then
-			printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+		elif [ "$day_choice" = "*" ]; then
+			crudays="$day_choice"
+			printf "\\n"
+			break
+		elif [ -z "$day_choice" ]; then
+			printf "\\n\\e[31mPlease enter a valid number (0-6) or comma separated values\\e[0m\\n"
 		else
-			if [ "$hour" -lt 0 ] || [ "$hour" -gt 23 ]; then
-				printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
-			else
-				starthour="$hour"
+			crudaystmp="$(echo "$day_choice" | sed "s/,/ /g")"
+			crudaysvalidated="true"
+			for i in $crudaystmp; do
+				if ! Validate_Number "" "$i" silent; then
+					printf "\\n\\e[31mPlease enter a valid number (0-6) or comma separated values\\e[0m\\n"
+					crudaysvalidated="false"
+					break
+				else
+					if [ "$i" -lt 0 ] || [ "$i" -gt 6 ]; then
+						printf "\\n\\e[31mPlease enter a number between 0 and 6 or comma separated values\\e[0m\\n"
+						crudaysvalidated="false"
+						break
+					fi
+				fi
+			done
+			if [ "$crudaysvalidated" = "true" ]; then
+				crudays="$day_choice"
 				printf "\\n"
 				break
 			fi
@@ -1441,68 +1418,198 @@ Menu_EditSchedule(){
 	
 	if [ "$exitmenu" != "exit" ]; then
 		while true; do
-			printf "\\n\\e[1mPlease enter an end hour (0-23):\\e[0m  "
-			read -r hour
+			printf "\\n\\e[1mPlease choose the format to specify the hour/minute(s) to run ping test:\\e[0m\\n"
+			printf "    1. Every X hours/minutes\\n"
+			printf "    2. Custom\\n\\n"
+			printf "Choose an option:  "
+			read -r formatmenu
 			
-			if [ "$hour" = "e" ]; then
-				exitmenu="exit"
-				break
-			elif ! Validate_Number "" "$hour" silent; then
-				printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
-			else
-				if [ "$hour" -lt 0 ] || [ "$hour" -gt 23 ]; then
-					printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
-				else
-					endhour="$hour"
+			case "$formatmenu" in
+				1)
+					formattype="everyx"
 					printf "\\n"
 					break
-				fi
-			fi
+				;;
+				2)
+					formattype="custom"
+					printf "\\n"
+					break
+				;;
+				e)
+					exitmenu="exit"
+					break
+				;;
+				*)
+					printf "\\n\\e[31mPlease enter a valid choice (1-2)\\e[0m\\n"
+				;;
+			esac
 		done
 	fi
 	
 	if [ "$exitmenu" != "exit" ]; then
-		while true; do
-			printf "\\n\\e[1mPlease choose which day(s) to run ping tests (0-6 - 0 = Sunday, * for every day, or comma separated days):\\e[0m  "
-			read -r day_choice
-			
-			if [ "$day_choice" = "e" ]; then
-				exitmenu="exit"
-				break
-			elif [ "$day_choice" = "*" ]; then
-				crudays="$day_choice"
-				printf "\\n"
-				break
-			elif [ -z "$day_choice" ]; then
-				printf "\\n\\e[31mPlease enter a valid number (0-6) or comma separated values\\e[0m\\n"
-			else
-				crudaystmp="$(echo "$day_choice" | sed "s/,/ /g")"
-				crudaysvalidated="true"
-				for i in $crudaystmp; do
-					if ! Validate_Number "" "$i" silent; then
-						printf "\\n\\e[31mPlease enter a valid number (0-6) or comma separated values\\e[0m\\n"
-						crudaysvalidated="false"
+		if [ "$formattype" = "everyx" ]; then
+			while true; do
+				printf "\\n\\e[1mPlease choose whether to specify every X hours or every X minutes to run ping test:\\e[0m\\n"
+				printf "    1. Hours\\n"
+				printf "    2. Minutes\\n\\n"
+				printf "Choose an option:  "
+				read -r formatmenu
+				
+				case "$formatmenu" in
+					1)
+						formattype="hours"
+						printf "\\n"
+						break
+					;;
+					2)
+						formattype="mins"
+						printf "\\n"
+						break
+					;;
+					e)
+						exitmenu="exit"
+						break
+					;;
+					*)
+						printf "\\n\\e[31mPlease enter a valid choice (1-2)\\e[0m\\n"
+					;;
+				esac
+			done
+		fi
+	fi
+	
+	if [ "$exitmenu" != "exit" ]; then
+		if [ "$formattype" = "hours" ]; then
+			while true; do
+				printf "\\n\\e[1mPlease choose how often to run ping test (every X hours, where X is 1-24):\\e[0m    "
+				read -r hour_choice
+				
+				if [ "$hour_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif ! Validate_Number "" "$hour_choice" silent; then
+						printf "\\n\\e[31mPlease enter a valid number (1-24)\\e[0m\\n"
+				elif [ "$hour_choice" -lt 1 ] || [ "$hour_choice" -gt 24 ]; then
+					printf "\\n\\e[31mPlease enter a number between 1 and 24\\e[0m\\n"
+				else
+					if [ "$hour_choice" -eq 24 ]; then
+						cruhours="0"
+						crumins="0"
+						printf "\\n"
 						break
 					else
-						if [ "$i" -lt 0 ] || [ "$i" -gt 6 ]; then
-							printf "\\n\\e[31mPlease enter a number between 0 and 6 or comma separated values\\e[0m\\n"
-							crudaysvalidated="false"
-							break
-						fi
+						cruhours="*/$hour_choice"
+						crumins="0"
+						printf "\\n"
+						break
 					fi
-				done
-				if [ "$crudaysvalidated" = "true" ]; then
-					crudays="$day_choice"
+				fi
+			done
+		elif [ "$formattype" = "mins" ]; then
+			while true; do
+				printf "\\n\\e[1mPlease choose how often to run ping test (every X minutes, where X is 1-30):\\e[0m    "
+				read -r min_choice
+				
+				if [ "$min_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif ! Validate_Number "" "$min_choice" silent; then
+						printf "\\n\\e[31mPlease enter a valid number (1-30)\\e[0m\\n"
+				elif [ "$min_choice" -lt 1 ] || [ "$min_choice" -gt 30 ]; then
+					printf "\\n\\e[31mPlease enter a number between 1 and 30\\e[0m\\n"
+				else
+					crumins="*/$min_choice"
+					cruhours="*"
 					printf "\\n"
 					break
 				fi
-			fi
-		done
+			done
+		fi
 	fi
 	
+	if [ "$exitmenu" != "exit" ]; then
+		if [ "$formattype" = "custom" ]; then
+			while true; do
+				printf "\\n\\e[1mPlease choose which hour(s) to run ping test (0-23, * for every hour, or comma separated hours):\\e[0m    "
+				read -r hour_choice
+				
+				if [ "$hour_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif [ "$hour_choice" = "*" ]; then
+					cruhours="$hour_choice"
+					printf "\\n"
+					break
+				else
+					cruhourstmp="$(echo "$hour_choice" | sed "s/,/ /g")"
+					cruhoursvalidated="true"
+					for i in $cruhourstmp; do
+						if ! Validate_Number "" "$i" silent; then
+							printf "\\n\\e[31mPlease enter a valid number (0-23) or comma separated values\\e[0m\\n"
+							cruhoursvalidated="false"
+							break
+						else
+							if [ "$i" -lt 0 ] || [ "$i" -gt 23 ]; then
+								printf "\\n\\e[31mPlease enter a number between 0 and 23 or comma separated values\\e[0m\\n"
+								cruhoursvalidated="false"
+								break
+							fi
+						fi
+					done
+					if [ "$cruhoursvalidated" = "true" ]; then
+						cruhours="$hour_choice"
+						printf "\\n"
+						break
+					fi
+				fi
+			done
+		fi
+	fi
 	
 	if [ "$exitmenu" != "exit" ]; then
-		TestSchedule update "$starthour" "$endhour" "$crudays"
+		if [ "$formattype" = "custom" ]; then
+			while true; do
+				printf "\\n\\e[1mPlease choose which minutes(s) to run ping test (0-59, * for every minute, or comma separated minutes):\\e[0m    "
+				read -r min_choice
+				
+				if [ "$min_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif [ "$min_choice" = "*" ]; then
+					crumins="$min_choice"
+					printf "\\n"
+					break
+				else
+					cruminstmp="$(echo "$min_choice" | sed "s/,/ /g")"
+					cruminsvalidated="true"
+					for i in $cruminstmp; do
+						if ! Validate_Number "" "$i" silent; then
+							printf "\\n\\e[31mPlease enter a valid number (0-59) or comma separated values\\e[0m\\n"
+							cruminsvalidated="false"
+							break
+						else
+							if [ "$i" -lt 0 ] || [ "$i" -gt 59 ]; then
+								printf "\\n\\e[31mPlease enter a number between 0 and 59 or comma separated values\\e[0m\\n"
+								cruminsvalidated="false"
+								break
+							fi
+						fi
+					done
+					if [ "$cruminsvalidated" = "true" ]; then
+						crumins="$min_choice"
+						printf "\\n"
+						break
+					fi
+				fi
+			done
+		fi
+	fi
+	
+	if [ "$exitmenu" != "exit" ]; then
+		TestSchedule update "$crudays" "$cruhours" "$crumins"
+		return 0
+	else
+		return 1
 	fi
 }
 
