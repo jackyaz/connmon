@@ -304,7 +304,12 @@ Conf_FromSettings(){
 			ScriptStorageLocation "$(ScriptStorageLocation check)"
 			Create_Symlinks
 			
-			if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
+			if AutomaticMode check; then
+				Auto_Cron delete 2>/dev/null
+				Auto_Cron create 2>/dev/null
+			else
+				Auto_Cron delete 2>/dev/null
+			fi
 			Generate_CSVs
 			
 			Print_Output true "Merge of updated settings from WebUI completed successfully" "$PASS"
