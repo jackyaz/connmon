@@ -92,6 +92,9 @@ function Validate_Schedule(forminput,hoursmins){
 		upperlimit = 59;
 	}
 	
+	showhide("btnfixhours",false);
+	showhide("btnfixmins",false);
+	
 	var validationfailed = "false";
 	for(var i=0; i < inputvalues.length; i++){
 		if(inputvalues[i] == "*" && i == 0){
@@ -130,8 +133,14 @@ function Validate_Schedule(forminput,hoursmins){
 						if((inputvalues2[i2]*1) > upperlimit || (inputvalues2[i2]*1) < 0){
 							validationfailed = "true";
 						}
-						else if((inputvalues2[i2+1]*1) <= (inputvalues2[i2]*1)){
+						else if((inputvalues2[i2+1]*1) < (inputvalues2[i2]*1)){
 							validationfailed = "true";
+							if(hoursmins == "hours"){
+								showhide("btnfixhours",true)
+							}
+							else if (hoursmins == "mins"){
+								showhide("btnfixmins",true)
+							}
 						}
 					}
 					else{
@@ -205,6 +214,19 @@ function Validate_All(){
 	}
 	else{
 		return true;
+	}
+}
+
+function FixCron(hoursmins){
+	if(hoursmins == "hours"){
+		var origvalue = document.form.connmon_schhours.value;
+		document.form.connmon_schhours.value = origvalue.split("-")[0]+"-23,0-"+origvalue.split("-")[1];
+		Validate_Schedule(document.form.connmon_schhours,"hours");
+	}
+	else if(hoursmins == "mins"){
+		var origvalue = document.form.connmon_schmins.value;
+		document.form.connmon_schmins.value = origvalue.split("-")[0]+"-59,0-"+origvalue.split("-")[1];
+		Validate_Schedule(document.form.connmon_schmins,"mins");
 	}
 }
 
