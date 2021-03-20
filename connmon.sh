@@ -250,13 +250,9 @@ Update_File(){
 }
 
 Validate_Number(){
-	if [ "$2" -eq "$2" ] 2>/dev/null; then
+	if [ "$1" -eq "$1" ] 2>/dev/null; then
 		return 0
 	else
-		formatted="$(echo "$1" | sed -e 's/|/ /g')"
-		if [ -z "$3" ]; then
-			Print_Output false "$formatted - $2 is not a number" "$ERR"
-		fi
 		return 1
 	fi
 }
@@ -454,7 +450,7 @@ PingDuration(){
 				if [ "$pingdur_choice" = "e" ]; then
 					exitmenu="exit"
 					break
-				elif ! Validate_Number "" "$pingdur_choice" silent; then
+				elif ! Validate_Number "$pingdur_choice"; then
 					printf "\\n\\e[31mPlease enter a valid number (10-60)\\e[0m\\n"
 				else
 					if [ "$pingdur_choice" -lt 10 ] || [ "$pingdur_choice" -gt 60 ]; then
@@ -1117,9 +1113,9 @@ MainMenu(){
 	AUTOMATIC_ENABLED=""
 	if AutomaticMode check; then AUTOMATIC_ENABLED="${PASS}Enabled"; else AUTOMATIC_ENABLED="${ERR}Disabled"; fi
 	TEST_SCHEDULE="$(TestSchedule check)"
-	if [ "$(echo "$TEST_SCHEDULE" | cut -f2 -d'|' | grep -c "/")" -gt 0 ]; then
+	if [ "$(echo "$TEST_SCHEDULE" | cut -f2 -d'|' | grep -c "/")" -gt 0 ] && [ "$(echo "$TEST_SCHEDULE" | cut -f3 -d'|')" -eq 0 ]; then
 		TEST_SCHEDULE_MENU="Every $(echo "$TEST_SCHEDULE" | cut -f2 -d'|' | cut -f2 -d'/') hours"
-	elif [ "$(echo "$TEST_SCHEDULE" | cut -f3 -d'|' | grep -c "/")" -gt 0 ]; then
+	elif [ "$(echo "$TEST_SCHEDULE" | cut -f3 -d'|' | grep -c "/")" -gt 0 ] && [ "$(echo "$TEST_SCHEDULE" | cut -f2 -d'|')" = "*" ]; then
 		TEST_SCHEDULE_MENU="Every $(echo "$TEST_SCHEDULE" | cut -f3 -d'|' | cut -f2 -d'/') minutes"
 	else
 		TEST_SCHEDULE_MENU="Hours: $(echo "$TEST_SCHEDULE" | cut -f2 -d'|')    -    Minutes: $(echo "$TEST_SCHEDULE" | cut -f3 -d'|')"
@@ -1396,7 +1392,7 @@ Menu_EditSchedule(){
 			crudaystmp="$(echo "$day_choice" | sed "s/,/ /g")"
 			crudaysvalidated="true"
 			for i in $crudaystmp; do
-				if ! Validate_Number "" "$i" silent; then
+				if ! Validate_Number "$i"; then
 					printf "\\n\\e[31mPlease enter a valid number (0-6) or comma separated values\\e[0m\\n"
 					crudaysvalidated="false"
 					break
@@ -1487,22 +1483,20 @@ Menu_EditSchedule(){
 				if [ "$hour_choice" = "e" ]; then
 					exitmenu="exit"
 					break
-				elif ! Validate_Number "" "$hour_choice" silent; then
+				elif ! Validate_Number "$hour_choice"; then
 						printf "\\n\\e[31mPlease enter a valid number (1-24)\\e[0m\\n"
 				elif [ "$hour_choice" -lt 1 ] || [ "$hour_choice" -gt 24 ]; then
 					printf "\\n\\e[31mPlease enter a number between 1 and 24\\e[0m\\n"
+				elif [ "$hour_choice" -eq 24 ]; then
+					cruhours="0"
+					crumins="0"
+					printf "\\n"
+					break
 				else
-					if [ "$hour_choice" -eq 24 ]; then
-						cruhours="0"
-						crumins="0"
-						printf "\\n"
-						break
-					else
-						cruhours="*/$hour_choice"
-						crumins="0"
-						printf "\\n"
-						break
-					fi
+					cruhours="*/$hour_choice"
+					crumins="0"
+					printf "\\n"
+					break
 				fi
 			done
 		elif [ "$formattype" = "mins" ]; then
@@ -1513,7 +1507,7 @@ Menu_EditSchedule(){
 				if [ "$min_choice" = "e" ]; then
 					exitmenu="exit"
 					break
-				elif ! Validate_Number "" "$min_choice" silent; then
+				elif ! Validate_Number "$min_choice"; then
 						printf "\\n\\e[31mPlease enter a valid number (1-30)\\e[0m\\n"
 				elif [ "$min_choice" -lt 1 ] || [ "$min_choice" -gt 30 ]; then
 					printf "\\n\\e[31mPlease enter a number between 1 and 30\\e[0m\\n"
@@ -1544,20 +1538,57 @@ Menu_EditSchedule(){
 					cruhourstmp="$(echo "$hour_choice" | sed "s/,/ /g")"
 					cruhoursvalidated="true"
 					for i in $cruhourstmp; do
-						if ! Validate_Number "" "$i" silent; then
-							printf "\\n\\e[31mPlease enter a valid number (0-23) or comma separated values\\e[0m\\n"
-							cruhoursvalidated="false"
-							break
-						else
-							if [ "$i" -lt 0 ] || [ "$i" -gt 23 ]; then
-								printf "\\n\\e[31mPlease enter a number between 0 and 23 or comma separated values\\e[0m\\n"
+						if echo "$i" | grep -q "-"; then
+							if [ "$i" = "-" ]; then
+								printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
 								cruhoursvalidated="false"
 								break
 							fi
+							cruhourstmp2="$(echo "$i" | sed "s/-/ /")"
+							for i2 in $cruhourstmp2; do
+								if ! Validate_Number "$i2"; then
+									printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+									cruhoursvalidated="false"
+									break
+								elif [ "$i2" -lt 0 ] || [ "$i2" -gt 23 ]; then
+									printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
+									cruhoursvalidated="false"
+									break
+								fi
+							done
+						elif echo "$i" | grep -q "/"; then
+							cruhourstmp3="$(echo "$i" | sed "s/\*\///")"
+							if ! Validate_Number "$cruhourstmp3"; then
+								printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+								cruhoursvalidated="false"
+								break
+							elif [ "$cruhourstmp3" -lt 0 ] || [ "$cruhourstmp3" -gt 23 ]; then
+								printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
+								cruhoursvalidated="false"
+								break
+							fi
+						elif ! Validate_Number "$i"; then
+							printf "\\n\\e[31mPlease enter a valid number (0-23) or comma separated values\\e[0m\\n"
+							cruhoursvalidated="false"
+							break
+						elif [ "$i" -lt 0 ] || [ "$i" -gt 23 ]; then
+							printf "\\n\\e[31mPlease enter a number between 0 and 23 or comma separated values\\e[0m\\n"
+							cruhoursvalidated="false"
+							break
 						fi
 					done
 					if [ "$cruhoursvalidated" = "true" ]; then
-						cruhours="$hour_choice"
+						if echo "$hour_choice" | grep -q "-"; then
+							cruhours1="$(echo "$hour_choice" | cut -f1 -d'-')"
+							cruhours2="$(echo "$hour_choice" | cut -f2 -d'-')"
+							if [ "$cruhours1" -lt "$cruhours2" ]; then
+								cruhours="$hour_choice"
+							elif [ "$cruhours2" -lt "$cruhours1" ]; then
+								cruhours="$cruhours1-23,0-$cruhours2"
+							fi
+						else
+							cruhours="$hour_choice"
+						fi
 						printf "\\n"
 						break
 					fi
@@ -1583,20 +1614,58 @@ Menu_EditSchedule(){
 					cruminstmp="$(echo "$min_choice" | sed "s/,/ /g")"
 					cruminsvalidated="true"
 					for i in $cruminstmp; do
-						if ! Validate_Number "" "$i" silent; then
-							printf "\\n\\e[31mPlease enter a valid number (0-59) or comma separated values\\e[0m\\n"
-							cruminsvalidated="false"
-							break
-						else
-							if [ "$i" -lt 0 ] || [ "$i" -gt 59 ]; then
-								printf "\\n\\e[31mPlease enter a number between 0 and 59 or comma separated values\\e[0m\\n"
+						if echo "$i" | grep -q "-"; then
+							if [ "$i" = "-" ]; then
+								printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
 								cruminsvalidated="false"
 								break
 							fi
+							cruminstmp2="$(echo "$i" | sed "s/-/ /")"
+							for i2 in $cruminstmp2; do
+								if ! Validate_Number "$i2"; then
+									printf "\\n\\e[31mPlease enter a valid number (0-59)\\e[0m\\n"
+									cruminsvalidated="false"
+									break
+								elif [ "$i2" -lt 0 ] || [ "$i2" -gt 59 ]; then
+									printf "\\n\\e[31mPlease enter a number between 0 and 59\\e[0m\\n"
+									cruminsvalidated="false"
+									break
+								fi
+							done
+						elif echo "$i" | grep -q "/"; then
+							cruminstmp3="$(echo "$i" | sed "s/\*\///")"
+							if ! Validate_Number "$cruminstmp3"; then
+								printf "\\n\\e[31mPlease enter a valid number (0-30)\\e[0m\\n"
+								cruminsvalidated="false"
+								break
+							elif [ "$cruminstmp3" -lt 0 ] || [ "$cruminstmp3" -gt 30 ]; then
+								printf "\\n\\e[31mPlease enter a number between 0 and 30\\e[0m\\n"
+								cruminsvalidated="false"
+								break
+							fi
+						elif ! Validate_Number "$i"; then
+							printf "\\n\\e[31mPlease enter a valid number (0-59) or comma separated values\\e[0m\\n"
+							cruminsvalidated="false"
+							break
+						elif [ "$i" -lt 0 ] || [ "$i" -gt 59 ]; then
+							printf "\\n\\e[31mPlease enter a number between 0 and 59 or comma separated values\\e[0m\\n"
+							cruminsvalidated="false"
+							break
 						fi
 					done
+					
 					if [ "$cruminsvalidated" = "true" ]; then
-						crumins="$min_choice"
+						if echo "$min_choice" | grep -q "-"; then
+							crumins1="$(echo "$min_choice" | cut -f1 -d'-')"
+							crumins2="$(echo "$min_choice" | cut -f2 -d'-')"
+							if [ "$crumins1" -lt "$crumins2" ]; then
+								crumins="$min_choice"
+							elif [ "$crumins2" -lt "$crumins1" ]; then
+								crumins="$crumins1-59,0-$crumins2"
+							fi
+						else
+							crumins="$min_choice"
+						fi
 						printf "\\n"
 						break
 					fi
