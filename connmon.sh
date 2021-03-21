@@ -1241,6 +1241,7 @@ MainMenu(){
 				printf "\\n"
 				if Check_Lock menu; then
 					Menu_ResetDB
+					Clear_Lock
 				fi
 				PressEnter
 				break
@@ -1701,8 +1702,6 @@ Menu_ResetDB(){
 			printf "\\n\\e[1m\\e[33mDatabase reset cancelled\\e[0m\\n\\n"
 		;;
 	esac
-	
-	Clear_Lock
 }
 
 Menu_Uninstall(){
