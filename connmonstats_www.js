@@ -25,6 +25,17 @@ var intervallist = [24,7,30];
 var bordercolourlist = ["#fc8500","#42ecf5","#ffffff"];
 var backgroundcolourlist = ["rgba(252,133,0,0.5)","rgba(66,236,245,0.5)","rgba(255,255,255,0.5)"];
 
+function SettingHint(hintid){
+	var tag_name = document.getElementsByTagName('a');
+	for (var i=0;i<tag_name.length;i++){
+		tag_name[i].onmouseout=nd;
+	}
+	hinttext="My text goes here";
+	if(hintid == 1) hinttext="Hour(s) of day to run ping test<br />* for all<br />Valid numbers between 0 and 23<br />comma (,) separate for multiple<br />dash (-) separate for a range";
+	if(hintid == 2) hinttext="Minute(s) of day to run ping test<br />(* for all<br />Valid numbers between 0 and 59<br />comma (,) separate for multiple<br />dash (-) separate for a range";
+	return overlib(hinttext, 0, 0);
+}
+
 function keyHandler(e){
 	if(e.keyCode == 27){
 		$j(document).off("keydown");
@@ -78,7 +89,6 @@ function Validate_PingDuration(forminput){
 		return true;
 	}
 }
-
 
 function Validate_Schedule(forminput,hoursmins){
 	var inputname = forminput.name;
