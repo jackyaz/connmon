@@ -11,9 +11,15 @@
 ##                                                        ##
 ############################################################
 
+#############        Shellcheck directives      ############
+# shellcheck disable=SC2018
+# shellcheck disable=SC2019
+# shellcheck disable=SC2059
+############################################################
+
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.8.5"
+readonly SCRIPT_VERSION="v2.9.0"
 SCRIPT_BRANCH="master"
 SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -31,16 +37,16 @@ readonly CRIT="\\e[41m"
 readonly ERR="\\e[31m"
 readonly WARN="\\e[33m"
 readonly PASS="\\e[32m"
+readonly SETTING="\\e[1m\\e[36m"
 ### End of output format variables ###
 
 # $1 = print to syslog, $2 = message to print, $3 = log level
+# shellcheck disable=SC2059
 Print_Output(){
 	if [ "$1" = "true" ]; then
 		logger -t "$SCRIPT_NAME" "$2"
-		printf "\\e[1m$3%s: $2\\e[0m\\n\\n" "$SCRIPT_NAME"
-	else
-		printf "\\e[1m$3%s: $2\\e[0m\\n\\n" "$SCRIPT_NAME"
 	fi
+	printf "\\e[1m${3}%s\\e[0m\\n\\n" "$2"
 }
 
 Firmware_Version_Check(){
@@ -87,19 +93,19 @@ Clear_Lock(){
 ############################################################################
 
 Set_Version_Custom_Settings(){
-	SETTINGSFILE=/jffs/addons/custom_settings.txt
+	SETTINGSFILE="/jffs/addons/custom_settings.txt"
 	case "$1" in
 		local)
 			if [ -f "$SETTINGSFILE" ]; then
 				if [ "$(grep -c "connmon_version_local" $SETTINGSFILE)" -gt 0 ]; then
-					if [ "$SCRIPT_VERSION" != "$(grep "connmon_version_local" /jffs/addons/custom_settings.txt | cut -f2 -d' ')" ]; then
-						sed -i "s/connmon_version_local.*/connmon_version_local $SCRIPT_VERSION/" "$SETTINGSFILE"
+					if [ "$2" != "$(grep "connmon_version_local" /jffs/addons/custom_settings.txt | cut -f2 -d' ')" ]; then
+						sed -i "s/connmon_version_local.*/connmon_version_local $2/" "$SETTINGSFILE"
 					fi
 				else
-					echo "connmon_version_local $SCRIPT_VERSION" >> "$SETTINGSFILE"
+					echo "connmon_version_local $2" >> "$SETTINGSFILE"
 				fi
 			else
-				echo "connmon_version_local $SCRIPT_VERSION" >> "$SETTINGSFILE"
+				echo "connmon_version_local $2" >> "$SETTINGSFILE"
 			fi
 		;;
 		server)
@@ -121,7 +127,7 @@ Set_Version_Custom_Settings(){
 Update_Check(){
 	echo 'var updatestatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_update.js"
 	doupdate="false"
-	localver=$(grep "SCRIPT_VERSION=" /jffs/scripts/"$SCRIPT_NAME" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
+	localver=$(grep "SCRIPT_VERSION=" "/jffs/scripts/$SCRIPT_NAME" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 	/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep -qF "jackyaz" || { Print_Output true "404 error detected - stopping update" "$ERR"; return 1; }
 	serverver=$(/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 	if [ "$localver" != "$serverver" ]; then
@@ -144,34 +150,43 @@ Update_Check(){
 }
 
 Update_Version(){
-	if [ -z "$1" ] || [ "$1" = "unattended" ]; then
+	if [ -z "$1" ]; then
 		updatecheckresult="$(Update_Check)"
 		isupdate="$(echo "$updatecheckresult" | cut -f1 -d',')"
 		localver="$(echo "$updatecheckresult" | cut -f2 -d',')"
 		serverver="$(echo "$updatecheckresult" | cut -f3 -d',')"
 		
 		if [ "$isupdate" = "version" ]; then
-			Print_Output true "New version of $SCRIPT_NAME available - updating to $serverver" "$PASS"
+			Print_Output true "New version of $SCRIPT_NAME available - $serverver" "$PASS"
 		elif [ "$isupdate" = "md5" ]; then
-			Print_Output true "MD5 hash of $SCRIPT_NAME does not match - downloading updated $serverver" "$PASS"
+			Print_Output true "MD5 hash of $SCRIPT_NAME does not match - hotfix available - $serverver" "$PASS"
 		fi
 		
-		Update_File shared-jy.tar.gz
-		
 		if [ "$isupdate" != "false" ]; then
-			Update_File connmonstats_www.asp
-			
-			/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
-			chmod 0755 /jffs/scripts/"$SCRIPT_NAME"
-			Clear_Lock
-			if [ -z "$1" ]; then
-				exec "$0" setversion
-			elif [ "$1" = "unattended" ]; then
-				exec "$0" setversion unattended
-			fi
-			exit 0
+			printf "\\n\\e[1mDo you want to continue with the update? (y/n)\\e[0m  "
+			read -r confirm
+			case "$confirm" in
+				y|Y)
+					printf "\\n"
+					Update_File shared-jy.tar.gz
+					Update_File connmonstats_www.asp
+					/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
+					chmod 0755 "/jffs/scripts/$SCRIPT_NAME"
+					Set_Version_Custom_Settings local "$serverver"
+					Set_Version_Custom_Settings server "$serverver"
+					Clear_Lock
+					PressEnter
+					exec "$0"
+					exit 0
+				;;
+				*)
+					printf "\\n"
+					Clear_Lock
+					return 1
+				;;
+			esac
 		else
-			Print_Output true "No new version - latest is $localver" "$WARN"
+			Print_Output true "No updates available - latest is $localver" "$WARN"
 			Clear_Lock
 		fi
 	fi
@@ -179,15 +194,18 @@ Update_Version(){
 	if [ "$1" = "force" ]; then
 		serverver=$(/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 		Print_Output true "Downloading latest version ($serverver) of $SCRIPT_NAME" "$PASS"
-		Update_File connmonstats_www.asp
 		Update_File shared-jy.tar.gz
+		Update_File connmonstats_www.asp
 		/usr/sbin/curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
-		chmod 0755 /jffs/scripts/"$SCRIPT_NAME"
+		chmod 0755 "/jffs/scripts/$SCRIPT_NAME"
+		Set_Version_Custom_Settings local "$serverver"
+		Set_Version_Custom_Settings server "$serverver"
 		Clear_Lock
 		if [ -z "$2" ]; then
-			exec "$0" setversion
+			PressEnter
+			exec "$0"
 		elif [ "$2" = "unattended" ]; then
-			exec "$0" setversion unattended
+			exec "$0" postupdate
 		fi
 		exit 0
 	fi
@@ -232,13 +250,9 @@ Update_File(){
 }
 
 Validate_Number(){
-	if [ "$2" -eq "$2" ] 2>/dev/null; then
+	if [ "$1" -eq "$1" ] 2>/dev/null; then
 		return 0
 	else
-		formatted="$(echo "$1" | sed -e 's/|/ /g')"
-		if [ -z "$3" ]; then
-			Print_Output false "$formatted - $2 is not a number" "$ERR"
-		fi
 		return 1
 	fi
 }
@@ -290,7 +304,12 @@ Conf_FromSettings(){
 			ScriptStorageLocation "$(ScriptStorageLocation check)"
 			Create_Symlinks
 			
-			Auto_Cron create
+			if AutomaticMode check; then
+				Auto_Cron delete 2>/dev/null
+				Auto_Cron create 2>/dev/null
+			else
+				Auto_Cron delete 2>/dev/null
+			fi
 			Generate_CSVs
 			
 			Print_Output true "Merge of updated settings from WebUI completed successfully" "$PASS"
@@ -348,24 +367,22 @@ Conf_Exists(){
 		dos2unix "$SCRIPT_CONF"
 		chmod 0644 "$SCRIPT_CONF"
 		sed -i -e 's/"//g' "$SCRIPT_CONF"
-		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 1 ]; then
-			echo "OUTPUTDATAMODE=raw" >> "$SCRIPT_CONF"
-		fi
-		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 2 ]; then
-			echo "OUTPUTTIMEMODE=unix" >> "$SCRIPT_CONF"
-		fi
-		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 3 ]; then
-			echo "STORAGELOCATION=jffs" >> "$SCRIPT_CONF"
-		fi
-		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 4 ]; then
-			{ echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; } >> "$SCRIPT_CONF"
-		fi
-		if [ "$(wc -l < "$SCRIPT_CONF")" -eq 6 ]; then
-			{ echo "SCHEDULESTART=0"; echo "SCHEDULEEND=23"; } >> "$SCRIPT_CONF"
+		
+		if grep -q "SCHEDULESTART" "$SCRIPT_CONF"; then
+			if [ "$(wc -l < "$SCRIPT_CONF")" -eq 8 ]; then
+				echo "AUTOMATED=true" >> "$SCRIPT_CONF"
+			fi
+			if [ "$(wc -l < "$SCRIPT_CONF")" -eq 9 ]; then
+				echo "SCHDAYS=*" >> "$SCRIPT_CONF"
+			fi
+			echo "SCHHOURS=*" >> "$SCRIPT_CONF"
+			PINGFREQUENCY=$(grep "PINGFREQUENCY" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "SCHMINS=*/$PINGFREQUENCY" >> "$SCRIPT_CONF"
+			sed -i '/SCHEDULESTART/d;/SCHEDULEEND/d;/PINGFREQUENCY/d;' "$SCRIPT_CONF"
 		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "PINGFREQUENCY=3"; echo "SCHEDULESTART=0"; echo "SCHEDULEEND=23"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -379,12 +396,12 @@ PingServer(){
 				printf "1.    Enter IP Address\\n"
 				printf "2.    Enter Domain\\n"
 				printf "\\ne.    Go back\\n"
-				printf "\\n\\e[1mChoose an option:\\e[0m    "
+				printf "\\n\\e[1mChoose an option:\\e[0m  "
 				read -r pingoption
 				case "$pingoption" in
 					1)
 						while true; do
-							printf "\\n\\e[1mPlease enter an IP address, or enter e to go back:\\e[0m    "
+							printf "\\n\\e[1mPlease enter an IP address, or enter e to go back:\\e[0m  "
 							read -r ipoption
 							if [ "$ipoption" = "e" ]; then
 								break
@@ -397,7 +414,7 @@ PingServer(){
 					;;
 					2)
 						while true; do
-							printf "\\n\\e[1mPlease enter a domain name, or enter e to go back:\\e[0m    "
+							printf "\\n\\e[1mPlease enter a domain name, or enter e to go back:\\e[0m  "
 							read -r domainoption
 							if [ "$domainoption" = "e" ]; then
 								break
@@ -425,48 +442,6 @@ PingServer(){
 	esac
 }
 
-PingFrequency(){
-	case "$1" in
-		update)
-			pingfreq=0
-			exitmenu=""
-			ScriptHeader
-			while true; do
-				printf "\\n\\e[1mPlease enter the desired test frequency (every 1-30 minutes):\\e[0m    "
-				read -r pingfreq_choice
-				
-				if [ "$pingfreq_choice" = "e" ]; then
-					exitmenu="exit"
-					break
-				elif ! Validate_Number "" "$pingfreq_choice" silent; then
-					printf "\\n\\e[31mPlease enter a valid number (1-30)\\e[0m\\n"
-				else
-					if [ "$pingfreq_choice" -lt 1 ] || [ "$pingfreq_choice" -gt 30 ]; then
-						printf "\\n\\e[31mPlease enter a number between 1 and 30\\e[0m\\n"
-					else
-						pingfreq="$pingfreq_choice"
-						printf "\\n"
-						break
-					fi
-				fi
-			done
-			
-			if [ "$exitmenu" != "exit" ]; then
-				sed -i 's/^PINGFREQUENCY.*$/PINGFREQUENCY='"$pingfreq"'/' "$SCRIPT_CONF"
-				Auto_Cron create
-				return 0
-			else
-				printf "\\n"
-				return 1
-			fi
-		;;
-		check)
-			PINGFREQUENCY=$(grep "PINGFREQUENCY" "$SCRIPT_CONF" | cut -f2 -d"=")
-			echo "$PINGFREQUENCY"
-		;;
-	esac
-}
-
 PingDuration(){
 	case "$1" in
 		update)
@@ -474,13 +449,13 @@ PingDuration(){
 			exitmenu=""
 			ScriptHeader
 			while true; do
-				printf "\\n\\e[1mPlease enter the desired test duration (10-60 seconds):\\e[0m    "
+				printf "\\n\\e[1mPlease enter the desired test duration (10-60 seconds):\\e[0m  "
 				read -r pingdur_choice
 				
 				if [ "$pingdur_choice" = "e" ]; then
 					exitmenu="exit"
 					break
-				elif ! Validate_Number "" "$pingdur_choice" silent; then
+				elif ! Validate_Number "$pingdur_choice"; then
 					printf "\\n\\e[31mPlease enter a valid number (10-60)\\e[0m\\n"
 				else
 					if [ "$pingdur_choice" -lt 10 ] || [ "$pingdur_choice" -gt 60 ]; then
@@ -594,19 +569,14 @@ Auto_Startup(){
 Auto_Cron(){
 	case $1 in
 		create)
-			pingfrequency="$(PingFrequency check)"
+			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
 			
-			# shellcheck disable=SC2063
-			STARTUPLINECOUNTEX=$(cru l | grep "$SCRIPT_NAME" | grep -c "*/$pingfrequency")
-			if [ "$STARTUPLINECOUNTEX" -eq 0 ]; then
-				SCHEDULESTART=$(grep "SCHEDULESTART" "$SCRIPT_CONF" | cut -f2 -d"=")
-				SCHEDULEEND=$(grep "SCHEDULEEND" "$SCRIPT_CONF" | cut -f2 -d"=")
+			if [ "$STARTUPLINECOUNT" -eq 0 ]; then
+				CRU_DAYNUMBERS="$(grep "SCHDAYS" "$SCRIPT_CONF" | cut -f2 -d"=" | sed 's/Sun/0/;s/Mon/1/;s/Tues/2/;s/Wed/3/;s/Thurs/4/;s/Fri/5/;s/Sat/6/;')"
+				CRU_HOURS="$(grep "SCHHOURS" "$SCRIPT_CONF" | cut -f2 -d"=")"
+				CRU_MINUTES="$(grep "SCHMINS" "$SCRIPT_CONF" | cut -f2 -d"=")"
 				
-				if [ "$SCHEDULESTART" -lt "$SCHEDULEEND" ]; then
-					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-$SCHEDULEEND * * * /jffs/scripts/$SCRIPT_NAME generate"
-				else
-					cru a "$SCRIPT_NAME" "*/$pingfrequency $SCHEDULESTART-23,0-$SCHEDULEEND * * * /jffs/scripts/$SCRIPT_NAME generate"
-				fi
+				cru a "$SCRIPT_NAME" "$CRU_MINUTES $CRU_HOURS * * $CRU_DAYNUMBERS /jffs/scripts/$SCRIPT_NAME generate"
 			fi
 		;;
 		delete)
@@ -635,9 +605,41 @@ Get_WebUI_Page(){
 	done
 }
 
-### locking mechanism code credit to Martineau (@MartineauUK) ###
+### function based on @dave14305's FlexQoS webconfigpage function ###
+Get_WebUI_URL(){
+	urlpage=""
+	urlproto=""
+	urldomain=""
+	urlport=""
+	
+	urlpage="$(sed -nE "/$SCRIPT_NAME/ s/.*url\: \"(user[0-9]+\.asp)\".*/\1/p" /tmp/menuTree.js)"
+	if [ "$(nvram get http_enable)" -eq 1 ]; then
+		urlproto="https"
+	else
+		urlproto="http"
+	fi
+	if [ -n "$(nvram get lan_domain)" ]; then
+		urldomain="$(nvram get lan_hostname).$(nvram get lan_domain)"
+	else
+		urldomain="$(nvram get lan_ipaddr)"
+	fi
+	if [ "$(nvram get ${urlproto}_lanport)" -eq 80 ] || [ "$(nvram get ${urlproto}_lanport)" -eq 443 ]; then
+		urlport=""
+	else
+		urlport=":$(nvram get ${urlproto}_lanport)"
+	fi
+	
+	if echo "$urlpage" | grep -qE "user[0-9]+\.asp"; then
+		echo "${urlproto}://${urldomain}${urlport}/${urlpage}" | tr "A-Z" "a-z"
+	else
+		echo "WebUI page not found"
+	fi
+}
+### ###
 
+### locking mechanism code credit to Martineau (@MartineauUK) ###
 Mount_WebUI(){
+	Print_Output true "Mounting WebUI tab for $SCRIPT_NAME" "$PASS"
 	LOCKFILE=/tmp/addonwebui.lock
 	FD=386
 	eval exec "$FD>$LOCKFILE"
@@ -649,7 +651,7 @@ Mount_WebUI(){
 		return 1
 	fi
 	cp -f "$SCRIPT_DIR/connmonstats_www.asp" "$SCRIPT_WEBPAGE_DIR/$MyPage"
-	echo "connmon" > "$SCRIPT_WEBPAGE_DIR/$(echo $MyPage | cut -f1 -d'.').title"
+	echo "$SCRIPT_NAME" > "$SCRIPT_WEBPAGE_DIR/$(echo $MyPage | cut -f1 -d'.').title"
 	
 	if [ "$(uname -o)" = "ASUSWRT-Merlin" ]; then
 		if [ ! -f /tmp/index_style.css ]; then
@@ -677,7 +679,7 @@ Mount_WebUI(){
 		if ! grep -q "javascript:window.open('/ext/shared-jy/redirect.htm'" /tmp/menuTree.js ; then
 			sed -i "s~ext/shared-jy/redirect.htm~javascript:window.open('/ext/shared-jy/redirect.htm','_blank')~" /tmp/menuTree.js
 		fi
-		sed -i "/url: \"javascript:window.open('\/ext\/shared-jy\/redirect.htm'/i {url: \"$MyPage\", tabName: \"connmon\"}," /tmp/menuTree.js
+		sed -i "/url: \"javascript:window.open('\/ext\/shared-jy\/redirect.htm'/i {url: \"$MyPage\", tabName: \"$SCRIPT_NAME\"}," /tmp/menuTree.js
 		
 		umount /www/require/modules/menuTree.js 2>/dev/null
 		mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
@@ -686,18 +688,38 @@ Mount_WebUI(){
 	Print_Output true "Mounted $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
 }
 
+AutomaticMode(){
+	case "$1" in
+		enable)
+			sed -i 's/^AUTOMATED.*$/AUTOMATED=true/' "$SCRIPT_CONF"
+			Auto_Cron create 2>/dev/null
+		;;
+		disable)
+			sed -i 's/^AUTOMATED.*$/AUTOMATED=false/' "$SCRIPT_CONF"
+			Auto_Cron delete 2>/dev/null
+		;;
+		check)
+			AUTOMATED=$(grep "AUTOMATED" "$SCRIPT_CONF" | cut -f2 -d"=")
+			if [ "$AUTOMATED" = "true" ]; then return 0; else return 1; fi
+		;;
+	esac
+}
+
 TestSchedule(){
 	case "$1" in
 		update)
-			sed -i 's/^'"SCHEDULESTART"'.*$/SCHEDULESTART='"$2"'/' "$SCRIPT_CONF"
-			sed -i 's/^'"SCHEDULEEND"'.*$/SCHEDULEEND='"$3"'/' "$SCRIPT_CONF"
+			sed -i 's/^SCHDAYS.*$/SCHDAYS='"$(echo "$2" | sed 's/0/Sun/;s/1/Mon/;s/2/Tues/;s/3/Wed/;s/4/Thurs/;s/5/Fri/;s/6/Sat/;')"'/' "$SCRIPT_CONF"
+			sed -i 's~^SCHHOURS.*$~SCHHOURS='"$3"'~' "$SCRIPT_CONF"
+			sed -i 's~^SCHMINS.*$~SCHMINS='"$4"'~' "$SCRIPT_CONF"
+			
 			Auto_Cron delete 2>/dev/null
 			Auto_Cron create 2>/dev/null
 		;;
 		check)
-			SCHEDULESTART=$(grep "SCHEDULESTART" "$SCRIPT_CONF" | cut -f2 -d"=")
-			SCHEDULEEND=$(grep "SCHEDULEEND" "$SCRIPT_CONF" | cut -f2 -d"=")
-			echo "$SCHEDULESTART,$SCHEDULEEND"
+			SCHDAYS=$(grep "SCHDAYS" "$SCRIPT_CONF" | cut -f2 -d"=")
+			SCHHOURS=$(grep "SCHHOURS" "$SCRIPT_CONF" | cut -f2 -d"=")
+			SCHMINS=$(grep "SCHMINS" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$SCHDAYS|$SCHHOURS|$SCHMINS"
 		;;
 	esac
 }
@@ -783,7 +805,7 @@ WritePlainData_ToJS(){
 	inputfile="$1"
 	outputfile="$2"
 	shift;shift
-	i="0"
+	i=0
 	for var in "$@"; do
 		i=$((i+1))
 		{
@@ -814,7 +836,7 @@ WriteSql_ToFile(){
 	{
 		echo ".mode csv"
 		echo ".headers on"
-		echo ".output $5$6.htm"
+		echo ".output ${5}${6}.htm"
 	} >> "$7"
 	
 	echo "SELECT '$1' Metric, Min([Timestamp]) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= $timenow - ($multiplier*$maxcount)) GROUP BY ([Timestamp]/($multiplier));" >> "$7"
@@ -829,7 +851,7 @@ Generate_LastXResults(){
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
 	sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
 	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
-	WritePlainData_ToJS "/tmp/conn-lastx.csv" "$SCRIPT_STORAGE_DIR/connjs.js" "DataTimestamp" "DataPing" "DataJitter" "DataLineQuality"
+	WritePlainData_ToJS /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/connjs.js" DataTimestamp DataPing DataJitter DataLineQuality
 	rm -f /tmp/conn-lastx.sql
 	rm -f /tmp/conn-lastx.csv
 }
@@ -837,9 +859,8 @@ Generate_LastXResults(){
 Run_PingTest(){
 	Create_Dirs
 	Conf_Exists
-	Set_Version_Custom_Settings local
 	Auto_Startup create 2>/dev/null
-	Auto_Cron create 2>/dev/null
+	if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 	Auto_ServiceEvent create 2>/dev/null
 	ScriptStorageLocation load
 	Create_Symlinks
@@ -895,14 +916,14 @@ Run_PingTest(){
 	timenow=$(date +"%s")
 	timenowfriendly=$(date +"%c")
 	
-	ping="0"
-	jitter="0"
-	linequal="0"
+	ping=0
+	jitter=0
+	linequal=0
 	
 	if [ "$PINGCOUNT" -gt 1 ]; then
 		ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
 		jitter="$(echo "$TOTALDIFF" "$DIFFCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
-		linequal="$(echo "100" "$(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" | awk '{printf "%4.3f\n",$1-$2}')"
+		linequal="$(echo 100 "$(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" | awk '{printf "%4.3f\n",$1-$2}')"
 	fi
 	
 	{
@@ -920,7 +941,7 @@ Run_PingTest(){
 	echo "Stats last updated: $timenowfriendly" > "/tmp/connstatstitle.txt"
 	WriteStats_ToJS /tmp/connstatstitle.txt "$SCRIPT_STORAGE_DIR/connstatstext.js" SetConnmonStatsTitle statstitle
 	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
-	Print_Output false "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %%" "$PASS"
+	Print_Output false "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %" "$PASS"
 	
 	{
 		printf "Ping test result\\n"
@@ -1051,13 +1072,13 @@ Shortcut_Script(){
 	case $1 in
 		create)
 			if [ -d /opt/bin ] && [ ! -f "/opt/bin/$SCRIPT_NAME" ] && [ -f "/jffs/scripts/$SCRIPT_NAME" ]; then
-				ln -s /jffs/scripts/"$SCRIPT_NAME" /opt/bin
-				chmod 0755 /opt/bin/"$SCRIPT_NAME"
+				ln -s "/jffs/scripts/$SCRIPT_NAME" /opt/bin
+				chmod 0755 "/opt/bin/$SCRIPT_NAME"
 			fi
 		;;
 		delete)
 			if [ -f "/opt/bin/$SCRIPT_NAME" ]; then
-				rm -f /opt/bin/"$SCRIPT_NAME"
+				rm -f "/opt/bin/$SCRIPT_NAME"
 			fi
 		;;
 	esac
@@ -1085,7 +1106,7 @@ ScriptHeader(){
 	printf "\\e[1m## | (__ | (_) || | | || | | || | | | | || (_) || | | |   ##\\e[0m\\n"
 	printf "\\e[1m##  \___| \___/ |_| |_||_| |_||_| |_| |_| \___/ |_| |_|   ##\\e[0m\\n"
 	printf "\\e[1m##                                                        ##\\e[0m\\n"
-	printf "\\e[1m##                  %s on %-9s                   ##\\e[0m\\n" "$SCRIPT_VERSION" "$ROUTER_MODEL"
+	printf "\\e[1m##                  %s on %-11s                 ##\\e[0m\\n" "$SCRIPT_VERSION" "$ROUTER_MODEL"
 	printf "\\e[1m##                                                        ##\\e[0m\\n"
 	printf "\\e[1m##          https://github.com/jackyaz/connmon            ##\\e[0m\\n"
 	printf "\\e[1m##                                                        ##\\e[0m\\n"
@@ -1094,16 +1115,32 @@ ScriptHeader(){
 }
 
 MainMenu(){
+	AUTOMATIC_ENABLED=""
+	if AutomaticMode check; then AUTOMATIC_ENABLED="${PASS}Enabled"; else AUTOMATIC_ENABLED="${ERR}Disabled"; fi
 	TEST_SCHEDULE="$(TestSchedule check)"
-	TEST_SCHEDULE_MENU="Start: $(echo "$TEST_SCHEDULE" | cut -f1 -d',')    -    End: $(echo "$TEST_SCHEDULE" | cut -f2 -d',')"
+	if [ "$(echo "$TEST_SCHEDULE" | cut -f2 -d'|' | grep -c "/")" -gt 0 ] && [ "$(echo "$TEST_SCHEDULE" | cut -f3 -d'|')" -eq 0 ]; then
+		TEST_SCHEDULE_MENU="Every $(echo "$TEST_SCHEDULE" | cut -f2 -d'|' | cut -f2 -d'/') hours"
+	elif [ "$(echo "$TEST_SCHEDULE" | cut -f3 -d'|' | grep -c "/")" -gt 0 ] && [ "$(echo "$TEST_SCHEDULE" | cut -f2 -d'|')" = "*" ]; then
+		TEST_SCHEDULE_MENU="Every $(echo "$TEST_SCHEDULE" | cut -f3 -d'|' | cut -f2 -d'/') minutes"
+	else
+		TEST_SCHEDULE_MENU="Hours: $(echo "$TEST_SCHEDULE" | cut -f2 -d'|')    -    Minutes: $(echo "$TEST_SCHEDULE" | cut -f3 -d'|')"
+	fi
+	
+	if [ "$(echo "$TEST_SCHEDULE" | cut -f1 -d'|')" = "*" ]; then
+		TEST_SCHEDULE_MENU2="Days of week: All"
+	else
+		TEST_SCHEDULE_MENU2="Days of week: $(echo "$TEST_SCHEDULE" | cut -f1 -d'|')"
+	fi
+	
+	printf "WebUI for %s is available at:\\n${SETTING}%s\\e[0m\\n\\n" "$SCRIPT_NAME" "$(Get_WebUI_URL)"
 	printf "1.    Check connection now\\n\\n"
-	printf "2.    Set preferred ping server\\n      Currently: %s\\n\\n" "$(PingServer check)"
-	printf "3.    Set ping test duration\\n      Currently: %ss\\n\\n" "$(PingDuration check)"
-	printf "4.    Set ping test frequency\\n      Currently: Every %s minutes\\n\\n" "$(PingFrequency check)"
-	printf "5.    Set time range for ping tests\\n      %s\\n\\n" "$TEST_SCHEDULE_MENU"
-	printf "6.    Toggle data output mode\\n      Currently \\e[1m%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode check)"
-	printf "7.    Toggle time output mode\\n      Currently \\e[1m%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
-	printf "s.    Toggle storage location for stats and config\\n      Current location is \\e[1m%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
+	printf "2.    Set preferred ping server\\n      Currently: ${SETTING}%s\\e[0m\\n\\n" "$(PingServer check)"
+	printf "3.    Set ping test duration\\n      Currently: ${SETTING}%ss\\e[0m\\n\\n" "$(PingDuration check)"
+	printf "4.    Toggle automatic ping tests\\n      Currently \\e[1m$AUTOMATIC_ENABLED\\e[0m\\n\\n"
+	printf "5.    Set schedule for automatic ping tests\\n      ${SETTING}%s\\n      %s\\e[0m\\n\\n" "$TEST_SCHEDULE_MENU" "$TEST_SCHEDULE_MENU2"
+	printf "6.    Toggle data output mode\\n      Currently ${SETTING}%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode check)"
+	printf "7.    Toggle time output mode\\n      Currently ${SETTING}%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
+	printf "s.    Toggle storage location for stats and config\\n      Current location is ${SETTING}%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
 	printf "r.    Reset %s database / delete all data\\n\\n" "$SCRIPT_NAME"
@@ -1114,33 +1151,37 @@ MainMenu(){
 	printf "\\n"
 	
 	while true; do
-		printf "Choose an option:    "
+		printf "Choose an option:  "
 		read -r menu
 		case "$menu" in
 			1)
 				printf "\\n"
 				if Check_Lock menu; then
-					Menu_GenerateStats
+					Run_PingTest
+					Clear_Lock
 				fi
 				PressEnter
 				break
 			;;
 			2)
 				printf "\\n"
-				Menu_SetPingServer
+				PingServer update
 				PressEnter
 				break
 			;;
 			3)
 				printf "\\n"
-				Menu_SetPingDuration
+				PingDuration update
 				PressEnter
 				break
 			;;
 			4)
 				printf "\\n"
-				Menu_SetPingFrequency
-				PressEnter
+				if AutomaticMode check; then
+					AutomaticMode disable
+				else
+					AutomaticMode enable
+				fi
 				break
 			;;
 			5)
@@ -1151,23 +1192,38 @@ MainMenu(){
 			;;
 			6)
 				printf "\\n"
-				Menu_ToggleOutputDataMode
+				if [ "$(OutputDataMode check)" = "raw" ]; then
+					OutputDataMode average
+				elif [ "$(OutputDataMode check)" = "average" ]; then
+					OutputDataMode raw
+				fi
 				break
 			;;
 			7)
 				printf "\\n"
-				Menu_ToggleOutputTimeMode
+				if [ "$(OutputTimeMode check)" = "unix" ]; then
+					OutputTimeMode non-unix
+				elif [ "$(OutputTimeMode check)" = "non-unix" ]; then
+					OutputTimeMode unix
+				fi
 				break
 			;;
 			s)
 				printf "\\n"
-				Menu_ToggleStorageLocation
+				if [ "$(ScriptStorageLocation check)" = "jffs" ]; then
+					ScriptStorageLocation usb
+					Create_Symlinks
+				elif [ "$(ScriptStorageLocation check)" = "usb" ]; then
+					ScriptStorageLocation jffs
+					Create_Symlinks
+				fi
 				break
 			;;
 			u)
 				printf "\\n"
 				if Check_Lock menu; then
-					Menu_Update
+					Update_Version
+					Clear_Lock
 				fi
 				PressEnter
 				break
@@ -1175,7 +1231,8 @@ MainMenu(){
 			uf)
 				printf "\\n"
 				if Check_Lock menu; then
-					Menu_ForceUpdate
+					Update_Version force
+					Clear_Lock
 				fi
 				PressEnter
 				break
@@ -1195,7 +1252,7 @@ MainMenu(){
 			;;
 			z)
 				while true; do
-					printf "\\n\\e[1mAre you sure you want to uninstall %s? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
+					printf "\\n\\e[1mAre you sure you want to uninstall %s? (y/n)\\e[0m  " "$SCRIPT_NAME"
 					read -r confirm
 					case "$confirm" in
 						y|Y)
@@ -1264,7 +1321,8 @@ Menu_Install(){
 	
 	Create_Dirs
 	Conf_Exists
-	Set_Version_Custom_Settings local
+	Set_Version_Custom_Settings local "$SCRIPT_VERSION"
+	Set_Version_Custom_Settings server "$SCRIPT_VERSION"
 	ScriptStorageLocation load
 	Create_Symlinks
 	
@@ -1272,10 +1330,10 @@ Menu_Install(){
 	Update_File shared-jy.tar.gz
 	
 	Auto_Startup create 2>/dev/null
-	Auto_Cron create 2>/dev/null
+	if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
-	Menu_GenerateStats
+	Run_PingTest
 	
 	Clear_Lock
 }
@@ -1303,11 +1361,10 @@ Menu_Startup(){
 	
 	Create_Dirs
 	Conf_Exists
-	Set_Version_Custom_Settings local
 	ScriptStorageLocation load
 	Create_Symlinks
 	Auto_Startup create 2>/dev/null
-	Auto_Cron create 2>/dev/null
+	if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
 	Mount_WebUI
@@ -1315,43 +1372,45 @@ Menu_Startup(){
 	Clear_Lock
 }
 
-Menu_GenerateStats(){
-	Run_PingTest
-	Clear_Lock
-}
-
-Menu_SetPingServer(){
-	PingServer update
-}
-
-Menu_SetPingDuration(){
-	PingDuration update
-}
-
-Menu_SetPingFrequency(){
-	PingFrequency update
-}
-
 Menu_EditSchedule(){
-	exitmenu="false"
-	starthour=""
-	endhour=""
-	ScriptHeader
+	exitmenu=""
+	formattype=""
+	crudays=""
+	crudaysvalidated=""
+	cruhours=""
+	crumins=""
 	
 	while true; do
-		printf "\\n\\e[1mPlease enter a start hour (0-23):\\e[0m\\n"
-		read -r hour
+		printf "\\n\\e[1mPlease choose which day(s) to run ping test (0-6 - 0 = Sunday, * for every day, or comma separated days):\\e[0m    "
+		read -r day_choice
 		
-		if [ "$hour" = "e" ]; then
+		if [ "$day_choice" = "e" ]; then
 			exitmenu="exit"
 			break
-		elif ! Validate_Number "" "$hour" silent; then
-			printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+		elif [ "$day_choice" = "*" ]; then
+			crudays="$day_choice"
+			printf "\\n"
+			break
+		elif [ -z "$day_choice" ]; then
+			printf "\\n\\e[31mPlease enter a valid number (0-6) or comma separated values\\e[0m\\n"
 		else
-			if [ "$hour" -lt 0 ] || [ "$hour" -gt 23 ]; then
-				printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
-			else
-				starthour="$hour"
+			crudaystmp="$(echo "$day_choice" | sed "s/,/ /g")"
+			crudaysvalidated="true"
+			for i in $crudaystmp; do
+				if ! Validate_Number "$i"; then
+					printf "\\n\\e[31mPlease enter a valid number (0-6) or comma separated values\\e[0m\\n"
+					crudaysvalidated="false"
+					break
+				else
+					if [ "$i" -lt 0 ] || [ "$i" -gt 6 ]; then
+						printf "\\n\\e[31mPlease enter a number between 0 and 6 or comma separated values\\e[0m\\n"
+						crudaysvalidated="false"
+						break
+					fi
+				fi
+			done
+			if [ "$crudaysvalidated" = "true" ]; then
+				crudays="$day_choice"
 				printf "\\n"
 				break
 			fi
@@ -1360,71 +1419,278 @@ Menu_EditSchedule(){
 	
 	if [ "$exitmenu" != "exit" ]; then
 		while true; do
-			printf "\\n\\e[1mPlease enter an end hour (0-23):\\e[0m\\n"
-			read -r hour
+			printf "\\n\\e[1mPlease choose the format to specify the hour/minute(s) to run ping test:\\e[0m\\n"
+			printf "    1. Every X hours/minutes\\n"
+			printf "    2. Custom\\n\\n"
+			printf "Choose an option:  "
+			read -r formatmenu
 			
-			if [ "$hour" = "e" ]; then
-				exitmenu="exit"
-				break
-			elif ! Validate_Number "" "$hour" silent; then
-				printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
-			else
-				if [ "$hour" -lt 0 ] || [ "$hour" -gt 23 ]; then
-					printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
-				else
-					endhour="$hour"
+			case "$formatmenu" in
+				1)
+					formattype="everyx"
 					printf "\\n"
 					break
-				fi
-			fi
+				;;
+				2)
+					formattype="custom"
+					printf "\\n"
+					break
+				;;
+				e)
+					exitmenu="exit"
+					break
+				;;
+				*)
+					printf "\\n\\e[31mPlease enter a valid choice (1-2)\\e[0m\\n"
+				;;
+			esac
 		done
 	fi
 	
 	if [ "$exitmenu" != "exit" ]; then
-		TestSchedule update "$starthour" "$endhour"
+		if [ "$formattype" = "everyx" ]; then
+			while true; do
+				printf "\\n\\e[1mPlease choose whether to specify every X hours or every X minutes to run ping test:\\e[0m\\n"
+				printf "    1. Hours\\n"
+				printf "    2. Minutes\\n\\n"
+				printf "Choose an option:  "
+				read -r formatmenu
+				
+				case "$formatmenu" in
+					1)
+						formattype="hours"
+						printf "\\n"
+						break
+					;;
+					2)
+						formattype="mins"
+						printf "\\n"
+						break
+					;;
+					e)
+						exitmenu="exit"
+						break
+					;;
+					*)
+						printf "\\n\\e[31mPlease enter a valid choice (1-2)\\e[0m\\n"
+					;;
+				esac
+			done
+		fi
 	fi
-}
-
-Menu_ToggleOutputDataMode(){
-	if [ "$(OutputDataMode check)" = "raw" ]; then
-		OutputDataMode average
-	elif [ "$(OutputDataMode check)" = "average" ]; then
-		OutputDataMode raw
+	
+	if [ "$exitmenu" != "exit" ]; then
+		if [ "$formattype" = "hours" ]; then
+			while true; do
+				printf "\\n\\e[1mPlease choose how often to run ping test (every X hours, where X is 1-24):\\e[0m    "
+				read -r hour_choice
+				
+				if [ "$hour_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif ! Validate_Number "$hour_choice"; then
+						printf "\\n\\e[31mPlease enter a valid number (1-24)\\e[0m\\n"
+				elif [ "$hour_choice" -lt 1 ] || [ "$hour_choice" -gt 24 ]; then
+					printf "\\n\\e[31mPlease enter a number between 1 and 24\\e[0m\\n"
+				elif [ "$hour_choice" -eq 24 ]; then
+					cruhours="0"
+					crumins="0"
+					printf "\\n"
+					break
+				else
+					cruhours="*/$hour_choice"
+					crumins="0"
+					printf "\\n"
+					break
+				fi
+			done
+		elif [ "$formattype" = "mins" ]; then
+			while true; do
+				printf "\\n\\e[1mPlease choose how often to run ping test (every X minutes, where X is 1-30):\\e[0m    "
+				read -r min_choice
+				
+				if [ "$min_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif ! Validate_Number "$min_choice"; then
+						printf "\\n\\e[31mPlease enter a valid number (1-30)\\e[0m\\n"
+				elif [ "$min_choice" -lt 1 ] || [ "$min_choice" -gt 30 ]; then
+					printf "\\n\\e[31mPlease enter a number between 1 and 30\\e[0m\\n"
+				else
+					crumins="*/$min_choice"
+					cruhours="*"
+					printf "\\n"
+					break
+				fi
+			done
+		fi
 	fi
-}
-
-Menu_ToggleOutputTimeMode(){
-	if [ "$(OutputTimeMode check)" = "unix" ]; then
-		OutputTimeMode non-unix
-	elif [ "$(OutputTimeMode check)" = "non-unix" ]; then
-		OutputTimeMode unix
+	
+	if [ "$exitmenu" != "exit" ]; then
+		if [ "$formattype" = "custom" ]; then
+			while true; do
+				printf "\\n\\e[1mPlease choose which hour(s) to run ping test (0-23, * for every hour, or comma separated hours):\\e[0m    "
+				read -r hour_choice
+				
+				if [ "$hour_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif [ "$hour_choice" = "*" ]; then
+					cruhours="$hour_choice"
+					printf "\\n"
+					break
+				else
+					cruhourstmp="$(echo "$hour_choice" | sed "s/,/ /g")"
+					cruhoursvalidated="true"
+					for i in $cruhourstmp; do
+						if echo "$i" | grep -q "-"; then
+							if [ "$i" = "-" ]; then
+								printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+								cruhoursvalidated="false"
+								break
+							fi
+							cruhourstmp2="$(echo "$i" | sed "s/-/ /")"
+							for i2 in $cruhourstmp2; do
+								if ! Validate_Number "$i2"; then
+									printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+									cruhoursvalidated="false"
+									break
+								elif [ "$i2" -lt 0 ] || [ "$i2" -gt 23 ]; then
+									printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
+									cruhoursvalidated="false"
+									break
+								fi
+							done
+						elif echo "$i" | grep -q "/"; then
+							cruhourstmp3="$(echo "$i" | sed "s/\*\///")"
+							if ! Validate_Number "$cruhourstmp3"; then
+								printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+								cruhoursvalidated="false"
+								break
+							elif [ "$cruhourstmp3" -lt 0 ] || [ "$cruhourstmp3" -gt 23 ]; then
+								printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
+								cruhoursvalidated="false"
+								break
+							fi
+						elif ! Validate_Number "$i"; then
+							printf "\\n\\e[31mPlease enter a valid number (0-23) or comma separated values\\e[0m\\n"
+							cruhoursvalidated="false"
+							break
+						elif [ "$i" -lt 0 ] || [ "$i" -gt 23 ]; then
+							printf "\\n\\e[31mPlease enter a number between 0 and 23 or comma separated values\\e[0m\\n"
+							cruhoursvalidated="false"
+							break
+						fi
+					done
+					if [ "$cruhoursvalidated" = "true" ]; then
+						if echo "$hour_choice" | grep -q "-"; then
+							cruhours1="$(echo "$hour_choice" | cut -f1 -d'-')"
+							cruhours2="$(echo "$hour_choice" | cut -f2 -d'-')"
+							if [ "$cruhours1" -lt "$cruhours2" ]; then
+								cruhours="$hour_choice"
+							elif [ "$cruhours2" -lt "$cruhours1" ]; then
+								cruhours="$cruhours1-23,0-$cruhours2"
+							fi
+						else
+							cruhours="$hour_choice"
+						fi
+						printf "\\n"
+						break
+					fi
+				fi
+			done
+		fi
 	fi
-}
-
-Menu_ToggleStorageLocation(){
-	if [ "$(ScriptStorageLocation check)" = "jffs" ]; then
-		ScriptStorageLocation usb
-		Create_Symlinks
-	elif [ "$(ScriptStorageLocation check)" = "usb" ]; then
-		ScriptStorageLocation jffs
-		Create_Symlinks
+	
+	if [ "$exitmenu" != "exit" ]; then
+		if [ "$formattype" = "custom" ]; then
+			while true; do
+				printf "\\n\\e[1mPlease choose which minutes(s) to run ping test (0-59, * for every minute, or comma separated minutes):\\e[0m    "
+				read -r min_choice
+				
+				if [ "$min_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif [ "$min_choice" = "*" ]; then
+					crumins="$min_choice"
+					printf "\\n"
+					break
+				else
+					cruminstmp="$(echo "$min_choice" | sed "s/,/ /g")"
+					cruminsvalidated="true"
+					for i in $cruminstmp; do
+						if echo "$i" | grep -q "-"; then
+							if [ "$i" = "-" ]; then
+								printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+								cruminsvalidated="false"
+								break
+							fi
+							cruminstmp2="$(echo "$i" | sed "s/-/ /")"
+							for i2 in $cruminstmp2; do
+								if ! Validate_Number "$i2"; then
+									printf "\\n\\e[31mPlease enter a valid number (0-59)\\e[0m\\n"
+									cruminsvalidated="false"
+									break
+								elif [ "$i2" -lt 0 ] || [ "$i2" -gt 59 ]; then
+									printf "\\n\\e[31mPlease enter a number between 0 and 59\\e[0m\\n"
+									cruminsvalidated="false"
+									break
+								fi
+							done
+						elif echo "$i" | grep -q "/"; then
+							cruminstmp3="$(echo "$i" | sed "s/\*\///")"
+							if ! Validate_Number "$cruminstmp3"; then
+								printf "\\n\\e[31mPlease enter a valid number (0-30)\\e[0m\\n"
+								cruminsvalidated="false"
+								break
+							elif [ "$cruminstmp3" -lt 0 ] || [ "$cruminstmp3" -gt 30 ]; then
+								printf "\\n\\e[31mPlease enter a number between 0 and 30\\e[0m\\n"
+								cruminsvalidated="false"
+								break
+							fi
+						elif ! Validate_Number "$i"; then
+							printf "\\n\\e[31mPlease enter a valid number (0-59) or comma separated values\\e[0m\\n"
+							cruminsvalidated="false"
+							break
+						elif [ "$i" -lt 0 ] || [ "$i" -gt 59 ]; then
+							printf "\\n\\e[31mPlease enter a number between 0 and 59 or comma separated values\\e[0m\\n"
+							cruminsvalidated="false"
+							break
+						fi
+					done
+					
+					if [ "$cruminsvalidated" = "true" ]; then
+						if echo "$min_choice" | grep -q "-"; then
+							crumins1="$(echo "$min_choice" | cut -f1 -d'-')"
+							crumins2="$(echo "$min_choice" | cut -f2 -d'-')"
+							if [ "$crumins1" -lt "$crumins2" ]; then
+								crumins="$min_choice"
+							elif [ "$crumins2" -lt "$crumins1" ]; then
+								crumins="$crumins1-59,0-$crumins2"
+							fi
+						else
+							crumins="$min_choice"
+						fi
+						printf "\\n"
+						break
+					fi
+				fi
+			done
+		fi
 	fi
-}
-
-Menu_Update(){
-	Update_Version
-	Clear_Lock
-}
-
-Menu_ForceUpdate(){
-	Update_Version force
-	Clear_Lock
+	
+	if [ "$exitmenu" != "exit" ]; then
+		TestSchedule update "$crudays" "$cruhours" "$crumins"
+		return 0
+	else
+		return 1
+	fi
 }
 
 Menu_ResetDB(){
 	printf "\\e[1m\\e[33mWARNING: This will reset the %s database by deleting all database records.\\n" "$SCRIPT_NAME"
 	printf "A backup of the database will be created if you change your mind.\\e[0m\\n"
-	printf "\\n\\e[1mDo you want to continue? (y/n)\\e[0m\\n"
+	printf "\\n\\e[1mDo you want to continue? (y/n)\\e[0m  "
 	read -r confirm
 	case "$confirm" in
 		y|Y)
@@ -1458,10 +1724,9 @@ Menu_Uninstall(){
 		rm -rf "{$SCRIPT_WEBPAGE_DIR:?}/$MyPage"
 	fi
 	flock -u "$FD"
-	
 	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null
 	
-	printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m\\n" "$SCRIPT_NAME"
+	printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m  " "$SCRIPT_NAME"
 	read -r confirm
 	case "$confirm" in
 		y|Y)
@@ -1485,17 +1750,15 @@ Menu_Uninstall(){
 
 NTP_Ready(){
 	if [ "$(nvram get ntp_ready)" -eq 0 ]; then
-		ntpwaitcount="0"
+		ntpwaitcount=0
 		Check_Lock
-		while [ "$(nvram get ntp_ready)" -eq 0 ] && [ "$ntpwaitcount" -lt 300 ]; do
-			ntpwaitcount="$((ntpwaitcount + 1))"
-			if [ "$ntpwaitcount" -eq 60 ]; then
-				Print_Output true "Waiting for NTP to sync..." "$WARN"
-			fi
-			sleep 1
+		while [ "$(nvram get ntp_ready)" -eq 0 ] && [ "$ntpwaitcount" -lt 600 ]; do
+			ntpwaitcount="$((ntpwaitcount + 30))"
+			Print_Output true "Waiting for NTP to sync..." "$WARN"
+			sleep 30
 		done
-		if [ "$ntpwaitcount" -ge 300 ]; then
-			Print_Output true "NTP failed to sync after 5 minutes. Please resolve!" "$CRIT"
+		if [ "$ntpwaitcount" -ge 600 ]; then
+			Print_Output true "NTP failed to sync after 10 minutes. Please resolve!" "$CRIT"
 			Clear_Lock
 			exit 1
 		else
@@ -1527,6 +1790,49 @@ Entware_Ready(){
 }
 ### ###
 
+### function based on @dave14305's FlexQoS about function ###
+Show_About(){
+	cat <<EOF
+About
+  $SCRIPT_NAME is an internet connection monitoring tool for
+  AsusWRT Merlin with charts for daily, weekly and monthly
+  summaries.
+
+License
+  $SCRIPT_NAME is free to use under the GNU General Public License
+  version 3 (GPL-3.0) https://opensource.org/licenses/GPL-3.0
+
+Help & Support
+  https://www.snbforums.com/forums/asuswrt-merlin-addons.60/?prefix_id=18
+
+Source code
+  https://github.com/jackyaz/$SCRIPT_NAME
+EOF
+	printf "\\n"
+}
+### ###
+
+### function based on @dave14305's FlexQoS show_help function ###
+Show_Help(){
+	cat <<EOF
+Available commands:
+  $SCRIPT_NAME about              explains functionality
+  $SCRIPT_NAME update             checks for updates
+  $SCRIPT_NAME forceupdate        updates to latest version (force update)
+  $SCRIPT_NAME startup force      runs startup actions such as mount WebUI tab
+  $SCRIPT_NAME install            installs script
+  $SCRIPT_NAME uninstall          uninstalls script
+  $SCRIPT_NAME generate           run ping test and save to database. also runs outputcsv
+  $SCRIPT_NAME outputcsv          create CSVs from database, used by WebUI and export
+  $SCRIPT_NAME enable             enable automatic ping tests
+  $SCRIPT_NAME disable            disable automatic ping tests
+  $SCRIPT_NAME develop            switch to development branch
+  $SCRIPT_NAME stable             switch to stable branch
+EOF
+	printf "\\n"
+}
+### ###
+
 if [ -f "/opt/share/$SCRIPT_NAME.d/config" ]; then
 	SCRIPT_CONF="/opt/share/$SCRIPT_NAME.d/config"
 	SCRIPT_STORAGE_DIR="/opt/share/$SCRIPT_NAME.d"
@@ -1547,12 +1853,11 @@ if [ -z "$1" ]; then
 	fi
 	Create_Dirs
 	Conf_Exists
-	Set_Version_Custom_Settings local
 	ScriptStorageLocation load
 	Create_Symlinks
 	Process_Upgrade
 	Auto_Startup create 2>/dev/null
-	Auto_Cron create 2>/dev/null
+	if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
 	ScriptHeader
@@ -1574,7 +1879,8 @@ case "$1" in
 		NTP_Ready
 		Entware_Ready
 		Check_Lock
-		Menu_GenerateStats
+		Run_PingTest
+		Clear_Lock
 		exit 0
 	;;
 	outputcsv)
@@ -1585,10 +1891,21 @@ case "$1" in
 		Clear_Lock
 		exit 0
 	;;
+	enable)
+		Entware_Ready
+		AutomaticMode enable
+		exit 0
+	;;
+	disable)
+		Entware_Ready
+		AutomaticMode disable
+		exit 0
+	;;
 	service_event)
 		if [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME" ]; then
 			Check_Lock webui
-			Menu_GenerateStats
+			Run_PingTest
+			Clear_Lock
 			exit 0
 		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}config" ]; then
 			Conf_FromSettings
@@ -1603,33 +1920,37 @@ case "$1" in
 		exit 0
 	;;
 	update)
-		Update_Version unattended
+		Update_Version
 		exit 0
 	;;
 	forceupdate)
-		Update_Version force unattended
+		Update_Version force
 		exit 0
 	;;
 	setversion)
-		Set_Version_Custom_Settings local
+		Create_Dirs
+		Conf_Exists
+		ScriptStorageLocation load
+		Create_Symlinks
+		Process_Upgrade
+		Auto_Startup create 2>/dev/null
+		if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
+		Auto_ServiceEvent create 2>/dev/null
+		Shortcut_Script create
+		Set_Version_Custom_Settings local "$SCRIPT_VERSION"
 		Set_Version_Custom_Settings server "$SCRIPT_VERSION"
-		if [ -z "$2" ]; then
-			exec "$0"
-		else
-			Create_Dirs
-			Conf_Exists
-			ScriptStorageLocation load
-			Create_Symlinks
-			Process_Upgrade
-			Auto_Startup create 2>/dev/null
-			Auto_Cron create 2>/dev/null
-			Auto_ServiceEvent create 2>/dev/null
-			Shortcut_Script create
-		fi
 		exit 0
 	;;
-	checkupdate)
-		Update_Check
+	postupdate)
+		Create_Dirs
+		Conf_Exists
+		ScriptStorageLocation load
+		Create_Symlinks
+		Process_Upgrade
+		Auto_Startup create 2>/dev/null
+		if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
+		Auto_ServiceEvent create 2>/dev/null
+		Shortcut_Script create
 		exit 0
 	;;
 	uninstall)
@@ -1649,8 +1970,20 @@ case "$1" in
 		Update_Version force
 		exit 0
 	;;
+	about)
+		ScriptHeader
+		Show_About
+		exit 0
+	;;
+	help)
+		ScriptHeader
+		Show_Help
+		exit 0
+	;;
 	*)
-		echo "Command not recognised, please try again"
+		ScriptHeader
+		Print_Output false "Command not recognised." "$ERR"
+		Print_Output false "For a list of available commands run: $SCRIPT_NAME help"
 		exit 1
 	;;
 esac
