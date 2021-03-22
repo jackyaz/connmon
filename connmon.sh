@@ -1737,7 +1737,7 @@ Menu_Uninstall(){
 		;;
 	esac
 	
-	SETTINGSFILE=/jffs/addons/custom_settings.txt
+	SETTINGSFILE="/jffs/addons/custom_settings.txt"
 	sed -i '/connmon_version_local/d' "$SETTINGSFILE"
 	sed -i '/connmon_version_server/d' "$SETTINGSFILE"
 	
