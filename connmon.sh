@@ -1136,7 +1136,7 @@ MainMenu(){
 	printf "1.    Check connection now\\n\\n"
 	printf "2.    Set preferred ping server\\n      Currently: ${SETTING}%s\\e[0m\\n\\n" "$(PingServer check)"
 	printf "3.    Set ping test duration\\n      Currently: ${SETTING}%ss\\e[0m\\n\\n" "$(PingDuration check)"
-	printf "4.    Toggle automatic ping tests\\n      Currently \\e[1m$AUTOMATIC_ENABLED\\e[0m\\n\\n"
+	printf "4.    Toggle automatic ping tests\\n      Currently: \\e[1m$AUTOMATIC_ENABLED\\e[0m\\n\\n"
 	printf "5.    Set schedule for automatic ping tests\\n      ${SETTING}%s\\n      %s\\e[0m\\n\\n" "$TEST_SCHEDULE_MENU" "$TEST_SCHEDULE_MENU2"
 	printf "6.    Toggle data output mode\\n      Currently ${SETTING}%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode check)"
 	printf "7.    Toggle time output mode\\n      Currently ${SETTING}%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
@@ -1737,7 +1737,7 @@ Menu_Uninstall(){
 		;;
 	esac
 	
-	SETTINGSFILE=/jffs/addons/custom_settings.txt
+	SETTINGSFILE="/jffs/addons/custom_settings.txt"
 	sed -i '/connmon_version_local/d' "$SETTINGSFILE"
 	sed -i '/connmon_version_server/d' "$SETTINGSFILE"
 	
