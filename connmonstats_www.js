@@ -669,7 +669,7 @@ function GetCookie(cookiename,returntype){
 }
 
 function SetCookie(cookiename,cookievalue){
-	cookie.set("conn_"+cookiename, cookievalue, 10 * 365 * 24 * 60 * 60);
+	cookie.set("conn_"+cookiename, cookievalue, 10 * 365);
 }
 
 function AddEventHandlers(){
