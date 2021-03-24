@@ -19,7 +19,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.9.0"
+readonly SCRIPT_VERSION="v2.9.1"
 SCRIPT_BRANCH="master"
 SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -292,7 +292,7 @@ Conf_FromSettings(){
 			while IFS='' read -r line || [ -n "$line" ]; do
 				SETTINGNAME="$(echo "$line" | cut -f1 -d'=' | awk '{ print toupper($1) }')"
 				SETTINGVALUE="$(echo "$line" | cut -f2 -d'=')"
-				sed -i "s/$SETTINGNAME=.*/$SETTINGNAME=$SETTINGVALUE/" "$SCRIPT_CONF"
+				sed -i "s~$SETTINGNAME=.*~$SETTINGNAME=$SETTINGVALUE~" "$SCRIPT_CONF"
 			done < "$TMPFILE"
 			grep 'connmon_version' "$SETTINGSFILE" > "$TMPFILE"
 			sed -i "\\~connmon_~d" "$SETTINGSFILE"
