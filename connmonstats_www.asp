@@ -113,6 +113,7 @@ td.nodata {
   height: 23px;
   vertical-align: middle;
 }
+
 .SettingsTable select {
   margin-left: 3px !important;
 }
