@@ -1497,13 +1497,13 @@ Menu_EditSchedule(){
 				elif [ "$hour_choice" -lt 1 ] || [ "$hour_choice" -gt 24 ]; then
 					printf "\\n\\e[31mPlease enter a number between 1 and 24\\e[0m\\n"
 				elif [ "$hour_choice" -eq 24 ]; then
-					cruhours="0"
-					crumins="0"
+					cruhours=0
+					crumins=0
 					printf "\\n"
 					break
 				else
 					cruhours="*/$hour_choice"
-					crumins="0"
+					crumins=0
 					printf "\\n"
 					break
 				fi
