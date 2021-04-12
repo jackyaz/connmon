@@ -986,7 +986,7 @@ Generate_CSVs(){
 			echo ".mode csv"
 			echo ".headers on"
 			echo ".output $CSV_OUTPUT_DIR/${metric}_raw_daily.htm"
-			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400) ORDER BY [Timestamp] DESC;"
+			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-1 day'))) ORDER BY [Timestamp] DESC;"
 		} > /tmp/connmon-stats.sql
 		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 		
@@ -994,7 +994,7 @@ Generate_CSVs(){
 			echo ".mode csv"
 			echo ".headers on"
 			echo ".output $CSV_OUTPUT_DIR/${metric}_raw_weekly.htm"
-			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400*7) ORDER BY [Timestamp] DESC;"
+			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-7 day'))) ORDER BY [Timestamp] DESC;"
 		} > /tmp/connmon-stats.sql
 		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 		
@@ -1002,7 +1002,7 @@ Generate_CSVs(){
 			echo ".mode csv"
 			echo ".headers on"
 			echo ".output $CSV_OUTPUT_DIR/${metric}_raw_monthly.htm"
-			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400*30) ORDER BY [Timestamp] DESC;"
+			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-30 day'))) ORDER BY [Timestamp] DESC;"
 		} > /tmp/connmon-stats.sql
 		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 		
@@ -1037,7 +1037,7 @@ Generate_CSVs(){
 		echo ".headers on"
 		echo ".output $CSV_OUTPUT_DIR/CompleteResults.htm"
 	} > /tmp/connmon-complete.sql
-	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats WHERE [Timestamp] >= ($timenow - 86400*30) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
+	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-30 day'))) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-complete.sql
 	rm -f /tmp/connmon-complete.sql
 	
