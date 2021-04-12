@@ -820,14 +820,13 @@ WriteStats_ToJS(){
 WriteSql_ToFile(){
 	timenow="$8"
 	maxcount="$(echo "$3" "$4" | awk '{printf ((24*$2)/$1)}')"
-	multiplier="$(echo "$3" | awk '{printf (60*60*$1)}')"
 	
 	if ! echo "$5" | grep -q "day"; then
 		{
 			echo ".mode csv"
 			echo ".headers on"
 			echo ".output ${5}_${6}.htm"
-			echo "SELECT '$1' Metric, Min([Timestamp]) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= $timenow - ($multiplier*$maxcount)) GROUP BY ([Timestamp]/($multiplier)) ORDER BY [Timestamp] DESC;"
+			echo "SELECT '$1' Metric, Min(strftime('%s',datetime(strftime('%Y-%m-%d %H:00:00',datetime([Timestamp],'unixepoch'))))) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-$maxcount hour'))) GROUP BY strftime('%m',datetime([Timestamp],'unixepoch')),strftime('%d',datetime([Timestamp],'unixepoch')),strftime('%H',datetime([Timestamp],'unixepoch')) ORDER BY [Timestamp] DESC;"
 		} >> "$7"
 	else
 		if [ "$maxcount" -eq 1 ]; then
@@ -837,7 +836,7 @@ WriteSql_ToFile(){
 			echo ".mode csv"
 			echo ".headers on"
 			echo ".output ${5}_${6}.htm"
-			echo "SELECT '$1' Metric, Min(strftime('%s',datetime([Timestamp],'unixepoch','start of day'))) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','start of day','-$maxcount day'))) GROUP BY strftime('%d',datetime([Timestamp],'unixepoch','start of day')) ORDER BY [Timestamp] DESC;"
+			echo "SELECT '$1' Metric, Min(strftime('%s',datetime([Timestamp],'unixepoch','start of day'))) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','start of day','-$maxcount day'))) GROUP BY strftime('%m',datetime([Timestamp],'unixepoch')),strftime('%d',datetime([Timestamp],'unixepoch')) ORDER BY [Timestamp] DESC;"
 		} >> "$7"
 	fi
 }
