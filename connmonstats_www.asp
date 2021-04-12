@@ -103,7 +103,7 @@ td.nodata {
   border-right: solid 1px black;
   border-left: solid 1px black;
   border-bottom: solid 1px black;
-  background-color:rgb(77, 89, 93);
+  background-color:rgb(77,89,93);
 }
 
 .SettingsTable .cronbutton {
@@ -218,14 +218,1275 @@ var custom_settings;
 function LoadCustomSettings(){
 	custom_settings = <% get_custom_settings(); %>;
 	for(var prop in custom_settings) {
-		if(Object.prototype.hasOwnProperty.call(custom_settings, prop)) {
-			if(prop.indexOf("connmon") != -1 && prop.indexOf("connmon_version") == -1){
-				eval("delete custom_settings."+prop)
+		if(Object.prototype.hasOwnProperty.call(custom_settings,prop)) {
+			if(prop.indexOf('connmon') != -1 && prop.indexOf('connmon_version') == -1){
+				eval('delete custom_settings.'+prop)
 			}
 		}
 	}
 }
-var $j=jQuery.noConflict(),daysofweek=["Mon","Tues","Wed","Thurs","Fri","Sat","Sun"],pingtestdur=60,maxNoCharts=9,currentNoCharts=0,ShowLines=GetCookie("ShowLines","string"),ShowFill=GetCookie("ShowFill","string");""==ShowFill&&(ShowFill="origin");var DragZoom=!0,ChartPan=!1;Chart.defaults.global.defaultFontColor="#CCC",Chart.Tooltip.positioners.cursor=function(a,b){return b};var metriclist=["Ping","Jitter","LineQuality"],titlelist=["Ping","Jitter","Quality"],measureunitlist=["ms","ms","%"],chartlist=["daily","weekly","monthly"],timeunitlist=["hour","day","day"],intervallist=[24,7,30],bordercolourlist=["#fc8500","#42ecf5","#ffffff"],backgroundcolourlist=["rgba(252,133,0,0.5)","rgba(66,236,245,0.5)","rgba(255,255,255,0.5)"];function SettingHint(a){for(var b=document.getElementsByTagName("a"),c=0;c<b.length;c++)b[c].onmouseout=nd;return hinttext="My text goes here",1==a&&(hinttext="Hour(s) of day to run ping test<br />* for all<br />Valid numbers between 0 and 23<br />comma (,) separate for multiple<br />dash (-) separate for a range"),2==a&&(hinttext="Minute(s) of day to run ping test<br />(* for all<br />Valid numbers between 0 and 59<br />comma (,) separate for multiple<br />dash (-) separate for a range"),overlib(hinttext,0,0)}function keyHandler(a){27==a.keyCode&&($j(document).off("keydown"),ResetZoom())}$j(document).keydown(function(a){keyHandler(a)}),$j(document).keyup(function(){$j(document).keydown(function(a){keyHandler(a)})});function Validate_IP(a){var b=a.value,c=a.name;return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(b)?($j(a).removeClass("invalid"),!0):($j(a).addClass("invalid"),!1)}function Validate_Domain(a){var b=a.value,c=a.name;return /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/.test(b)?($j(a).removeClass("invalid"),!0):($j(a).addClass("invalid"),!1)}function Validate_PingDuration(a){var b=a.name,c=1*a.value;return 60<c||10>c?($j(a).addClass("invalid"),!1):($j(a).removeClass("invalid"),!0)}function Validate_Schedule(a,b){var c=a.name,d=a.value.split(","),e=0;"hours"==b?e=23:"mins"==b&&(e=59),showhide("btnfixhours",!1),showhide("btnfixmins",!1);for(var f="false",g=0;g<d.length;g++)if("*"==d[g]&&0==g)f="false";else if("*"==d[g]&&0!=g)f="true";else if("*"==d[0]&&0<g)f="true";else if(""==d[g])f="true";else if(d[g].startsWith("*/"))isNaN(1*d[g].replace("*/",""))?f="true":(1*d[g].replace("*/","")>e||0>1*d[g].replace("*/",""))&&(f="true");else if(!(-1!=d[g].indexOf("-")))isNaN(1*d[g])?f="true":(1*d[g]>e||0>1*d[g])&&(f="true");else if(d[g].startsWith("-"))f="true";else for(var h=d[g].split("-"),j=0;j<h.length;j++)""==h[j]?f="true":isNaN(1*h[j])?f="true":1*h[j]>e||0>1*h[j]?f="true":1*h[j+1]<1*h[j]&&(f="true","hours"==b?showhide("btnfixhours",!0):"mins"==b&&showhide("btnfixmins",!0));return"true"==f?($j(a).addClass("invalid"),!1):($j(a).removeClass("invalid"),!0)}function Validate_ScheduleValue(a){var b=a.name,c=1*a.value,d=0,e=$j("#everyxselect").val();return"hours"==e?d=24:"minutes"==e&&(d=30),c>d||c<1||1>a.value.length?($j(a).addClass("invalid"),!1):($j(a).removeClass("invalid"),!0)}function Validate_All(){var a=!1;return Validate_IP(document.form.connmon_ipaddr)||(a=!0),Validate_Domain(document.form.connmon_domain)||(a=!0),Validate_PingDuration(document.form.connmon_pingduration)||(a=!0),"EveryX"==document.form.schedulemode.value?!Validate_ScheduleValue(document.form.everyxvalue)&&(a=!0):"Custom"==document.form.schedulemode.value&&(!Validate_Schedule(document.form.connmon_schhours,"hours")&&(a=!0),!Validate_Schedule(document.form.connmon_schmins,"mins")&&(a=!0)),!a||(alert("Validation for some fields failed. Please correct invalid values and try again."),!1)}function FixCron(a){if("hours"==a){var b=document.form.connmon_schhours.value;document.form.connmon_schhours.value=b.split("-")[0]+"-23,0-"+b.split("-")[1],Validate_Schedule(document.form.connmon_schhours,"hours")}else if("mins"==a){var b=document.form.connmon_schmins.value;document.form.connmon_schmins.value=b.split("-")[0]+"-59,0-"+b.split("-")[1],Validate_Schedule(document.form.connmon_schmins,"mins")}}function changePingType(a){var b=a.value,c=a.name;"0"==b?(document.getElementById("rowip").style.display="",document.getElementById("rowdomain").style.display="none"):(document.getElementById("rowip").style.display="none",document.getElementById("rowdomain").style.display="")}function Draw_Chart_NoData(a){document.getElementById("divLineChart_"+a).width="730",document.getElementById("divLineChart_"+a).height="500",document.getElementById("divLineChart_"+a).style.width="730px",document.getElementById("divLineChart_"+a).style.height="500px";var b=document.getElementById("divLineChart_"+a).getContext("2d");b.save(),b.textAlign="center",b.textBaseline="middle",b.font="normal normal bolder 48px Arial",b.fillStyle="white",b.fillText("No data to display",365,250),b.restore()}function Draw_Chart(a,b,c,d,e){var f=getChartPeriod($j("#"+a+"_Period option:selected").val()),g=timeunitlist[$j("#"+a+"_Period option:selected").val()],h=intervallist[$j("#"+a+"_Period option:selected").val()],i=window[a+f];if("undefined"==typeof i||null===i)return void Draw_Chart_NoData(a);if(0==i.length)return void Draw_Chart_NoData(a);var j=i.map(function(a){return a.Metric}),k=i.map(function(a){return{x:a.Time,y:a.Value}}),l=window["LineChart_"+a],m=getTimeFormat($j("#Time_Format option:selected").val(),"axis"),n=getTimeFormat($j("#Time_Format option:selected").val(),"tooltip");factor=0,"hour"==g?factor=3600000:"day"==g&&(factor=86400000),l!=null&&l.destroy();var o=document.getElementById("divLineChart_"+a).getContext("2d"),p={segmentShowStroke:!1,segmentStrokeColor:"#000",animationEasing:"easeOutQuart",animationSteps:100,maintainAspectRatio:!1,animateScale:!0,hover:{mode:"point"},legend:{display:!1,position:"bottom",onClick:null},title:{display:!0,text:b},tooltips:{callbacks:{title:function(a){return moment(a[0].xLabel,"X").format(n)},label:function(a,b){return round(b.datasets[a.datasetIndex].data[a.index].y,2).toFixed(2)+" "+c}},mode:"point",position:"cursor",intersect:!0},scales:{xAxes:[{type:"time",gridLines:{display:!0,color:"#282828"},ticks:{min:moment().subtract(h,g+"s"),display:!0},time:{parser:"X",unit:g,stepSize:1,displayFormats:m}}],yAxes:[{type:getChartScale($j("#"+a+"_Scale option:selected").val()),gridLines:{display:!1,color:"#282828"},scaleLabel:{display:!1,labelString:c},ticks:{display:!0,beginAtZero:!0,max:getYAxisMax(a),labels:{index:["min","max"],removeEmptyLines:!0},userCallback:LogarithmicFormatter}}]},plugins:{zoom:{pan:{enabled:ChartPan,mode:"xy",rangeMin:{x:new Date().getTime()-factor*h,y:0},rangeMax:{x:new Date().getTime(),y:getLimit(k,"y","max",!1)+.1*getLimit(k,"y","max",!1)}},zoom:{enabled:!0,drag:DragZoom,mode:"xy",rangeMin:{x:new Date().getTime()-factor*h,y:0},rangeMax:{x:new Date().getTime(),y:getLimit(k,"y","max",!1)+.1*getLimit(k,"y","max",!1)},speed:.1}}},annotation:{drawTime:"afterDatasetsDraw",annotations:[{type:ShowLines,mode:"horizontal",scaleID:"y-axis-0",value:getAverage(k),borderColor:d,borderWidth:1,borderDash:[5,5],label:{backgroundColor:"rgba(0,0,0,0.3)",fontFamily:"sans-serif",fontSize:10,fontStyle:"bold",fontColor:"#fff",xPadding:6,yPadding:6,cornerRadius:6,position:"center",enabled:!0,xAdjust:0,yAdjust:0,content:"Avg="+round(getAverage(k),2).toFixed(2)+c}},{type:ShowLines,mode:"horizontal",scaleID:"y-axis-0",value:getLimit(k,"y","max",!0),borderColor:d,borderWidth:1,borderDash:[5,5],label:{backgroundColor:"rgba(0,0,0,0.3)",fontFamily:"sans-serif",fontSize:10,fontStyle:"bold",fontColor:"#fff",xPadding:6,yPadding:6,cornerRadius:6,position:"right",enabled:!0,xAdjust:15,yAdjust:0,content:"Max="+round(getLimit(k,"y","max",!0),2).toFixed(2)+c}},{type:ShowLines,mode:"horizontal",scaleID:"y-axis-0",value:getLimit(k,"y","min",!0),borderColor:d,borderWidth:1,borderDash:[5,5],label:{backgroundColor:"rgba(0,0,0,0.3)",fontFamily:"sans-serif",fontSize:10,fontStyle:"bold",fontColor:"#fff",xPadding:6,yPadding:6,cornerRadius:6,position:"left",enabled:!0,xAdjust:15,yAdjust:0,content:"Min="+round(getLimit(k,"y","min",!0),2).toFixed(2)+c}}]}},q={labels:j,datasets:[{data:k,borderWidth:1,pointRadius:1,lineTension:0,fill:ShowFill,backgroundColor:e,borderColor:d}]};l=new Chart(o,{type:"line",options:p,data:q}),window["LineChart_"+a]=l}function LogarithmicFormatter(a,b,c){var d=this.options.scaleLabel.labelString;if("logarithmic"!=this.type)return isNaN(a)?a+" "+d:round(a,2).toFixed(2)+" "+d;var e=this.options.ticks.labels||{},f=e.index||["min","max"],g=e.significand||[1,2,5],h=a/Math.pow(10,Math.floor(Chart.helpers.log10(a))),i=!0===e.removeEmptyLines?void 0:"",j="";return 0===b?j="min":b==c.length-1&&(j="max"),"all"===e||-1!==g.indexOf(h)||-1!==f.indexOf(b)||-1!==f.indexOf(j)?0===a?"0 "+d:isNaN(a)?a+" "+d:round(a,2).toFixed(2)+" "+d:i}function getLimit(a,b,c,d){var e,f=0;return e="x"==b?a.map(function(a){return a.x}):a.map(function(a){return a.y}),f="max"==c?Math.max.apply(Math,e):Math.min.apply(Math,e),"max"==c&&0==f&&!1==d&&(f=1),f}function getYAxisMax(a){if("LineQuality"==a)return 100}function getAverage(a){for(var b=0,c=0;c<a.length;c++)b+=1*a[c].y;var d=b/a.length;return d}function round(a,b){return+(Math.round(a+"e"+b)+"e-"+b)}function ToggleLines(){""==ShowLines?(ShowLines="line",SetCookie("ShowLines","line")):(ShowLines="",SetCookie("ShowLines",""));for(var a=0;a<metriclist.length;a++){for(var b=0;3>b;b++)window["LineChart_"+metriclist[a]].options.annotation.annotations[b].type=ShowLines;window["LineChart_"+metriclist[a]].update()}}function ToggleFill(){"false"==ShowFill?(ShowFill="origin",SetCookie("ShowFill","origin")):(ShowFill="false",SetCookie("ShowFill","false"));for(var a=0;a<metriclist.length;a++)window["LineChart_"+metriclist[a]].data.datasets[0].fill=ShowFill,window["LineChart_"+metriclist[a]].update()}function RedrawAllCharts(){for(var a=0;a<metriclist.length;a++)for(var b=0;b<chartlist.length;b++)d3.csv("/ext/connmon/csv/"+metriclist[a]+chartlist[b]+".htm").then(SetGlobalDataset.bind(null,metriclist[a]+chartlist[b]))}function SetGlobalDataset(a,b){if(window[a]=b,currentNoCharts++,currentNoCharts==maxNoCharts){showhide("imgConnTest",!1),showhide("conntest_text",!1),showhide("btnRunPingtest",!0),BuildLastXTable();for(var c=0;c<metriclist.length;c++)$j("#"+metriclist[c]+"_Period").val(GetCookie(metriclist[c]+"_Period","number")),$j("#"+metriclist[c]+"_Scale").val(GetCookie(metriclist[c]+"_Scale","number")),Draw_Chart(metriclist[c],titlelist[c],measureunitlist[c],bordercolourlist[c],backgroundcolourlist[c]);AddEventHandlers()}}function getChartScale(a){var b="";return 0==a?b="linear":1==a&&(b="logarithmic"),b}function getTimeFormat(a,b){var c;return"axis"==b?0==a?c={millisecond:"HH:mm:ss.SSS",second:"HH:mm:ss",minute:"HH:mm",hour:"HH:mm"}:1==a&&(c={millisecond:"h:mm:ss.SSS A",second:"h:mm:ss A",minute:"h:mm A",hour:"h A"}):"tooltip"==b&&(0==a?c="YYYY-MM-DD HH:mm:ss":1==a&&(c="YYYY-MM-DD h:mm:ss A")),c}function GetCookie(a,b){var c;if(null!=(c=cookie.get("conn_"+a)))return cookie.get("conn_"+a);return"string"==b?"":"number"==b?0:void 0}function SetCookie(a,b){cookie.set("conn_"+a,b,3650)}function AddEventHandlers(){$j(".collapsible-jquery").off("click").on("click",function(){$j(this).siblings().toggle("fast",function(){"none"==$j(this).css("display")?SetCookie($j(this).siblings()[0].id,"collapsed"):SetCookie($j(this).siblings()[0].id,"expanded")})}),$j(".collapsible-jquery").each(function(){"collapsed"==GetCookie($j(this)[0].id,"string")?$j(this).siblings().toggle(!1):$j(this).siblings().toggle(!0)})}$j.fn.serializeObject=function(){var b=custom_settings,c=this.serializeArray();$j.each(c,function(){void 0!==b[this.name]&&-1!=this.name.indexOf("connmon")&&-1==this.name.indexOf("version")&&-1==this.name.indexOf("ipaddr")&&-1==this.name.indexOf("domain")&&-1==this.name.indexOf("schdays")?(!b[this.name].push&&(b[this.name]=[b[this.name]]),b[this.name].push(this.value||"")):-1!=this.name.indexOf("connmon")&&-1==this.name.indexOf("version")&&-1==this.name.indexOf("ipaddr")&&-1==this.name.indexOf("domain")&&-1==this.name.indexOf("schdays")&&(b[this.name]=this.value||"")});var a=[];$j.each($j("input[name='connmon_schdays']:checked"),function(){a.push($j(this).val())});var d=a.join(",");return"Mon,Tues,Wed,Thurs,Fri,Sat,Sun"==d&&(d="*"),b.connmon_schdays=d,b};function SetCurrentPage(){document.form.next_page.value=window.location.pathname.substring(1),document.form.current_page.value=window.location.pathname.substring(1)}function ParseCSVExport(a){for(var b,c="Timestamp,Ping,Jitter,LineQuality\n",d=0;d<a.length;d++)b=a[d].Timestamp+","+a[d].Ping+","+a[d].Jitter+","+a[d].LineQuality,c+=d<a.length-1?b+"\n":b;document.getElementById("aExport").href="data:text/csv;charset=utf-8,"+encodeURIComponent(c)}function ErrorCSVExport(){document.getElementById("aExport").href="javascript:alert(\"Error exporting CSV, please refresh the page and try again\")"}function initial(){SetCurrentPage(),LoadCustomSettings(),show_menu(),get_conf_file(),d3.csv("/ext/connmon/csv/CompleteResults.htm").then(function(a){ParseCSVExport(a)}).catch(function(){ErrorCSVExport()}),$j("#Time_Format").val(GetCookie("Time_Format","number")),RedrawAllCharts(),ScriptUpdateLayout(),SetConnmonStatsTitle()}function ScriptUpdateLayout(){var a=GetVersionNumber("local"),b=GetVersionNumber("server");$j("#connmon_version_local").text(a),a!=b&&"N/A"!=b&&($j("#connmon_version_server").text("Updated version available: "+b),showhide("btnChkUpdate",!1),showhide("connmon_version_server",!0),showhide("btnDoUpdate",!0))}function reload(){location.reload(!0)}function getChartPeriod(a){var b="daily";return 0==a?b="daily":1==a?b="weekly":2==a&&(b="monthly"),b}function ResetZoom(){for(var a,b=0;b<metriclist.length;b++)(a=window["LineChart_"+metriclist[b]],"undefined"!=typeof a&&null!==a)&&a.resetZoom()}function ToggleDragZoom(a){var b=!0,c=!1,d="";-1==a.value.indexOf("On")?(b=!0,c=!1,DragZoom=!0,ChartPan=!1,d="Drag Zoom On"):(b=!1,c=!0,DragZoom=!1,ChartPan=!0,d="Drag Zoom Off");for(var e,f=0;f<metriclist.length;f++)(e=window["LineChart_"+metriclist[f]],"undefined"!=typeof e&&null!==e)&&(e.options.plugins.zoom.zoom.drag=b,e.options.plugins.zoom.pan.enabled=c,a.value=d,e.update())}function update_status(){$j.ajax({url:"/ext/connmon/detect_update.js",dataType:"script",timeout:3e3,error:function(){setTimeout(update_status,1e3)},success:function(){"InProgress"==updatestatus?setTimeout(update_status,1e3):(document.getElementById("imgChkUpdate").style.display="none",showhide("connmon_version_server",!0),"None"==updatestatus?($j("#connmon_version_server").text("No update available"),showhide("btnChkUpdate",!0),showhide("btnDoUpdate",!1)):($j("#connmon_version_server").text("Updated version available: "+updatestatus),showhide("btnChkUpdate",!1),showhide("btnDoUpdate",!0)))}})}function CheckUpdate(){showhide("btnChkUpdate",!1),document.formScriptActions.action_script.value="start_connmoncheckupdate",document.formScriptActions.submit(),document.getElementById("imgChkUpdate").style.display="",setTimeout(update_status,2e3)}function DoUpdate(){document.form.action_script.value="start_connmondoupdate",document.form.action_wait.value=10,showLoading(),document.form.submit()}function SaveConfig(){if(Validate_All()){if($j("[name*=connmon_]").prop("disabled",!1),0==document.form.pingtype.value?document.form.connmon_pingserver.value=document.form.connmon_ipaddr.value:1==document.form.pingtype.value&&(document.form.connmon_pingserver.value=document.form.connmon_domain.value),"EveryX"==document.form.schedulemode.value)if("hours"==document.form.everyxselect.value){var a=1*document.form.everyxvalue.value;document.form.connmon_schmins.value=0,document.form.connmon_schhours.value=24==a?0:"*/"+a}else if("minutes"==document.form.everyxselect.value){document.form.connmon_schhours.value="*";var a=1*document.form.everyxvalue.value;document.form.connmon_schmins.value="*/"+a}document.getElementById("amng_custom").value=JSON.stringify($j("form").serializeObject()),document.form.action_script.value="start_connmonconfig",document.form.action_wait.value=5,showLoading(),document.form.submit()}else return!1}function GetVersionNumber(a){var b;return"local"==a?b=custom_settings.connmon_version_local:"server"==a&&(b=custom_settings.connmon_version_server),"undefined"==typeof b||null==b?"N/A":b}function get_conntestresult_file(){$j.ajax({url:"/ext/connmon/ping-result.htm",dataType:"text",timeout:1e3,error:function(){setTimeout(get_conntestresult_file,500)},success:function(a){var b=a.trim().split("\n");a=b.join("\n"),$j("#conntest_output").html(a),document.getElementById("conntest_output").parentElement.parentElement.style.display=""}})}function get_conf_file(){$j.ajax({url:"/ext/connmon/config.htm",dataType:"text",error:function(){setTimeout(get_conf_file,1e3)},success:function(data){var configdata=data.split("\n");configdata=configdata.filter(Boolean);for(var i=0;i<configdata.length;i++){let settingname=configdata[i].split("=")[0].toLowerCase(),settingvalue=configdata[i].split("=")[1].replace(/(\r\n|\n|\r)/gm,"");if(-1!=configdata[i].indexOf("PINGSERVER")){var pingserver=settingvalue;document.form.connmon_pingserver.value=pingserver,Validate_IP(document.form.connmon_pingserver)?(document.form.pingtype.value=0,document.form.connmon_ipaddr.value=pingserver):(document.form.pingtype.value=1,document.form.connmon_domain.value=pingserver),document.form.pingtype.onchange()}else if(!(-1!=configdata[i].indexOf("SCHDAYS")))eval("document.form.connmon_"+settingname).value=settingvalue;else if("*"==settingvalue)for(var i2=0;i2<daysofweek.length;i2++)$j("#connmon_"+daysofweek[i2].toLowerCase()).prop("checked",!0);else for(var schdayarray=settingvalue.split(","),i2=0;i2<schdayarray.length;i2++)$j("#connmon_"+schdayarray[i2].toLowerCase()).prop("checked",!0);-1!=configdata[i].indexOf("AUTOMATED")&&AutomaticTestEnableDisable($j("#connmon_auto_"+document.form.connmon_automated.value)[0]),-1!=configdata[i].indexOf("PINGDURATION")&&(pingtestdur=document.form.connmon_pingduration.value)}-1!=$j("[name=connmon_schhours]").val().indexOf("/")&&0==$j("[name=connmon_schmins]").val()?(document.form.schedulemode.value="EveryX",document.form.everyxselect.value="hours",document.form.everyxvalue.value=$j("[name=connmon_schhours]").val().split("/")[1]):-1!=$j("[name=connmon_schmins]").val().indexOf("/")&&"*"==$j("[name=connmon_schhours]").val()?(document.form.schedulemode.value="EveryX",document.form.everyxselect.value="minutes",document.form.everyxvalue.value=$j("[name=connmon_schmins]").val().split("/")[1]):document.form.schedulemode.value="Custom",ScheduleModeToggle($j("#schmode_"+$j("[name=schedulemode]:checked").val().toLowerCase())[0])}})}function AutomaticTestEnableDisable(a){var b=a.name,c=a.value,d=b.substring(0,b.indexOf("_")),e=["schhours","schmins"],f=["schedulemode","everyxselect","everyxvalue"];if("false"==c){for(var g=0;g<e.length;g++)$j("input[name="+d+"_"+e[g]+"]").addClass("disabled"),$j("input[name="+d+"_"+e[g]+"]").prop("disabled",!0);for(var g=0;g<daysofweek.length;g++)$j("#"+d+"_"+daysofweek[g].toLowerCase()).prop("disabled",!0);for(var g=0;g<f.length;g++)$j("[name="+f[g]+"]").addClass("disabled"),$j("[name="+f[g]+"]").prop("disabled",!0)}else if("true"==c){for(var g=0;g<e.length;g++)$j("input[name="+d+"_"+e[g]+"]").removeClass("disabled"),$j("input[name="+d+"_"+e[g]+"]").prop("disabled",!1);for(var g=0;g<daysofweek.length;g++)$j("#"+d+"_"+daysofweek[g].toLowerCase()).prop("disabled",!1);for(var g=0;g<f.length;g++)$j("[name="+f[g]+"]").removeClass("disabled"),$j("[name="+f[g]+"]").prop("disabled",!1)}}function ScheduleModeToggle(a){var b=a.name,c=a.value;"EveryX"==c?(showhide("schfrequency",!0),showhide("schcustom",!1),"hours"==$j("#everyxselect").val()?(showhide("spanxhours",!0),showhide("spanxminutes",!1)):"minutes"==$j("#everyxselect").val()&&(showhide("spanxhours",!1),showhide("spanxminutes",!0))):"Custom"==c&&(showhide("schfrequency",!1),showhide("schcustom",!0))}function EveryXToggle(a){var b=a.name,c=a.value;"hours"==c?(showhide("spanxhours",!0),showhide("spanxminutes",!1)):"minutes"==c&&(showhide("spanxhours",!1),showhide("spanxminutes",!0)),Validate_ScheduleValue($j("[name=everyxvalue]")[0])}var pingcount=2;function update_conntest(){pingcount++,$j.ajax({url:"/ext/connmon/detect_connmon.js",dataType:"script",timeout:1e3,error:function(){},success:function(){"InProgress"==connmonstatus?(showhide("imgConnTest",!0),showhide("conntest_text",!0),document.getElementById("conntest_text").innerHTML="Ping test in progress - "+pingcount+"s elapsed"):"Done"==connmonstatus?(get_conntestresult_file(),document.getElementById("conntest_text").innerHTML="Refreshing charts...",pingcount=2,clearInterval(myinterval),PostConnTest()):"LOCKED"==connmonstatus?(showhide("imgConnTest",!1),document.getElementById("conntest_text").innerHTML="Scheduled ping test already running!",showhide("conntest_text",!0),showhide("btnRunPingtest",!0),document.getElementById("conntest_output").parentElement.parentElement.style.display="none",clearInterval(myinterval)):"InvalidServer"==connmonstatus&&(showhide("imgConnTest",!1),document.getElementById("conntest_text").innerHTML="Specified ping server is not valid",showhide("conntest_text",!0),showhide("btnRunPingtest",!0),document.getElementById("conntest_output").parentElement.parentElement.style.display="none",clearInterval(myinterval))}})}function PostConnTest(){currentNoCharts=0,$j("#resulttable_pings").remove(),reload_js("/ext/connmon/connjs.js"),reload_js("/ext/connmon/connstatstext.js"),$j("#Time_Format").val(GetCookie("Time_Format","number")),SetConnmonStatsTitle(),setTimeout(RedrawAllCharts,3e3)}function runPingTest(){showhide("btnRunPingtest",!1),$j("#conntest_output").html(""),document.getElementById("conntest_output").parentElement.parentElement.style.display="none",document.formScriptActions.action_script.value="start_connmon",document.formScriptActions.submit(),showhide("imgConnTest",!0),showhide("conntest_text",!1),setTimeout(StartConnTestInterval,2e3)}var myinterval;function StartConnTestInterval(){myinterval=setInterval(update_conntest,1e3)}function reload_js(a){$j("script[src=\""+a+"\"]").remove(),$j("<script>").attr("src",a+"?cachebuster="+new Date().getTime()).appendTo("head")}function changeAllCharts(a){value=1*a.value,name=a.id.substring(0,a.id.indexOf("_")),SetCookie(a.id,value);for(var b=0;b<metriclist.length;b++)Draw_Chart(metriclist[b],titlelist[b],measureunitlist[b],bordercolourlist[b],backgroundcolourlist[b])}function changeChart(a){value=1*a.value,name=a.id.substring(0,a.id.indexOf("_")),SetCookie(a.id,value),"Ping"==name?Draw_Chart("Ping",titlelist[0],measureunitlist[0],bordercolourlist[0],backgroundcolourlist[0]):"Jitter"==name?Draw_Chart("Jitter",titlelist[1],measureunitlist[1],bordercolourlist[1],backgroundcolourlist[1]):"LineQuality"==name&&Draw_Chart("LineQuality",titlelist[2],measureunitlist[2],bordercolourlist[2],backgroundcolourlist[2])}function BuildLastXTable(){var a="<div style=\"line-height:10px;\">&nbsp;</div>";a+="<table width=\"100%\" border=\"1\" align=\"center\" cellpadding=\"4\" cellspacing=\"0\" bordercolor=\"#6b8fa3\" class=\"FormTable\" id=\"resulttable_pings\">",a+="<thead class=\"collapsible-jquery\" id=\"resultthead_pings\">",a+="<tr><td colspan=\"2\">Last 10 ping test results (click to expand/collapse)</td></tr>",a+="</thead>",a+="<tr>",a+="<td colspan=\"2\" align=\"center\" style=\"padding: 0px;\">",a+="<table width=\"100%\" border=\"1\" align=\"center\" cellpadding=\"4\" cellspacing=\"0\" bordercolor=\"#6b8fa3\" class=\"FormTable StatsTable\">";var b="",c=window.DataTimestamp;if("undefined"==typeof c||null===c?b="true":0==c.length?b="true":1==c.length&&""==c[0]&&(b="true"),"true"==b)a+="<tr>",a+="<td colspan=\"4\" class=\"nodata\">",a+="No data to display",a+="</td>",a+="</tr>";else{a+="<col style=\"width:185px;\">",a+="<col style=\"width:185px;\">",a+="<col style=\"width:185px;\">",a+="<col style=\"width:185px;\">",a+="<thead>",a+="<tr>",a+="<th class=\"keystatsnumber\">Time</th>",a+="<th class=\"keystatsnumber\">Ping (ms)</th>",a+="<th class=\"keystatsnumber\">Jitter (ms)</th>",a+="<th class=\"keystatsnumber\">Line Quality (%)</th>",a+="</tr>",a+="</thead>";for(var d=0;d<c.length;d++)a+="<tr>",a+="<td>"+moment.unix(window.DataTimestamp[d]).format("YYYY-MM-DD HH:mm:ss")+"</td>",a+="<td>"+window.DataPing[d]+"</td>",a+="<td>"+window.DataJitter[d]+"</td>",a+="<td>"+window.DataLineQuality[d].replace("null","")+"</td>",a+="</tr>"}a+="</table>",a+="</td>",a+="</tr>",a+="</table>",$j("#table_config").after(a)}
+var $j = jQuery.noConflict(); //avoid conflicts on John's fork (state.js)
+var daysofweek = ['Mon','Tues','Wed','Thurs','Fri','Sat','Sun'];
+var pingtestdur = 60;
+var maxNoCharts = 27;
+var currentNoCharts = 0;
+var ShowLines = GetCookie('ShowLines','string');
+var ShowFill = GetCookie('ShowFill','string');
+if( ShowFill == '' ){
+	ShowFill = 'origin';
+}
+var DragZoom = true;
+var ChartPan = false;
+
+Chart.defaults.global.defaultFontColor = '#CCC';
+Chart.Tooltip.positioners.cursor = function(chartElements,coordinates){
+	return coordinates;
+};
+
+var dataintervallist = ["raw","hour","day"];
+var metriclist = ['Ping','Jitter','LineQuality'];
+var titlelist = ['Ping','Jitter','Quality'];
+var measureunitlist = ['ms','ms','%'];
+var chartlist = ['daily','weekly','monthly'];
+var timeunitlist = ['hour','day','day'];
+var intervallist = [24,7,30];
+var bordercolourlist = ['#fc8500','#42ecf5','#ffffff'];
+var backgroundcolourlist = ['rgba(252,133,0,0.5)','rgba(66,236,245,0.5)','rgba(255,255,255,0.5)'];
+
+function SettingHint(hintid){
+	var tag_name = document.getElementsByTagName('a');
+	for (var i=0; i<tag_name.length; i++){
+		tag_name[i].onmouseout=nd;
+	}
+	hinttext='My text goes here';
+	if(hintid == 1) hinttext='Hour(s) of day to run ping test<br />* for all<br />Valid numbers between 0 and 23<br />comma (,) separate for multiple<br />dash (-) separate for a range';
+	if(hintid == 2) hinttext='Minute(s) of day to run ping test<br />(* for all<br />Valid numbers between 0 and 59<br />comma (,) separate for multiple<br />dash (-) separate for a range';
+	return overlib(hinttext,0,0);
+}
+
+function keyHandler(e){
+	if(e.keyCode == 27){
+		$j(document).off('keydown');
+		ResetZoom();
+	}
+}
+
+$j(document).keydown(function(e){keyHandler(e);});
+$j(document).keyup(function(e){
+	$j(document).keydown(function(e){
+		keyHandler(e);
+	});
+});
+
+function Validate_IP(forminput){
+	var inputvalue = forminput.value;
+	var inputname = forminput.name;
+	if(/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(inputvalue)){
+		$j(forminput).removeClass('invalid');
+		return true;
+	}
+	else{
+		$j(forminput).addClass('invalid');
+		return false;
+	}
+}
+
+function Validate_Domain(forminput){
+	var inputvalue = forminput.value;
+	var inputname = forminput.name;
+	if(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/.test(inputvalue)){
+		$j(forminput).removeClass('invalid');
+		return true;
+	}
+	else{
+		$j(forminput).addClass('invalid');
+		return false;
+	}
+}
+
+function Validate_PingDuration(forminput){
+	var inputname = forminput.name;
+	var inputvalue = forminput.value*1;
+	
+	if(inputvalue > 60 || inputvalue < 10){
+		$j(forminput).addClass('invalid');
+		return false;
+	}
+	else{
+		$j(forminput).removeClass('invalid');
+		return true;
+	}
+}
+
+function Validate_Schedule(forminput,hoursmins){
+	var inputname = forminput.name;
+	var inputvalues = forminput.value.split(',');
+	var upperlimit = 0;
+	
+	if(hoursmins == 'hours'){
+		upperlimit = 23;
+	}
+	else if (hoursmins == 'mins'){
+		upperlimit = 59;
+	}
+	
+	showhide('btnfixhours',false);
+	showhide('btnfixmins',false);
+	
+	var validationfailed = 'false';
+	for(var i=0; i < inputvalues.length; i++){
+		if(inputvalues[i] == '*' && i == 0){
+			validationfailed = 'false';
+		}
+		else if(inputvalues[i] == '*' && i != 0){
+			validationfailed = 'true';
+		}
+		else if(inputvalues[0] == '*' && i > 0){
+			validationfailed = 'true';
+		}
+		else if(inputvalues[i] == ''){
+			validationfailed = 'true';
+		}
+		else if(inputvalues[i].startsWith('*/')){
+			if(! isNaN(inputvalues[i].replace('*/','')*1)){
+				if((inputvalues[i].replace('*/','')*1) > upperlimit || (inputvalues[i].replace('*/','')*1) < 0){
+					validationfailed = 'true';
+				}
+			}
+			else{
+				validationfailed = 'true';
+			}
+		}
+		else if(inputvalues[i].indexOf('-') != -1){
+			if(inputvalues[i].startsWith('-')){
+				validationfailed = 'true';
+			}
+			else{
+				var inputvalues2 = inputvalues[i].split('-');
+				for(var i2 = 0; i2 < inputvalues2.length; i2++){
+					if(inputvalues2[i2] == ''){
+						validationfailed = 'true';
+					}
+					else if(! isNaN(inputvalues2[i2]*1)){
+						if((inputvalues2[i2]*1) > upperlimit || (inputvalues2[i2]*1) < 0){
+							validationfailed = 'true';
+						}
+						else if((inputvalues2[i2+1]*1) < (inputvalues2[i2]*1)){
+							validationfailed = 'true';
+							if(hoursmins == 'hours'){
+								showhide('btnfixhours',true)
+							}
+							else if (hoursmins == 'mins'){
+								showhide('btnfixmins',true)
+							}
+						}
+					}
+					else{
+						validationfailed = 'true';
+					}
+				}
+			}
+		}
+		else if(! isNaN(inputvalues[i]*1)){
+			if((inputvalues[i]*1) > upperlimit || (inputvalues[i]*1) < 0){
+				validationfailed = 'true';
+			}
+		}
+		else{
+			validationfailed = 'true';
+		}
+	}
+	
+	if(validationfailed == 'true'){
+		$j(forminput).addClass('invalid');
+		return false;
+	}
+	else{
+		$j(forminput).removeClass('invalid');
+		return true;
+	}
+}
+
+function Validate_ScheduleValue(forminput){
+	var inputname = forminput.name;
+	var inputvalue = forminput.value*1;
+	
+	var upperlimit = 0;
+	var lowerlimit = 1;
+	
+	var unittype = $j('#everyxselect').val();
+	
+	if(unittype == 'hours'){
+		upperlimit = 24;
+	}
+	else if(unittype == 'minutes'){
+		upperlimit = 30;
+	}
+	
+	if(inputvalue > upperlimit || inputvalue < lowerlimit || forminput.value.length < 1){
+		$j(forminput).addClass('invalid');
+		return false;
+	}
+	else{
+		$j(forminput).removeClass('invalid');
+		return true;
+	}
+}
+
+function Validate_All(){
+	var validationfailed = false;
+	if(! Validate_IP(document.form.connmon_ipaddr)){validationfailed=true;}
+	if(! Validate_Domain(document.form.connmon_domain)){validationfailed=true;}
+	if(! Validate_PingDuration(document.form.connmon_pingduration)){validationfailed=true;}
+	if(document.form.schedulemode.value == 'EveryX'){
+		if(! Validate_ScheduleValue(document.form.everyxvalue)) validationfailed=true;
+	}
+	else if(document.form.schedulemode.value == 'Custom'){
+		if(! Validate_Schedule(document.form.connmon_schhours,'hours')) validationfailed=true;
+		if(! Validate_Schedule(document.form.connmon_schmins,'mins')) validationfailed=true;
+	}
+	
+	if(validationfailed){
+		alert('Validation for some fields failed. Please correct invalid values and try again.');
+		return false;
+	}
+	else{
+		return true;
+	}
+}
+
+function FixCron(hoursmins){
+	if(hoursmins == 'hours'){
+		var origvalue = document.form.connmon_schhours.value;
+		document.form.connmon_schhours.value = origvalue.split('-')[0]+'-23,0-'+origvalue.split('-')[1];
+		Validate_Schedule(document.form.connmon_schhours,'hours');
+	}
+	else if(hoursmins == 'mins'){
+		var origvalue = document.form.connmon_schmins.value;
+		document.form.connmon_schmins.value = origvalue.split('-')[0]+'-59,0-'+origvalue.split('-')[1];
+		Validate_Schedule(document.form.connmon_schmins,'mins');
+	}
+}
+
+function changePingType(forminput){
+	var inputvalue = forminput.value;
+	var inputname = forminput.name;
+	if(inputvalue == 0){
+		document.getElementById('rowip').style.display = '';
+		document.getElementById('rowdomain').style.display = 'none';
+	}
+	else{
+		document.getElementById('rowip').style.display = 'none';
+		document.getElementById('rowdomain').style.display = '';
+	}
+}
+
+function Draw_Chart_NoData(txtchartname){
+	document.getElementById('divLineChart_'+txtchartname).width = '730';
+	document.getElementById('divLineChart_'+txtchartname).height = '500';
+	document.getElementById('divLineChart_'+txtchartname).style.width = '730px';
+	document.getElementById('divLineChart_'+txtchartname).style.height = '500px';
+	var ctx = document.getElementById('divLineChart_'+txtchartname).getContext('2d');
+	ctx.save();
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	ctx.font = 'normal normal bolder 48px Arial';
+	ctx.fillStyle = 'white';
+	ctx.fillText('No data to display',365,250);
+	ctx.restore();
+}
+
+function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundcolourname){
+	var chartperiod = getChartPeriod($j('#'+txtchartname+'_Period option:selected').val());
+	var chartinterval = getChartInterval($j("#" + txtchartname + "_Interval option:selected").val());
+	var txtunitx = timeunitlist[$j('#'+txtchartname+'_Period option:selected').val()];
+	var numunitx = intervallist[$j('#'+txtchartname+'_Period option:selected').val()];
+	var chartxaxismax = null;
+	var chartaxismin = moment().subtract(numunitx,txtunitx+'s');
+	var charttype = "line";
+	var dataobject = window[txtchartname+'_'+chartinterval+'_'+chartperiod];
+	
+	if(typeof dataobject === 'undefined' || dataobject === null){ Draw_Chart_NoData(txtchartname); return; }
+	if(dataobject.length == 0){ Draw_Chart_NoData(txtchartname); return; }
+	
+	var chartLabels = dataobject.map(function(d){return d.Metric});
+	var chartData = dataobject.map(function(d){return {x: d.Time,y: d.Value}});
+	var objchartname = window['LineChart_'+txtchartname];
+	
+	var timeaxisformat = getTimeFormat($j('#Time_Format option:selected').val(),'axis');
+	var timetooltipformat = getTimeFormat($j('#Time_Format option:selected').val(),'tooltip');
+	
+	if(chartinterval == 'day'){
+		charttype = 'bar';
+		chartxaxismax = moment().startOf('day').add(12, 'hours');
+		chartaxismin = chartaxismin.subtract(12, 'hours');
+	}
+	
+	if(chartperiod == 'daily' && chartinterval == 'day'){
+		txtunitx = 'day';
+		numunitx = 1;
+		chartxaxismax = moment().startOf('day').add(12, 'hours');
+		chartaxismin = moment().startOf('day').subtract(12, 'hours');
+	}
+	
+	factor = 0;
+	if(txtunitx == 'hour'){
+		factor = 60*60*1000;
+	}
+	else if(txtunitx == 'day'){
+		factor = 60*60*24*1000;
+	}
+	if(objchartname != undefined) objchartname.destroy();
+	var ctx = document.getElementById('divLineChart_'+txtchartname).getContext('2d');
+	var lineOptions = {
+		segmentShowStroke : false,
+		segmentStrokeColor : '#000',
+		animationEasing : 'easeOutQuart',
+		animationSteps : 100,
+		maintainAspectRatio: false,
+		animateScale : true,
+		hover: { mode: 'point' },
+		legend: { display: false,position: 'bottom',onClick: null },
+		title: { display: true,text: txttitle },
+		tooltips: {
+			callbacks: {
+				title: function (tooltipItem,data){
+					if(chartinterval == 'day'){
+						return moment(tooltipItem[0].xLabel,'X').format('YYYY-MM-DD');
+					}
+					else{
+						return moment(tooltipItem[0].xLabel,'X').format(timetooltipformat);
+					}
+				},
+				label: function (tooltipItem,data){ return round(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].y,2).toFixed(2)+' '+txtunity;}
+			},
+			mode: 'point',
+			position: 'cursor',
+			intersect: true
+		},
+		scales: {
+			xAxes: [{
+				type: 'time',
+				gridLines: { display: true,color: '#282828' },
+				ticks: {
+					min: chartaxismin,
+					max: chartxaxismax,
+					display: true
+				},
+				time: {
+					parser: 'X',
+					unit: txtunitx,
+					stepSize: 1,
+					displayFormats: timeaxisformat
+				}
+			}],
+			yAxes: [{
+				type: getChartScale($j('#'+txtchartname+'_Scale option:selected').val()),
+				gridLines: { display: false,color: '#282828' },
+				scaleLabel: { display: false,labelString: txtunity },
+				ticks: {
+					display: true,
+					beginAtZero: true,
+					max: getYAxisMax(txtchartname),
+					labels: {
+						index: ['min','max'],
+						removeEmptyLines: true
+					},
+					userCallback: LogarithmicFormatter
+				}
+			}]
+		},
+		plugins: {
+			zoom: {
+				pan: {
+					enabled: ChartPan,
+					mode: 'xy',
+					rangeMin: {
+						x: new Date().getTime() - (factor * numunitx),
+						y: 0
+					},
+					rangeMax: {
+						x: new Date().getTime(),
+						y: getLimit(chartData,'y','max',false)+getLimit(chartData,'y','max',false)*0.1
+					},
+				},
+				zoom: {
+					enabled: true,
+					drag: DragZoom,
+					mode: 'xy',
+					rangeMin: {
+						x: new Date().getTime() - (factor * numunitx),
+						y: 0
+					},
+					rangeMax: {
+						x: new Date().getTime(),
+						y: getLimit(chartData,'y','max',false)+getLimit(chartData,'y','max',false)*0.1
+					},
+					speed: 0.1
+				}
+			}
+		},
+		annotation: {
+			drawTime: 'afterDatasetsDraw',
+			annotations: [{
+				type: ShowLines,
+				mode: 'horizontal',
+				scaleID: 'y-axis-0',
+				value: getAverage(chartData),
+				borderColor: bordercolourname,
+				borderWidth: 1,
+				borderDash: [5,5],
+				label: {
+					backgroundColor: 'rgba(0,0,0,0.3)',
+					fontFamily: 'sans-serif',
+					fontSize: 10,
+					fontStyle: 'bold',
+					fontColor: '#fff',
+					xPadding: 6,
+					yPadding: 6,
+					cornerRadius: 6,
+					position: 'center',
+					enabled: true,
+					xAdjust: 0,
+					yAdjust: 0,
+					content: 'Avg='+round(getAverage(chartData),2).toFixed(2)+txtunity
+				}
+			},
+			{
+				type: ShowLines,
+				mode: 'horizontal',
+				scaleID: 'y-axis-0',
+				value: getLimit(chartData,'y','max',true),
+				borderColor: bordercolourname,
+				borderWidth: 1,
+				borderDash: [5,5],
+				label: {
+					backgroundColor: 'rgba(0,0,0,0.3)',
+					fontFamily: 'sans-serif',
+					fontSize: 10,
+					fontStyle: 'bold',
+					fontColor: '#fff',
+					xPadding: 6,
+					yPadding: 6,
+					cornerRadius: 6,
+					position: 'right',
+					enabled: true,
+					xAdjust: 15,
+					yAdjust: 0,
+					content: 'Max='+round(getLimit(chartData,'y','max',true),2).toFixed(2)+txtunity
+				}
+			},
+			{
+				type: ShowLines,
+				mode: 'horizontal',
+				scaleID: 'y-axis-0',
+				value: getLimit(chartData,'y','min',true),
+				borderColor: bordercolourname,
+				borderWidth: 1,
+				borderDash: [5,5],
+				label: {
+					backgroundColor: 'rgba(0,0,0,0.3)',
+					fontFamily: 'sans-serif',
+					fontSize: 10,
+					fontStyle: 'bold',
+					fontColor: '#fff',
+					xPadding: 6,
+					yPadding: 6,
+					cornerRadius: 6,
+					position: 'left',
+					enabled: true,
+					xAdjust: 15,
+					yAdjust: 0,
+					content: 'Min='+round(getLimit(chartData,'y','min',true),2).toFixed(2)+txtunity
+				}
+			}]
+		}
+	};
+	var lineDataset = {
+		labels: chartLabels,
+		datasets: [{data: chartData,
+			borderWidth: 1,
+			pointRadius: 1,
+			lineTension: 0,
+			fill: ShowFill,
+			backgroundColor: backgroundcolourname,
+			borderColor: bordercolourname
+		}]
+	};
+	objchartname = new Chart(ctx,{
+		type: charttype,
+		options: lineOptions,
+		data: lineDataset
+	});
+	window['LineChart_'+txtchartname]=objchartname;
+}
+
+function LogarithmicFormatter(tickValue,index,ticks){
+	var unit = this.options.scaleLabel.labelString;
+	if(this.type != 'logarithmic'){
+		if(! isNaN(tickValue)){
+			return round(tickValue,2).toFixed(2)+' '+unit;
+		}
+		else{
+			return tickValue+' '+unit;
+		}
+	}
+	else{
+		var labelOpts =  this.options.ticks.labels || {};
+		var labelIndex = labelOpts.index || ['min','max'];
+		var labelSignificand = labelOpts.significand || [1,2,5];
+		var significand = tickValue / (Math.pow(10,Math.floor(Chart.helpers.log10(tickValue))));
+		var emptyTick = labelOpts.removeEmptyLines === true ? undefined : '';
+		var namedIndex = '';
+		if(index === 0){
+			namedIndex = 'min';
+		}
+		else if(index === ticks.length - 1){
+			namedIndex = 'max';
+		}
+		if(labelOpts === 'all' || labelSignificand.indexOf(significand) !== -1 || labelIndex.indexOf(index) !== -1 || labelIndex.indexOf(namedIndex) !== -1){
+			if(tickValue === 0){
+				return '0'+' '+unit;
+			}
+			else{
+				if(! isNaN(tickValue)){
+					return round(tickValue,2).toFixed(2)+' '+unit;
+				}
+				else{
+					return tickValue+' '+unit;
+				}
+			}
+		}
+		return emptyTick;
+	}
+};
+
+function getLimit(datasetname,axis,maxmin,isannotation){
+	var limit = 0;
+	var values;
+	if(axis == 'x'){
+		values = datasetname.map(function(o){ return o.x } );
+	}
+	else{
+		values = datasetname.map(function(o){ return o.y } );
+	}
+	
+	if(maxmin == 'max'){
+		limit = Math.max.apply(Math,values);
+	}
+	else{
+		limit = Math.min.apply(Math,values);
+	}
+	if(maxmin == 'max' && limit == 0 && isannotation == false){
+		limit = 1;
+	}
+	return limit;
+}
+
+function getYAxisMax(chartname){
+	if(chartname == 'LineQuality'){
+		return 100;
+	}
+}
+
+function getAverage(datasetname){
+	var total = 0;
+	for(var i = 0; i < datasetname.length; i++){
+		total += (datasetname[i].y*1);
+	}
+	var avg = total / datasetname.length;
+	return avg;
+}
+
+function round(value,decimals){
+	return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+}
+
+function ToggleLines(){
+	if(ShowLines == ''){
+		ShowLines = 'line';
+		SetCookie('ShowLines','line');
+	}
+	else{
+		ShowLines = '';
+		SetCookie('ShowLines','');
+	}
+	for(var i = 0; i < metriclist.length; i++){
+		for(var i3 = 0; i3 < 3; i3++){
+			window['LineChart_'+metriclist[i]].options.annotation.annotations[i3].type=ShowLines;
+		}
+		window['LineChart_'+metriclist[i]].update();
+	}
+}
+
+function ToggleFill(){
+	if(ShowFill == 'false'){
+		ShowFill = 'origin';
+		SetCookie('ShowFill','origin');
+	}
+	else{
+		ShowFill = 'false';
+		SetCookie('ShowFill','false');
+	}
+	for(var i = 0; i < metriclist.length; i++){
+		window['LineChart_'+metriclist[i]].data.datasets[0].fill=ShowFill;
+		window['LineChart_'+metriclist[i]].update();
+	}
+}
+
+function RedrawAllCharts(){
+	for(var i = 0; i < metriclist.length; i++){
+		for(var i2 = 0; i2 < chartlist.length; i2++){
+			for(var i3 = 0; i3 < dataintervallist.length; i3++){
+				d3.csv('/ext/connmon/csv/'+metriclist[i]+'_'+dataintervallist[i3]+'_'+chartlist[i2]+'.htm').then(SetGlobalDataset.bind(null,metriclist[i]+'_'+dataintervallist[i3]+'_'+chartlist[i2]));
+			}
+		}
+	}
+}
+
+function SetGlobalDataset(txtchartname,dataobject){
+	window[txtchartname] = dataobject;
+	currentNoCharts++;
+	if(currentNoCharts == maxNoCharts){
+		showhide('imgConnTest',false);
+		showhide('conntest_text',false);
+		showhide('btnRunPingtest',true);
+		BuildLastXTable();
+		for(var i = 0; i < metriclist.length; i++){
+			$j('#'+metriclist[i]+'_Interval').val(GetCookie(metriclist[i]+'_Interval','number'));
+			$j('#'+metriclist[i]+'_Period').val(GetCookie(metriclist[i]+'_Period','number'));
+			$j('#'+metriclist[i]+'_Scale').val(GetCookie(metriclist[i]+'_Scale','number'));
+			Draw_Chart(metriclist[i],titlelist[i],measureunitlist[i],bordercolourlist[i],backgroundcolourlist[i]);
+		}
+		AddEventHandlers();
+	}
+}
+
+function getChartScale(scale){
+	var chartscale = '';
+	if(scale == 0){
+		chartscale = 'linear';
+	}
+	else if(scale == 1){
+		chartscale = 'logarithmic';
+	}
+	return chartscale;
+}
+
+function getChartInterval(layout){
+	var charttype = 'raw';
+	if(layout == 0) charttype = 'raw';
+	else if(layout == 1) charttype = 'hour';
+	else if(layout == 2) charttype = 'day';
+	return charttype;
+}
+
+function getTimeFormat(value,format){
+	var timeformat;
+	
+	if(format == 'axis'){
+		if(value == 0){
+			timeformat = {
+				millisecond: 'HH:mm:ss.SSS',
+				second: 'HH:mm:ss',
+				minute: 'HH:mm',
+				hour: 'HH:mm'
+			}
+		}
+		else if(value == 1){
+			timeformat = {
+				millisecond: 'h:mm:ss.SSS A',
+				second: 'h:mm:ss A',
+				minute: 'h:mm A',
+				hour: 'h A'
+			}
+		}
+	}
+	else if(format == 'tooltip'){
+		if(value == 0){
+			timeformat = 'YYYY-MM-DD HH:mm:ss';
+		}
+		else if(value == 1){
+			timeformat = 'YYYY-MM-DD h:mm:ss A';
+		}
+	}
+	
+	return timeformat;
+}
+
+function GetCookie(cookiename,returntype){
+	if(cookie.get('conn_'+cookiename) != null){
+		return cookie.get('conn_'+cookiename);
+	}
+	else{
+		if(returntype == 'string'){
+			return '';
+		}
+		else if(returntype == 'number'){
+			return 0;
+		}
+	}
+}
+
+function SetCookie(cookiename,cookievalue){
+	cookie.set('conn_'+cookiename,cookievalue,10 * 365);
+}
+
+function AddEventHandlers(){
+	$j('.collapsible-jquery').off('click').on('click',function(){
+		$j(this).siblings().toggle('fast',function(){
+			if($j(this).css('display') == 'none'){
+				SetCookie($j(this).siblings()[0].id,'collapsed');
+			}
+			else{
+				SetCookie($j(this).siblings()[0].id,'expanded');
+			}
+		})
+	});
+
+	$j('.collapsible-jquery').each(function(index,element){
+		if(GetCookie($j(this)[0].id,'string') == 'collapsed'){
+			$j(this).siblings().toggle(false);
+		}
+		else{
+			$j(this).siblings().toggle(true);
+		}
+	});
+}
+
+$j.fn.serializeObject = function(){
+	var o = custom_settings;
+	var a = this.serializeArray();
+	$j.each(a,function(){
+		if(o[this.name] !== undefined && this.name.indexOf('connmon') != -1 && this.name.indexOf('version') == -1 && this.name.indexOf('ipaddr') == -1 && this.name.indexOf('domain') == -1 && this.name.indexOf('schdays') == -1){
+			if(!o[this.name].push){
+				o[this.name] = [o[this.name]];
+			}
+			o[this.name].push(this.value || '');
+		} else if(this.name.indexOf('connmon') != -1 && this.name.indexOf('version') == -1 && this.name.indexOf('ipaddr') == -1 && this.name.indexOf('domain') == -1 && this.name.indexOf('schdays') == -1){
+			o[this.name] = this.value || '';
+		}
+	});
+	var schdays = [];
+	$j.each($j('input[name="connmon_schdays"]:checked'),function(){
+		schdays.push($j(this).val());
+	});
+	var schdaysstring = schdays.join(',');
+	if(schdaysstring == 'Mon,Tues,Wed,Thurs,Fri,Sat,Sun'){
+		schdaysstring = '*';
+	}
+	o['connmon_schdays'] = schdaysstring;
+	return o;
+};
+
+function SetCurrentPage(){
+	document.form.next_page.value = window.location.pathname.substring(1);
+	document.form.current_page.value = window.location.pathname.substring(1);
+}
+
+function ParseCSVExport(data){
+	var csvContent = 'Timestamp,Ping,Jitter,LineQuality\n';
+	for(var i = 0; i < data.length; i++){
+		var dataString = data[i].Timestamp+','+data[i].Ping+','+data[i].Jitter+','+data[i].LineQuality;
+		csvContent += i < data.length-1 ? dataString+'\n' : dataString;
+	}
+	document.getElementById('aExport').href='data:text/csv;charset=utf-8,'+encodeURIComponent(csvContent);
+}
+
+function ErrorCSVExport(){
+	document.getElementById('aExport').href='javascript:alert(\'Error exporting CSV, please refresh the page and try again\')';
+}
+
+function initial(){
+	SetCurrentPage();
+	LoadCustomSettings();
+	show_menu();
+	get_conf_file();
+	d3.csv('/ext/connmon/csv/CompleteResults.htm').then(function(data){ParseCSVExport(data);}).catch(function(){ErrorCSVExport();});
+	$j('#Time_Format').val(GetCookie('Time_Format','number'));
+	RedrawAllCharts();
+	ScriptUpdateLayout();
+	SetConnmonStatsTitle();
+}
+
+function ScriptUpdateLayout(){
+	var localver = GetVersionNumber('local');
+	var serverver = GetVersionNumber('server');
+	$j('#connmon_version_local').text(localver);
+	
+	if(localver != serverver && serverver != 'N/A'){
+		$j('#connmon_version_server').text('Updated version available: '+serverver);
+		showhide('btnChkUpdate',false);
+		showhide('connmon_version_server',true);
+		showhide('btnDoUpdate',true);
+	}
+}
+
+function reload(){
+	location.reload(true);
+}
+
+function getChartPeriod(period){
+	var chartperiod = 'daily';
+	if(period == 0) chartperiod = 'daily';
+	else if(period == 1) chartperiod = 'weekly';
+	else if(period == 2) chartperiod = 'monthly';
+	return chartperiod;
+}
+
+function ResetZoom(){
+	for(var i = 0; i < metriclist.length; i++){
+		var chartobj = window['LineChart_'+metriclist[i]];
+		if(typeof chartobj === 'undefined' || chartobj === null){ continue; }
+		chartobj.resetZoom();
+	}
+}
+
+function ToggleDragZoom(button){
+	var drag = true;
+	var pan = false;
+	var buttonvalue = '';
+	if(button.value.indexOf('On') != -1){
+		drag = false;
+		pan = true;
+		DragZoom = false;
+		ChartPan = true;
+		buttonvalue = 'Drag Zoom Off';
+	}
+	else{
+		drag = true;
+		pan = false;
+		DragZoom = true;
+		ChartPan = false;
+		buttonvalue = 'Drag Zoom On';
+	}
+	
+	for(var i = 0; i < metriclist.length; i++){
+		var chartobj = window['LineChart_'+metriclist[i]];
+		if(typeof chartobj === 'undefined' || chartobj === null){ continue; }
+		chartobj.options.plugins.zoom.zoom.drag = drag;
+		chartobj.options.plugins.zoom.pan.enabled = pan;
+		button.value = buttonvalue;
+		chartobj.update();
+	}
+}
+
+function update_status(){
+	$j.ajax({
+		url: '/ext/connmon/detect_update.js',
+		dataType: 'script',
+		timeout: 3000,
+		error: function(xhr){
+			setTimeout(update_status,1000);
+		},
+		success: function(){
+			if(updatestatus == 'InProgress'){
+				setTimeout(update_status,1000);
+			}
+			else{
+				document.getElementById('imgChkUpdate').style.display = 'none';
+				showhide('connmon_version_server',true);
+				if(updatestatus != 'None'){
+					$j('#connmon_version_server').text('Updated version available: '+updatestatus);
+					showhide('btnChkUpdate',false);
+					showhide('btnDoUpdate',true);
+				}
+				else{
+					$j('#connmon_version_server').text('No update available');
+					showhide('btnChkUpdate',true);
+					showhide('btnDoUpdate',false);
+				}
+			}
+		}
+	});
+}
+
+function CheckUpdate(){
+	showhide('btnChkUpdate',false);
+	document.formScriptActions.action_script.value='start_connmoncheckupdate'
+	document.formScriptActions.submit();
+	document.getElementById('imgChkUpdate').style.display = '';
+	setTimeout(update_status,2000);
+}
+
+function DoUpdate(){
+	document.form.action_script.value = 'start_connmondoupdate';
+	document.form.action_wait.value = 10;
+	showLoading();
+	document.form.submit();
+}
+
+function SaveConfig(){
+	if(Validate_All()){
+		$j('[name*=connmon_]').prop('disabled',false);
+		
+		if(document.form.pingtype.value == 0){
+			document.form.connmon_pingserver.value = document.form.connmon_ipaddr.value;
+		}
+		else if(document.form.pingtype.value == 1){
+			document.form.connmon_pingserver.value = document.form.connmon_domain.value;
+		}
+		
+		if(document.form.schedulemode.value == 'EveryX'){
+			if(document.form.everyxselect.value == 'hours'){
+				var everyxvalue = document.form.everyxvalue.value*1;
+				document.form.connmon_schmins.value = 0;
+				if(everyxvalue == 24){
+					document.form.connmon_schhours.value = 0;
+				}
+				else{
+					document.form.connmon_schhours.value = '*/'+everyxvalue;
+				}
+			}
+			else if(document.form.everyxselect.value == 'minutes'){
+				document.form.connmon_schhours.value = '*';
+				var everyxvalue = document.form.everyxvalue.value*1;
+				document.form.connmon_schmins.value = '*/'+everyxvalue;
+			}
+		}
+		
+		document.getElementById('amng_custom').value = JSON.stringify($j('form').serializeObject());
+		document.form.action_script.value = 'start_connmonconfig';
+		document.form.action_wait.value = 5;
+		showLoading();
+		document.form.submit();
+	}
+	else{
+		return false;
+	}
+}
+
+function GetVersionNumber(versiontype){
+	var versionprop;
+	if(versiontype == 'local'){
+		versionprop = custom_settings.connmon_version_local;
+	}
+	else if(versiontype == 'server'){
+		versionprop = custom_settings.connmon_version_server;
+	}
+	
+	if(typeof versionprop == 'undefined' || versionprop == null){
+		return 'N/A';
+	}
+	else{
+		return versionprop;
+	}
+}
+
+function get_conntestresult_file(){
+	$j.ajax({
+		url: '/ext/connmon/ping-result.htm',
+		dataType: 'text',
+		timeout: 1000,
+		error: function(xhr){
+			setTimeout(get_conntestresult_file,500);
+		},
+		success: function(data){
+			var lines = data.trim().split('\n');
+			data = lines.join('\n');
+			$j('#conntest_output').html(data);
+			document.getElementById('conntest_output').parentElement.parentElement.style.display = '';
+		}
+	});
+}
+
+function get_conf_file(){
+	$j.ajax({
+		url: '/ext/connmon/config.htm',
+		dataType: 'text',
+		error: function(xhr){
+			setTimeout(get_conf_file,1000);
+		},
+		success: function(data){
+			var configdata=data.split('\n');
+			configdata = configdata.filter(Boolean);
+			
+			for(var i = 0; i < configdata.length; i++){
+				let settingname = configdata[i].split('=')[0].toLowerCase();
+				let settingvalue = configdata[i].split('=')[1].replace(/(\r\n|\n|\r)/gm,'');
+				
+				if(configdata[i].indexOf('PINGSERVER') != -1){
+					var pingserver=settingvalue;
+					document.form.connmon_pingserver.value = pingserver;
+					if(Validate_IP(document.form.connmon_pingserver)){
+						document.form.pingtype.value=0;
+						document.form.connmon_ipaddr.value=pingserver;
+					}
+					else{
+						document.form.pingtype.value=1;
+						document.form.connmon_domain.value=pingserver;
+					}
+					document.form.pingtype.onchange();
+				}
+				else if(configdata[i].indexOf('SCHDAYS') != -1){
+					if(settingvalue == '*'){
+						for(var i2 = 0; i2 < daysofweek.length; i2++){
+							$j('#connmon_'+daysofweek[i2].toLowerCase()).prop('checked',true);
+						}
+					}
+					else{
+						var schdayarray = settingvalue.split(',');
+						for(var i2 = 0; i2 < schdayarray.length; i2++){
+							$j('#connmon_'+schdayarray[i2].toLowerCase()).prop('checked',true);
+						}
+					}
+				}
+				else{
+					eval('document.form.connmon_'+settingname).value = settingvalue;
+				}
+				
+				if(configdata[i].indexOf('AUTOMATED') != -1){
+					AutomaticTestEnableDisable($j('#connmon_auto_'+document.form.connmon_automated.value)[0]);
+				}
+				
+				if(configdata[i].indexOf('PINGDURATION') != -1){
+					pingtestdur=document.form.connmon_pingduration.value;
+				}
+			}
+			
+			if($j('[name=connmon_schhours]').val().indexOf('/') != -1 && $j('[name=connmon_schmins]').val() == 0){
+				document.form.schedulemode.value = 'EveryX';
+				document.form.everyxselect.value = 'hours';
+				document.form.everyxvalue.value = $j('[name=connmon_schhours]').val().split('/')[1];
+			}
+			else if($j('[name=connmon_schmins]').val().indexOf('/') != -1 && $j('[name=connmon_schhours]').val() == '*'){
+				document.form.schedulemode.value = 'EveryX';
+				document.form.everyxselect.value = 'minutes';
+				document.form.everyxvalue.value = $j('[name=connmon_schmins]').val().split('/')[1];
+			}
+			else{
+				document.form.schedulemode.value = 'Custom';
+			}
+			ScheduleModeToggle($j('#schmode_'+$j('[name=schedulemode]:checked').val().toLowerCase())[0]);
+		}
+	});
+}
+
+function AutomaticTestEnableDisable(forminput){
+	var inputname = forminput.name;
+	var inputvalue = forminput.value;
+	var prefix = inputname.substring(0,inputname.indexOf('_'));
+	
+	var fieldnames = ['schhours','schmins'];
+	var fieldnames2 = ['schedulemode','everyxselect','everyxvalue'];
+	
+	if(inputvalue == 'false'){
+		for (var i = 0; i < fieldnames.length; i++){
+			$j('input[name='+prefix+'_'+fieldnames[i]+']').addClass('disabled');
+			$j('input[name='+prefix+'_'+fieldnames[i]+']').prop('disabled',true);
+		}
+		for (var i = 0; i < daysofweek.length; i++){
+			$j('#'+prefix+'_'+daysofweek[i].toLowerCase()).prop('disabled',true);
+		}
+		for (var i = 0; i < fieldnames2.length; i++){
+			$j('[name='+fieldnames2[i]+']').addClass('disabled');
+			$j('[name='+fieldnames2[i]+']').prop('disabled',true);
+		}
+	}
+	else if(inputvalue == 'true'){
+		for (var i = 0; i < fieldnames.length; i++){
+			$j('input[name='+prefix+'_'+fieldnames[i]+']').removeClass('disabled');
+			$j('input[name='+prefix+'_'+fieldnames[i]+']').prop('disabled',false);
+		}
+		for (var i = 0; i < daysofweek.length; i++){
+			$j('#'+prefix+'_'+daysofweek[i].toLowerCase()).prop('disabled',false);
+		}
+		for (var i = 0; i < fieldnames2.length; i++){
+			$j('[name='+fieldnames2[i]+']').removeClass('disabled');
+			$j('[name='+fieldnames2[i]+']').prop('disabled',false);
+		}
+	}
+}
+
+function ScheduleModeToggle(forminput){
+	var inputname = forminput.name;
+	var inputvalue = forminput.value;
+	
+	if(inputvalue == 'EveryX'){
+		showhide('schfrequency',true);
+		showhide('schcustom',false);
+		if($j('#everyxselect').val() == 'hours'){
+			showhide('spanxhours',true);
+			showhide('spanxminutes',false);
+		}
+		else if($j('#everyxselect').val() == 'minutes'){
+			showhide('spanxhours',false);
+			showhide('spanxminutes',true);
+		}
+	}
+	else if(inputvalue == 'Custom'){
+		showhide('schfrequency',false);
+		showhide('schcustom',true);
+	}
+}
+
+function EveryXToggle(forminput){
+	var inputname = forminput.name;
+	var inputvalue = forminput.value;
+	
+	if(inputvalue == 'hours'){
+		showhide('spanxhours',true);
+		showhide('spanxminutes',false);
+	}
+	else if(inputvalue == 'minutes'){
+		showhide('spanxhours',false);
+		showhide('spanxminutes',true);
+	}
+	
+	Validate_ScheduleValue($j('[name=everyxvalue]')[0]);
+}
+
+var pingcount=2;
+function update_conntest(){
+	pingcount++;
+	$j.ajax({
+		url: '/ext/connmon/detect_connmon.js',
+		dataType: 'script',
+		timeout: 1000,
+		error: function(xhr){
+			//do nothing
+		},
+		success: function(){
+			if(connmonstatus == 'InProgress'){
+				showhide('imgConnTest',true);
+				showhide('conntest_text',true);
+				document.getElementById('conntest_text').innerHTML = 'Ping test in progress - '+pingcount+'s elapsed';
+			}
+			else if(connmonstatus == 'Done'){
+				get_conntestresult_file();
+				document.getElementById('conntest_text').innerHTML = 'Refreshing charts...';
+				pingcount=2;
+				clearInterval(myinterval);
+				PostConnTest();
+			}
+			else if(connmonstatus == 'LOCKED'){
+				showhide('imgConnTest',false);
+				document.getElementById('conntest_text').innerHTML = 'Scheduled ping test already running!';
+				showhide('conntest_text',true);
+				showhide('btnRunPingtest',true);
+				document.getElementById('conntest_output').parentElement.parentElement.style.display = 'none';
+				clearInterval(myinterval);
+			}
+			else if(connmonstatus == 'InvalidServer'){
+				showhide('imgConnTest',false);
+				document.getElementById('conntest_text').innerHTML = 'Specified ping server is not valid';
+				showhide('conntest_text',true);
+				showhide('btnRunPingtest',true);
+				document.getElementById('conntest_output').parentElement.parentElement.style.display = 'none';
+				clearInterval(myinterval);
+			}
+		}
+	});
+}
+
+function PostConnTest(){
+	currentNoCharts = 0;
+	$j('#resulttable_pings').remove();
+	reload_js('/ext/connmon/connjs.js');
+	reload_js('/ext/connmon/connstatstext.js');
+	$j('#Time_Format').val(GetCookie('Time_Format','number'));
+	SetConnmonStatsTitle();
+	setTimeout(RedrawAllCharts,3000);
+}
+
+function runPingTest(){
+	showhide('btnRunPingtest',false);
+	$j('#conntest_output').html('');
+	document.getElementById('conntest_output').parentElement.parentElement.style.display = 'none';
+	document.formScriptActions.action_script.value='start_connmon';
+	document.formScriptActions.submit();
+	showhide('imgConnTest',true);
+	showhide('conntest_text',false);
+	setTimeout(StartConnTestInterval,2000);
+}
+
+var myinterval;
+function StartConnTestInterval(){
+	myinterval = setInterval(update_conntest,1000);
+}
+
+function reload_js(src){
+	$j('script[src="'+src+'"]').remove();
+	$j('<script>').attr('src',src+'?cachebuster='+ new Date().getTime()).appendTo('head');
+}
+
+function changeAllCharts(e){
+	value = e.value * 1;
+	name = e.id.substring(0,e.id.indexOf('_'));
+	SetCookie(e.id,value);
+	for(var i = 0; i < metriclist.length; i++){
+		Draw_Chart(metriclist[i],titlelist[i],measureunitlist[i],bordercolourlist[i],backgroundcolourlist[i]);
+	}
+}
+
+function changeChart(e){
+	value = e.value * 1;
+	name = e.id.substring(0,e.id.indexOf('_'));
+	SetCookie(e.id,value);
+	
+	if(name == 'Ping'){
+		Draw_Chart('Ping',titlelist[0],measureunitlist[0],bordercolourlist[0],backgroundcolourlist[0]);
+	}
+	else if(name == 'Jitter'){
+		Draw_Chart('Jitter',titlelist[1],measureunitlist[1],bordercolourlist[1],backgroundcolourlist[1]);
+	}
+	else if(name == 'LineQuality'){
+		Draw_Chart('LineQuality',titlelist[2],measureunitlist[2],bordercolourlist[2],backgroundcolourlist[2]);
+	}
+}
+
+function BuildLastXTable(){
+	var tablehtml = '<div style="line-height:10px;">&nbsp;</div>';
+	tablehtml+='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="resulttable_pings">';
+	tablehtml+='<thead class="collapsible-jquery" id="resultthead_pings">';
+	tablehtml+='<tr><td colspan="2">Last 10 ping test results (click to expand/collapse)</td></tr>';
+	tablehtml+='</thead>';
+	tablehtml+='<tr>';
+	tablehtml+='<td colspan="2" align="center" style="padding: 0px;">';
+	tablehtml+='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable StatsTable">';
+	var nodata='';
+	var objdataname = window['DataTimestamp'];
+	if(typeof objdataname === 'undefined' || objdataname === null){nodata='true'}
+	else if(objdataname.length == 0){nodata='true'}
+	else if(objdataname.length == 1 && objdataname[0] == ''){nodata='true'}
+
+	if(nodata == 'true'){
+		tablehtml+='<tr>';
+		tablehtml+='<td colspan="4" class="nodata">';
+		tablehtml+='No data to display';
+		tablehtml+='</td>';
+		tablehtml+='</tr>';
+	}
+	else{
+		tablehtml+='<col style="width:185px;">';
+		tablehtml+='<col style="width:185px;">';
+		tablehtml+='<col style="width:185px;">';
+		tablehtml+='<col style="width:185px;">';
+		tablehtml+='<thead>';
+		tablehtml+='<tr>';
+		tablehtml+='<th class="keystatsnumber">Time</th>';
+		tablehtml+='<th class="keystatsnumber">Ping (ms)</th>';
+		tablehtml+='<th class="keystatsnumber">Jitter (ms)</th>';
+		tablehtml+='<th class="keystatsnumber">Line Quality (%)</th>';
+		tablehtml+='</tr>';
+		tablehtml+='</thead>';
+		
+		for(var i = 0; i < objdataname.length; i++){
+			tablehtml+='<tr>';
+			tablehtml+='<td>'+moment.unix(window['DataTimestamp'][i]).format('YYYY-MM-DD HH:mm:ss')+'</td>';
+			tablehtml+='<td>'+window['DataPing'][i]+'</td>';
+			tablehtml+='<td>'+window['DataJitter'][i]+'</td>';
+			tablehtml+='<td>'+window['DataLineQuality'][i].replace('null','')+'</td>';
+			tablehtml+='</tr>';
+		};
+	}
+	tablehtml+='</table>';
+	tablehtml+='</td>';
+	tablehtml+='</tr>';
+	tablehtml+='</table>';
+	$j('#table_config').after(tablehtml);
+}
+
 </script>
 </head>
 <body onload="initial();" onunload="return unload_body();">
@@ -324,19 +1585,19 @@ var $j=jQuery.noConflict(),daysofweek=["Mon","Tues","Wed","Thurs","Fri","Sat","S
 <tr class="even" id="rowip">
 <td class="settingname">IP Address</td>
 <td class="settingvalue">
-<input autocomplete="off" type="text" maxlength="15" class="input_15_table removespacing" name="connmon_ipaddr" value="8.8.8.8" onkeypress="return validator.isIPAddr(this, event)" onblur="Validate_IP(this)" data-lpignore="true" />
+<input autocomplete="off" type="text" maxlength="15" class="input_15_table removespacing" name="connmon_ipaddr" value="8.8.8.8" onkeypress="return validator.isIPAddr(this,event)" onblur="Validate_IP(this)" data-lpignore="true" />
 </td>
 </tr>
 <tr class="even" id="rowdomain">
 <td class="settingname">Domain</td>
 <td class="settingvalue">
-<input autocorrect="off" autocapitalize="off" type="text" maxlength="255" class="input_32_table removespacing" name="connmon_domain" value="google.co.uk" onkeypress="return validator.isString(this, event);" onblur="Validate_Domain(this)" data-lpignore="true" />
+<input autocorrect="off" autocapitalize="off" type="text" maxlength="255" class="input_32_table removespacing" name="connmon_domain" value="google.co.uk" onkeypress="return validator.isString(this,event);" onblur="Validate_Domain(this)" data-lpignore="true" />
 </td>
 </tr>
 <tr class="even" id="rowpingdur">
 <td class="settingname">Ping test duration</td>
 <td class="settingvalue">
-<input autocomplete="off" type="text" maxlength="2" class="input_3_table removespacing" name="connmon_pingduration" value="60" onkeypress="return validator.isNumber(this, event)" onblur="Validate_PingDuration(this)" />
+<input autocomplete="off" type="text" maxlength="2" class="input_3_table removespacing" name="connmon_pingduration" value="60" onkeypress="return validator.isNumber(this,event)" onblur="Validate_PingDuration(this)" />
 seconds <span style="color:#FFCC00;">(between 10 and 60, default: 60)</span>
 </td>
 </tr>
@@ -370,7 +1631,7 @@ seconds <span style="color:#FFCC00;">(between 10 and 60, default: 60)</span>
 <div style="margin-bottom:0px;" class="schedulesettings" id="schfrequency">
 <span class="schedulespan">Frequency</span>
 <span style="color:#FFFFFF;margin-left:3px;">Every </span>
-<input autocomplete="off" style="text-align:center;padding-left:2px;" type="text" maxlength="2" class="input_3_table removespacing" name="everyxvalue" id="everyxvalue" value="3" onkeypress="return validator.isNumber(this, event)" onkeyup="Validate_ScheduleValue(this)" onblur="Validate_ScheduleValue(this)" />
+<input autocomplete="off" style="text-align:center;padding-left:2px;" type="text" maxlength="2" class="input_3_table removespacing" name="everyxvalue" id="everyxvalue" value="3" onkeypress="return validator.isNumber(this,event)" onkeyup="Validate_ScheduleValue(this)" onblur="Validate_ScheduleValue(this)" />
 &nbsp;<select name="everyxselect" id="everyxselect" class="input_option" onchange="EveryXToggle(this)">
 <option value="hours">hours</option><option value="minutes" selected>minutes</option></select>
 <span id="spanxhours" style="color:#FFCC00;"> (between 1 and 24)</span>
@@ -392,15 +1653,6 @@ seconds <span style="color:#FFCC00;">(between 10 and 60, default: 60)</span>
 <input id="btnfixmins" type="button" onclick="FixCron('mins');" value="Fix?" class="button_gen cronbutton" name="button" style="display:none;">
 </div>
 </div>
-</td>
-</tr>
-<tr class="even" id="rowdataoutput">
-<td class="settingname">Data Output Mode<br/><span class="settingname">(for weekly and monthly charts)</span></td>
-<td class="settingvalue">
-<input type="radio" name="connmon_outputdatamode" id="connmon_dataoutput_average" class="input" value="average" checked>
-<label for="connmon_dataoutput_average">Average</label>
-<input type="radio" name="connmon_outputdatamode" id="connmon_dataoutput_raw" class="input" value="raw">
-<label for="connmon_dataoutput_raw">Raw</label>
 </td>
 </tr>
 <tr class="even" id="rowtimeoutput">
@@ -452,7 +1704,7 @@ seconds <span style="color:#FFCC00;">(between 10 and 60, default: 60)</span>
 </td>
 </tr>
 <tr class="apply_gen" valign="top">
-<td style="background-color:rgb(77, 89, 93);" colspan="2">
+<td style="background-color:rgb(77,89,93);" colspan="2">
 <input type="button" onclick="ToggleDragZoom(this);" value="Drag Zoom On" class="button_gen" name="btnDragZoom">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <input type="button" onclick="ResetZoom();" value="Reset Zoom" class="button_gen" name="btnResetZoom">
@@ -470,6 +1722,16 @@ seconds <span style="color:#FFCC00;">(between 10 and 60, default: 60)</span>
 <td colspan="2">Ping (click to expand/collapse)</td>
 </tr>
 </thead>
+<tr class="even">
+<th width="40%">Data interval</th>
+<td>
+<select style="width:150px" class="input_option" onchange="changeChart(this)" id="Ping_Interval">
+<option value="0">Raw</option>
+<option value="1">Hours</option>
+<option value="2">Days</option>
+</select>
+</td>
+</tr>
 <tr class="even">
 <th width="40%">Period to display</th>
 <td>
@@ -503,6 +1765,16 @@ seconds <span style="color:#FFCC00;">(between 10 and 60, default: 60)</span>
 </tr>
 </thead>
 <tr class="even">
+<th width="40%">Data interval</th>
+<td>
+<select style="width:150px" class="input_option" onchange="changeChart(this)" id="Jitter_Interval">
+<option value="0">Raw</option>
+<option value="1">Hours</option>
+<option value="2">Days</option>
+</select>
+</td>
+</tr>
+<tr class="even">
 <th width="40%">Period to display</th>
 <td>
 <select style="width:150px" class="input_option" onchange="changeChart(this)" id="Jitter_Period">
@@ -534,6 +1806,16 @@ seconds <span style="color:#FFCC00;">(between 10 and 60, default: 60)</span>
 <td colspan="2">Quality (click to expand/collapse)</td>
 </tr>
 </thead>
+<tr class="even">
+<th width="40%">Data interval</th>
+<td>
+<select style="width:150px" class="input_option" onchange="changeChart(this)" id="LineQuality_Interval">
+<option value="0">Raw</option>
+<option value="1">Hours</option>
+<option value="2">Days</option>
+</select>
+</td>
+</tr>
 <tr class="even">
 <th width="40%">Period to display</th>
 <td>

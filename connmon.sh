@@ -380,9 +380,12 @@ Conf_Exists(){
 			echo "SCHMINS=*/$PINGFREQUENCY" >> "$SCRIPT_CONF"
 			sed -i '/SCHEDULESTART/d;/SCHEDULEEND/d;/PINGFREQUENCY/d;' "$SCRIPT_CONF"
 		fi
+		if grep -q "OUTPUTDATAMODE" "$SCRIPT_CONF"; then
+			sed -i '/OUTPUTDATAMODE/d;' "$SCRIPT_CONF"
+		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -770,23 +773,6 @@ ScriptStorageLocation(){
 	esac
 }
 
-OutputDataMode(){
-	case "$1" in
-		raw)
-			sed -i 's/^OUTPUTDATAMODE.*$/OUTPUTDATAMODE=raw/' "$SCRIPT_CONF"
-			Generate_CSVs
-		;;
-		average)
-			sed -i 's/^OUTPUTDATAMODE.*$/OUTPUTDATAMODE=average/' "$SCRIPT_CONF"
-			Generate_CSVs
-		;;
-		check)
-			OUTPUTDATAMODE=$(grep "OUTPUTDATAMODE" "$SCRIPT_CONF" | cut -f2 -d"=")
-			echo "$OUTPUTDATAMODE"
-		;;
-	esac
-}
-
 OutputTimeMode(){
 	case "$1" in
 		unix)
@@ -836,21 +822,32 @@ WriteSql_ToFile(){
 	maxcount="$(echo "$3" "$4" | awk '{printf ((24*$2)/$1)}')"
 	multiplier="$(echo "$3" | awk '{printf (60*60*$1)}')"
 	
-	{
-		echo ".mode csv"
-		echo ".headers on"
-		echo ".output ${5}${6}.htm"
-	} >> "$7"
-	
-	echo "SELECT '$1' Metric, Min([Timestamp]) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= $timenow - ($multiplier*$maxcount)) GROUP BY ([Timestamp]/($multiplier));" >> "$7"
+	if ! echo "$5" | grep -q "day"; then
+		{
+			echo ".mode csv"
+			echo ".headers on"
+			echo ".output ${5}_${6}.htm"
+			echo "SELECT '$1' Metric, Min([Timestamp]) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= $timenow - ($multiplier*$maxcount)) GROUP BY ([Timestamp]/($multiplier)) ORDER BY [Timestamp] DESC;"
+		} >> "$7"
+	else
+		if [ "$maxcount" -eq 1 ]; then
+			maxcount=0;
+		fi
+		{
+			echo ".mode csv"
+			echo ".headers on"
+			echo ".output ${5}_${6}.htm"
+			echo "SELECT '$1' Metric, Min(strftime('%s',datetime([Timestamp],'unixepoch','start of day'))) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','start of day','-$maxcount day'))) GROUP BY strftime('%d',datetime([Timestamp],'unixepoch','start of day')) ORDER BY [Timestamp] DESC;"
+		} >> "$7"
+	fi
 }
 
 Generate_LastXResults(){
 	{
 		echo ".mode csv"
 		echo ".output /tmp/conn-lastx.csv"
+		echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats ORDER BY [Timestamp] DESC LIMIT 10;"
 	} > /tmp/conn-lastx.sql
-	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats ORDER BY [Timestamp] DESC LIMIT 10;" >> /tmp/conn-lastx.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
 	sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
 	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
@@ -975,19 +972,7 @@ Run_PingTest(){
 	rm -f /tmp/connstatstitle.txt
 }
 
-Process_Upgrade(){
-	if [ ! -f "$SCRIPT_STORAGE_DIR/.tableupgraded" ]; then
-		{
-			echo "ALTER TABLE connstats RENAME COLUMN [Packet_Loss] TO [LineQuality];"
-		} > /tmp/conn-stats.sql
-		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-stats.sql >/dev/null 2>&1
-		touch "$SCRIPT_STORAGE_DIR/.tableupgraded"
-	fi
-	rm -f /tmp/conn-stats.sql
-}
-
 Generate_CSVs(){
-	OUTPUTDATAMODE="$(OutputDataMode check)"
 	OUTPUTTIMEMODE="$(OutputTimeMode check)"
 	TZ=$(cat /etc/TZ)
 	export TZ
@@ -1001,39 +986,48 @@ Generate_CSVs(){
 		{
 			echo ".mode csv"
 			echo ".headers on"
-			echo ".output $CSV_OUTPUT_DIR/${metric}daily.htm"
-			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400);"
+			echo ".output $CSV_OUTPUT_DIR/${metric}_raw_daily.htm"
+			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400) ORDER BY [Timestamp] DESC;"
 		} > /tmp/connmon-stats.sql
 		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
-		rm -f /tmp/connmon-stats.sql
 		
-		if [ "$OUTPUTDATAMODE" = "raw" ]; then
-			{
-				echo ".mode csv"
-				echo ".headers on"
-				echo ".output $CSV_OUTPUT_DIR/${metric}weekly.htm"
-				echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400*7);"
-			} > /tmp/connmon-stats.sql
-			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
-			rm -f /tmp/connmon-stats.sql
-			
-			{
-				echo ".mode csv"
-				echo ".headers on"
-				echo ".output $CSV_OUTPUT_DIR/${metric}monthly.htm"
-				echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400*30);"
-			} > /tmp/connmon-stats.sql
-			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
-			rm -f /tmp/connmon-stats.sql
-		elif [ "$OUTPUTDATAMODE" = "average" ]; then
-			WriteSql_ToFile "$metric" connstats 1 7 "$CSV_OUTPUT_DIR/$metric" weekly /tmp/connmon-stats.sql "$timenow"
-			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
-			rm -f /tmp/connmon-stats.sql
-			
-			WriteSql_ToFile "$metric" connstats 3 30 "$CSV_OUTPUT_DIR/$metric" monthly /tmp/connmon-stats.sql "$timenow"
-			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
-			rm -f /tmp/connmon-stats.sql
-		fi
+		{
+			echo ".mode csv"
+			echo ".headers on"
+			echo ".output $CSV_OUTPUT_DIR/${metric}_raw_weekly.htm"
+			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400*7) ORDER BY [Timestamp] DESC;"
+		} > /tmp/connmon-stats.sql
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		{
+			echo ".mode csv"
+			echo ".headers on"
+			echo ".output $CSV_OUTPUT_DIR/${metric}_raw_monthly.htm"
+			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400*30) ORDER BY [Timestamp] DESC;"
+		} > /tmp/connmon-stats.sql
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		WriteSql_ToFile "$metric" connstats 1 1 "$CSV_OUTPUT_DIR/${metric}_hour" daily /tmp/connmon-stats.sql "$timenow"
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		WriteSql_ToFile "$metric" connstats 1 7 "$CSV_OUTPUT_DIR/${metric}_hour" weekly /tmp/connmon-stats.sql "$timenow"
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		WriteSql_ToFile "$metric" connstats 1 30 "$CSV_OUTPUT_DIR/${metric}_hour" monthly /tmp/connmon-stats.sql "$timenow"
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		WriteSql_ToFile "$metric" connstats 24 1 "$CSV_OUTPUT_DIR/${metric}_day" daily /tmp/connmon-stats.sql "$timenow"
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		WriteSql_ToFile "$metric" connstats 24 7 "$CSV_OUTPUT_DIR/${metric}_day" weekly /tmp/connmon-stats.sql "$timenow"
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		WriteSql_ToFile "$metric" connstats 24 30 "$CSV_OUTPUT_DIR/${metric}_day" monthly /tmp/connmon-stats.sql "$timenow"
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		rm -f "${metric}daily.htm"
+		rm -f "${metric}weekly.htm"
+		rm -f "${metric}monthly.htm"
 	done
 	
 	rm -f /tmp/connmon-stats.sql
@@ -1161,8 +1155,7 @@ MainMenu(){
 	printf "3.    Set ping test duration\\n      Currently: ${SETTING}%ss\\e[0m\\n\\n" "$(PingDuration check)"
 	printf "4.    Toggle automatic ping tests\\n      Currently: \\e[1m$AUTOMATIC_ENABLED\\e[0m\\n\\n"
 	printf "5.    Set schedule for automatic ping tests\\n      ${SETTING}%s\\n      %s\\e[0m\\n\\n" "$TEST_SCHEDULE_MENU" "$TEST_SCHEDULE_MENU2"
-	printf "6.    Toggle data output mode\\n      Currently ${SETTING}%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode check)"
-	printf "7.    Toggle time output mode\\n      Currently ${SETTING}%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
+	printf "6.    Toggle time output mode\\n      Currently ${SETTING}%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
 	printf "s.    Toggle storage location for stats and config\\n      Current location is ${SETTING}%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
@@ -1214,15 +1207,6 @@ MainMenu(){
 				break
 			;;
 			6)
-				printf "\\n"
-				if [ "$(OutputDataMode check)" = "raw" ]; then
-					OutputDataMode average
-				elif [ "$(OutputDataMode check)" = "average" ]; then
-					OutputDataMode raw
-				fi
-				break
-			;;
-			7)
 				printf "\\n"
 				if [ "$(OutputTimeMode check)" = "unix" ]; then
 					OutputTimeMode non-unix
@@ -1895,7 +1879,6 @@ if [ -z "$1" ]; then
 	Conf_Exists
 	ScriptStorageLocation load
 	Create_Symlinks
-	Process_Upgrade
 	Auto_Startup create 2>/dev/null
 	if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 	Auto_ServiceEvent create 2>/dev/null
@@ -1943,6 +1926,7 @@ case "$1" in
 	;;
 	service_event)
 		if [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME" ]; then
+			rm -f /tmp/detect_connmon.js
 			Check_Lock webui
 			Run_PingTest
 			Clear_Lock
@@ -1972,7 +1956,6 @@ case "$1" in
 		Conf_Exists
 		ScriptStorageLocation load
 		Create_Symlinks
-		Process_Upgrade
 		Auto_Startup create 2>/dev/null
 		if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 		Auto_ServiceEvent create 2>/dev/null
@@ -1986,7 +1969,6 @@ case "$1" in
 		Conf_Exists
 		ScriptStorageLocation load
 		Create_Symlinks
-		Process_Upgrade
 		Auto_Startup create 2>/dev/null
 		if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 		Auto_ServiceEvent create 2>/dev/null
