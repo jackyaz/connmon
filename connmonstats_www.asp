@@ -530,14 +530,15 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 	
 	if(chartinterval == 'day'){
 		charttype = 'bar';
-		chartxaxismax = moment().startOf('day').add(12, 'hours');
+		chartxaxismax = moment().endOf('day').subtract(9,'hours');
+		chartaxismin = moment().startOf('day').subtract(numunitx-1,txtunitx+'s').subtract(12,'hours');
 	}
 	
 	if(chartperiod == 'daily' && chartinterval == 'day'){
 		txtunitx = 'day';
 		numunitx = 1;
-		chartxaxismax = moment().startOf('day').add(12, 'hours');
-		chartaxismin = moment().startOf('day').subtract(9, 'hours');
+		chartxaxismax = moment().endOf('day').subtract(9,'hours');
+		chartaxismin = moment().startOf('day').subtract(12,'hours');
 	}
 	
 	factor = 0;
