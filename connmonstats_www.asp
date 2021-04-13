@@ -865,6 +865,7 @@ function SetGlobalDataset(txtchartname,dataobject){
 		BuildLastXTable();
 		for(var i = 0; i < metriclist.length; i++){
 			$j('#'+metriclist[i]+'_Interval').val(GetCookie(metriclist[i]+'_Interval','number'));
+			changePeriod(document.getElementById(metriclist[i]+'_Interval'));
 			$j('#'+metriclist[i]+'_Period').val(GetCookie(metriclist[i]+'_Period','number'));
 			$j('#'+metriclist[i]+'_Scale').val(GetCookie(metriclist[i]+'_Scale','number'));
 			Draw_Chart(metriclist[i],titlelist[i],measureunitlist[i],bordercolourlist[i],backgroundcolourlist[i]);
@@ -1446,6 +1447,17 @@ function changeChart(e){
 	}
 }
 
+function changePeriod(e){
+	value = e.value * 1;
+	name = e.id.substring(0,e.id.indexOf('_'));
+	if(value == 2){
+		$j('select[id="'+name+'_Period"] option:contains(24)').text("Today");
+	}
+	else{
+		$j('select[id="'+name+'_Period"] option:contains("Today")').text("Last 24 hours");
+	}
+}
+
 function BuildLastXTable(){
 	var tablehtml = '<div style="line-height:10px;">&nbsp;</div>';
 	tablehtml+='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="resulttable_pings">';
@@ -1736,7 +1748,7 @@ seconds <span style="color:#FFCC00;">(between 10 and 60, default: 60)</span>
 <tr class="even">
 <th width="40%">Data interval</th>
 <td>
-<select style="width:150px" class="input_option" onchange="changeChart(this)" id="Ping_Interval">
+<select style="width:150px" class="input_option" onchange="changeChart(this);changePeriod(this);" id="Ping_Interval">
 <option value="0">Raw</option>
 <option value="1">Hours</option>
 <option value="2">Days</option>
@@ -1778,7 +1790,7 @@ seconds <span style="color:#FFCC00;">(between 10 and 60, default: 60)</span>
 <tr class="even">
 <th width="40%">Data interval</th>
 <td>
-<select style="width:150px" class="input_option" onchange="changeChart(this)" id="Jitter_Interval">
+<select style="width:150px" class="input_option" onchange="changeChart(this);changePeriod(this);" id="Jitter_Interval">
 <option value="0">Raw</option>
 <option value="1">Hours</option>
 <option value="2">Days</option>
@@ -1820,7 +1832,7 @@ seconds <span style="color:#FFCC00;">(between 10 and 60, default: 60)</span>
 <tr class="even">
 <th width="40%">Data interval</th>
 <td>
-<select style="width:150px" class="input_option" onchange="changeChart(this)" id="LineQuality_Interval">
+<select style="width:150px" class="input_option" onchange="changeChart(this);changePeriod(this);" id="LineQuality_Interval">
 <option value="0">Raw</option>
 <option value="1">Hours</option>
 <option value="2">Days</option>
