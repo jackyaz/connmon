@@ -519,14 +519,13 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 	if(chartinterval == 'day'){
 		charttype = 'bar';
 		chartxaxismax = moment().startOf('day').add(12, 'hours');
-		chartaxismin = chartaxismin.subtract(12, 'hours');
 	}
 	
 	if(chartperiod == 'daily' && chartinterval == 'day'){
 		txtunitx = 'day';
 		numunitx = 1;
 		chartxaxismax = moment().startOf('day').add(12, 'hours');
-		chartaxismin = moment().startOf('day').subtract(12, 'hours');
+		chartaxismin = moment().startOf('day').subtract(9, 'hours');
 	}
 	
 	factor = 0;
