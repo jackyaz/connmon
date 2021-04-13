@@ -971,6 +971,7 @@ Run_PingTest(){
 }
 
 Generate_CSVs(){
+	Process_Upgrade
 	OUTPUTTIMEMODE="$(OutputTimeMode check)"
 	TZ=$(cat /etc/TZ)
 	export TZ
@@ -1080,6 +1081,27 @@ Reset_DB(){
 		rm -f /tmp/connmon-stats.sql
 		
 		Print_Output true "Database reset complete" "$WARN"
+	fi
+}
+
+Process_Upgrade(){
+	if [ ! -f "$SCRIPT_STORAGE_DIR/.indexcreated" ]; then
+		Print_Output true "Creating database table indexes..." "$PASS"
+		echo "CREATE INDEX idx_time_ping ON connstats (Timestamp,Ping);" > /tmp/connmon-upgrade.sql
+		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
+			sleep 1
+		done
+		echo "CREATE INDEX idx_time_jitter ON connstats (Timestamp,Jitter);" > /tmp/connmon-upgrade.sql
+		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
+			sleep 1
+		done
+		echo "CREATE INDEX idx_time_linequality ON connstats (Timestamp,LineQuality);" > /tmp/connmon-upgrade.sql
+		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
+			sleep 1
+		done
+		rm -f /tmp/connmon-upgrade.sql
+		touch "$SCRIPT_STORAGE_DIR/.indexcreated"
+		Print_Output true "Database ready, continuing..." "$PASS"
 	fi
 }
 
@@ -1881,6 +1903,7 @@ if [ -z "$1" ]; then
 	if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
+	Process_Upgrade
 	ScriptHeader
 	MainMenu
 	exit 0
