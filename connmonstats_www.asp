@@ -1432,28 +1432,33 @@ function update_conntest(){
 				showhide('conntest_text',true);
 				document.getElementById('conntest_text').innerHTML = 'Ping test in progress - '+pingcount+'s elapsed';
 			}
+			else if(connmonstatus == 'GenerateCSV'){
+				document.getElementById('conntest_text').innerHTML = 'Retrieving data for charts...';
+			}
 			else if(connmonstatus == 'Done'){
+				pingcount = 2;
+				clearInterval(myinterval);
 				get_conntestresult_file();
 				document.getElementById('conntest_text').innerHTML = 'Refreshing charts...';
-				pingcount=2;
-				clearInterval(myinterval);
 				PostConnTest();
 			}
 			else if(connmonstatus == 'LOCKED'){
+				pingcount = 2;
+				clearInterval(myinterval);
 				showhide('imgConnTest',false);
 				document.getElementById('conntest_text').innerHTML = 'Scheduled ping test already running!';
 				showhide('conntest_text',true);
 				showhide('btnRunPingtest',true);
 				document.getElementById('conntest_output').parentElement.parentElement.style.display = 'none';
-				clearInterval(myinterval);
 			}
 			else if(connmonstatus == 'InvalidServer'){
+				pingcount = 2;
+				clearInterval(myinterval);
 				showhide('imgConnTest',false);
 				document.getElementById('conntest_text').innerHTML = 'Specified ping server is not valid';
 				showhide('conntest_text',true);
 				showhide('btnRunPingtest',true);
 				document.getElementById('conntest_output').parentElement.parentElement.style.display = 'none';
-				clearInterval(myinterval);
 			}
 		}
 	});
