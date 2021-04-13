@@ -952,6 +952,8 @@ Run_PingTest(){
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	rm -f /tmp/connmon-stats.sql
 	
+	echo 'var connmonstatus = "GenerateCSV";' > /tmp/detect_connmon.js
+	
 	Generate_CSVs
 	
 	echo "Stats last updated: $timenowfriendly" > "/tmp/connstatstitle.txt"
