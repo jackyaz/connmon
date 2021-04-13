@@ -853,6 +853,17 @@ Generate_LastXResults(){
 }
 
 Run_PingTest(){
+	if [ ! -f /opt/bin/xargs ]; then
+		Print_Output true "Installing findutils from Entware"
+		opkg update
+		opkg install findutils
+	fi
+	#shellcheck disable=SC2009
+	if [ -n "$PPID" ]; then
+		ps | grep -v grep | grep -v $$ | grep -v "$PPID" | grep -i "$SCRIPT_NAME" | grep generate | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
+	else
+		ps | grep -v grep | grep -v $$ | grep -i "$SCRIPT_NAME" | grep generate | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
+	fi
 	Create_Dirs
 	Conf_Exists
 	Auto_Startup create 2>/dev/null
@@ -1327,6 +1338,7 @@ Check_Requirements(){
 		Print_Output true "Installing required packages from Entware" "$PASS"
 		opkg update
 		opkg install sqlite3-cli
+		opkg install findutils
 		return 0
 	else
 		return 1
