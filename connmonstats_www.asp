@@ -211,8 +211,6 @@ div.schedulesettings {
 <script language="JavaScript" type="text/javascript" src="/tmmenu.js"></script>
 <script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <script language="JavaScript" type="text/javascript" src="/validator.js"></script>
-<script language="JavaScript" type="text/javascript" src="/ext/connmon/connjs.js"></script>
-<script language="JavaScript" type="text/javascript" src="/ext/connmon/connstatstext.js"></script>
 <script>
 var custom_settings;
 function LoadCustomSettings(){
@@ -872,6 +870,7 @@ function SetGlobalDataset(txtchartname,dataobject){
 			Draw_Chart(metriclist[i],titlelist[i],measureunitlist[i],bordercolourlist[i],backgroundcolourlist[i]);
 		}
 		AddEventHandlers();
+		get_lastx_file();
 	}
 }
 
@@ -1019,7 +1018,7 @@ function initial(){
 	$j('#Time_Format').val(GetCookie('Time_Format','number'));
 	RedrawAllCharts();
 	ScriptUpdateLayout();
-	SetConnmonStatsTitle();
+	get_statstitle_file();
 }
 
 function ScriptUpdateLayout(){
@@ -1275,6 +1274,74 @@ function get_conf_file(){
 	});
 }
 
+function get_statstitle_file(){
+	$j.ajax({
+		url: '/ext/connmon/connstatstext.js',
+		dataType: 'script',
+		timeout: 3000,
+		error: function(xhr){
+			setTimeout(get_statstitle_file, 1000);
+		},
+		success: function(){
+			SetConnmonStatsTitle();
+		}
+	});
+}
+
+function get_lastx_file(){
+	$j.ajax({
+		url: '/ext/connmon/connjs.js',
+		dataType: 'script',
+		timeout: 3000,
+		error: function(xhr){
+			setTimeout(get_lastx_file, 1000);
+		},
+		success: function(){
+			var nodata='';
+			var objdataname = window['DataTimestamp'];
+			if(typeof objdataname === 'undefined' || objdataname === null){nodata='true'}
+			else if(objdataname.length == 0){nodata='true'}
+			else if(objdataname.length == 1 && objdataname[0] == ''){nodata='true'}
+
+			var tablehtml='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable StatsTable">';
+			if(nodata == 'true'){
+				tablehtml+='<tr>';
+				tablehtml+='<td colspan="4" class="nodata">';
+				tablehtml+='No data to display';
+				tablehtml+='</td>';
+				tablehtml+='</tr>';
+			}
+			else{
+				tablehtml+='<col style="width:185px;">';
+				tablehtml+='<col style="width:185px;">';
+				tablehtml+='<col style="width:185px;">';
+				tablehtml+='<col style="width:185px;">';
+				tablehtml+='<thead>';
+				tablehtml+='<tr>';
+				tablehtml+='<th class="keystatsnumber">Time</th>';
+				tablehtml+='<th class="keystatsnumber">Ping (ms)</th>';
+				tablehtml+='<th class="keystatsnumber">Jitter (ms)</th>';
+				tablehtml+='<th class="keystatsnumber">Line Quality (%)</th>';
+				tablehtml+='</tr>';
+				tablehtml+='</thead>';
+				
+				for(var i = 0; i < objdataname.length; i++){
+					tablehtml+='<tr>';
+					tablehtml+='<td>'+moment.unix(window['DataTimestamp'][i]).format('YYYY-MM-DD HH:mm:ss')+'</td>';
+					tablehtml+='<td>'+window['DataPing'][i]+'</td>';
+					tablehtml+='<td>'+window['DataJitter'][i]+'</td>';
+					tablehtml+='<td>'+window['DataLineQuality'][i].replace('null','')+'</td>';
+					tablehtml+='</tr>';
+				};
+			}
+			tablehtml+='</table>';
+			
+			$j("#tablelastxresults").empty();
+			$j("#tablelastxresults").append(tablehtml);
+		}
+	});
+}
+
 function AutomaticTestEnableDisable(forminput){
 	var inputname = forminput.name;
 	var inputvalue = forminput.value;
@@ -1395,10 +1462,8 @@ function update_conntest(){
 function PostConnTest(){
 	currentNoCharts = 0;
 	$j('#resulttable_pings').remove();
-	reload_js('/ext/connmon/connjs.js');
-	reload_js('/ext/connmon/connstatstext.js');
 	$j('#Time_Format').val(GetCookie('Time_Format','number'));
-	SetConnmonStatsTitle();
+	get_statstitle_file();
 	setTimeout(RedrawAllCharts,3000);
 }
 
@@ -1416,11 +1481,6 @@ function runPingTest(){
 var myinterval;
 function StartConnTestInterval(){
 	myinterval = setInterval(update_conntest,1000);
-}
-
-function reload_js(src){
-	$j('script[src="'+src+'"]').remove();
-	$j('<script>').attr('src',src+'?cachebuster='+ new Date().getTime()).appendTo('head');
 }
 
 function changeAllCharts(e){
@@ -1466,45 +1526,7 @@ function BuildLastXTable(){
 	tablehtml+='<tr><td colspan="2">Last 10 ping test results (click to expand/collapse)</td></tr>';
 	tablehtml+='</thead>';
 	tablehtml+='<tr>';
-	tablehtml+='<td colspan="2" align="center" style="padding: 0px;">';
-	tablehtml+='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable StatsTable">';
-	var nodata='';
-	var objdataname = window['DataTimestamp'];
-	if(typeof objdataname === 'undefined' || objdataname === null){nodata='true'}
-	else if(objdataname.length == 0){nodata='true'}
-	else if(objdataname.length == 1 && objdataname[0] == ''){nodata='true'}
-
-	if(nodata == 'true'){
-		tablehtml+='<tr>';
-		tablehtml+='<td colspan="4" class="nodata">';
-		tablehtml+='No data to display';
-		tablehtml+='</td>';
-		tablehtml+='</tr>';
-	}
-	else{
-		tablehtml+='<col style="width:185px;">';
-		tablehtml+='<col style="width:185px;">';
-		tablehtml+='<col style="width:185px;">';
-		tablehtml+='<col style="width:185px;">';
-		tablehtml+='<thead>';
-		tablehtml+='<tr>';
-		tablehtml+='<th class="keystatsnumber">Time</th>';
-		tablehtml+='<th class="keystatsnumber">Ping (ms)</th>';
-		tablehtml+='<th class="keystatsnumber">Jitter (ms)</th>';
-		tablehtml+='<th class="keystatsnumber">Line Quality (%)</th>';
-		tablehtml+='</tr>';
-		tablehtml+='</thead>';
-		
-		for(var i = 0; i < objdataname.length; i++){
-			tablehtml+='<tr>';
-			tablehtml+='<td>'+moment.unix(window['DataTimestamp'][i]).format('YYYY-MM-DD HH:mm:ss')+'</td>';
-			tablehtml+='<td>'+window['DataPing'][i]+'</td>';
-			tablehtml+='<td>'+window['DataJitter'][i]+'</td>';
-			tablehtml+='<td>'+window['DataLineQuality'][i].replace('null','')+'</td>';
-			tablehtml+='</tr>';
-		};
-	}
-	tablehtml+='</table>';
+	tablehtml+='<td colspan="2" align="center" style="padding: 0px;" id="tablelastxresults">';
 	tablehtml+='</td>';
 	tablehtml+='</tr>';
 	tablehtml+='</table>';
