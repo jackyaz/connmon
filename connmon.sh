@@ -956,7 +956,6 @@ Run_PingTest(){
 	
 	echo "Stats last updated: $timenowfriendly" > "/tmp/connstatstitle.txt"
 	WriteStats_ToJS /tmp/connstatstitle.txt "$SCRIPT_STORAGE_DIR/connstatstext.js" SetConnmonStatsTitle statstitle
-	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
 	Print_Output false "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %" "$PASS"
 	
 	{
@@ -966,6 +965,7 @@ Run_PingTest(){
 	
 	rm -f "$pingfile"
 	rm -f /tmp/connstatstitle.txt
+	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
 }
 
 Generate_CSVs(){
