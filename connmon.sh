@@ -1,25 +1,25 @@
 #!/bin/sh
 
-############################################################
-##                                                        ##
-##   ___   ___   _ __   _ __   _ __ ___    ___   _ __     ##
-##  / __| / _ \ | '_ \ | '_ \ | '_ ` _ \  / _ \ | '_ \    ##
-## | (__ | (_) || | | || | | || | | | | || (_) || | | |   ##
-##  \___| \___/ |_| |_||_| |_||_| |_| |_| \___/ |_| |_|   ##
-##                                                        ##
-##          https://github.com/jackyaz/connmon            ##
-##                                                        ##
-############################################################
+##############################################################
+##                                                          ##
+##     ___   ___   _ __   _ __   _ __ ___    ___   _ __     ##
+##    / __| / _ \ | '_ \ | '_ \ | '_ ` _ \  / _ \ | '_ \    ##
+##   | (__ | (_) || | | || | | || | | | | || (_) || | | |   ##
+##    \___| \___/ |_| |_||_| |_||_| |_| |_| \___/ |_| |_|   ##
+##                                                          ##
+##            https://github.com/jackyaz/connmon            ##
+##                                                          ##
+##############################################################
 
-#############        Shellcheck directives      ############
+##############        Shellcheck directives      #############
 # shellcheck disable=SC2018
 # shellcheck disable=SC2019
 # shellcheck disable=SC2059
-############################################################
+##############################################################
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.9.1"
+readonly SCRIPT_VERSION="v2.10.0"
 SCRIPT_BRANCH="master"
 SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -380,9 +380,12 @@ Conf_Exists(){
 			echo "SCHMINS=*/$PINGFREQUENCY" >> "$SCRIPT_CONF"
 			sed -i '/SCHEDULESTART/d;/SCHEDULEEND/d;/PINGFREQUENCY/d;' "$SCRIPT_CONF"
 		fi
+		if grep -q "OUTPUTDATAMODE" "$SCRIPT_CONF"; then
+			sed -i '/OUTPUTDATAMODE/d;' "$SCRIPT_CONF"
+		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTDATAMODE=raw"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -673,15 +676,9 @@ Mount_WebUI(){
 		
 		if ! grep -q 'menuName: "Addons"' /tmp/menuTree.js ; then
 			lineinsbefore="$(( $(grep -n "exclude:" /tmp/menuTree.js | cut -f1 -d':') - 1))"
-			sed -i "$lineinsbefore"'i,\n{\nmenuName: "Addons",\nindex: "menu_Addons",\ntab: [\n{url: "ext/shared-jy/redirect.htm", tabName: "Help & Support"},\n{url: "NULL", tabName: "__INHERIT__"}\n]\n}' /tmp/menuTree.js
+			sed -i "$lineinsbefore"'i,\n{\nmenuName: "Addons",\nindex: "menu_Addons",\ntab: [\n{url: "javascript:var helpwindow=window.open('"'"'/ext/shared-jy/redirect.htm'"'"')", tabName: "Help & Support"},\n{url: "NULL", tabName: "__INHERIT__"}\n]\n}' /tmp/menuTree.js
 		fi
 		
-		if grep -q "javascript:window.open('/ext/shared-jy/redirect.htm'" /tmp/menuTree.js ; then
-			sed -i "s~javascript:window.open('/ext/shared-jy/redirect.htm','_blank')~javascript:var helpwindow=window.open('/ext/shared-jy/redirect.htm','_blank')~" /tmp/menuTree.js
-		fi
-		if ! grep -q "javascript:var helpwindow=window.open('/ext/shared-jy/redirect.htm'" /tmp/menuTree.js ; then
-			sed -i "s~ext/shared-jy/redirect.htm~javascript:var helpwindow=window.open('/ext/shared-jy/redirect.htm','_blank')~" /tmp/menuTree.js
-		fi
 		sed -i "/url: \"javascript:var helpwindow=window.open('\/ext\/shared-jy\/redirect.htm'/i {url: \"$MyPage\", tabName: \"$SCRIPT_NAME\"}," /tmp/menuTree.js
 		
 		umount /www/require/modules/menuTree.js 2>/dev/null
@@ -738,6 +735,7 @@ ScriptStorageLocation(){
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstatstext.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connjs.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstats.db" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/jffs/addons/$SCRIPT_NAME.d/.indexcreated" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			SCRIPT_CONF="/opt/share/$SCRIPT_NAME.d/config"
 			ScriptStorageLocation load
 		;;
@@ -750,6 +748,7 @@ ScriptStorageLocation(){
 			mv "/opt/share/$SCRIPT_NAME.d/connstatstext.js" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connjs.js" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstats.db" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/opt/share/$SCRIPT_NAME.d/.indexcreated" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			SCRIPT_CONF="/jffs/addons/$SCRIPT_NAME.d/config"
 			ScriptStorageLocation load
 		;;
@@ -766,23 +765,6 @@ ScriptStorageLocation(){
 			fi
 			
 			CSV_OUTPUT_DIR="$SCRIPT_STORAGE_DIR/csv"
-		;;
-	esac
-}
-
-OutputDataMode(){
-	case "$1" in
-		raw)
-			sed -i 's/^OUTPUTDATAMODE.*$/OUTPUTDATAMODE=raw/' "$SCRIPT_CONF"
-			Generate_CSVs
-		;;
-		average)
-			sed -i 's/^OUTPUTDATAMODE.*$/OUTPUTDATAMODE=average/' "$SCRIPT_CONF"
-			Generate_CSVs
-		;;
-		check)
-			OUTPUTDATAMODE=$(grep "OUTPUTDATAMODE" "$SCRIPT_CONF" | cut -f2 -d"=")
-			echo "$OUTPUTDATAMODE"
 		;;
 	esac
 }
@@ -834,23 +816,30 @@ WriteStats_ToJS(){
 WriteSql_ToFile(){
 	timenow="$8"
 	maxcount="$(echo "$3" "$4" | awk '{printf ((24*$2)/$1)}')"
-	multiplier="$(echo "$3" | awk '{printf (60*60*$1)}')"
 	
-	{
-		echo ".mode csv"
-		echo ".headers on"
-		echo ".output ${5}${6}.htm"
-	} >> "$7"
-	
-	echo "SELECT '$1' Metric, Min([Timestamp]) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= $timenow - ($multiplier*$maxcount)) GROUP BY ([Timestamp]/($multiplier));" >> "$7"
+	if ! echo "$5" | grep -q "day"; then
+		{
+			echo ".mode csv"
+			echo ".headers on"
+			echo ".output ${5}_${6}.htm"
+			echo "SELECT '$1' Metric, Min(strftime('%s',datetime(strftime('%Y-%m-%d %H:00:00',datetime([Timestamp],'unixepoch'))))) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-$maxcount hour'))) GROUP BY strftime('%m',datetime([Timestamp],'unixepoch')),strftime('%d',datetime([Timestamp],'unixepoch')),strftime('%H',datetime([Timestamp],'unixepoch')) ORDER BY [Timestamp] DESC;"
+		} >> "$7"
+	else
+		{
+			echo ".mode csv"
+			echo ".headers on"
+			echo ".output ${5}_${6}.htm"
+			echo "SELECT '$1' Metric, Min(strftime('%s',datetime([Timestamp],'unixepoch','start of day'))) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] > strftime('%s',datetime($timenow,'unixepoch','start of day','+1 day','-$maxcount day'))) GROUP BY strftime('%m',datetime([Timestamp],'unixepoch')),strftime('%d',datetime([Timestamp],'unixepoch')) ORDER BY [Timestamp] DESC;"
+		} >> "$7"
+	fi
 }
 
 Generate_LastXResults(){
 	{
 		echo ".mode csv"
 		echo ".output /tmp/conn-lastx.csv"
+		echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats ORDER BY [Timestamp] DESC LIMIT 10;"
 	} > /tmp/conn-lastx.sql
-	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats ORDER BY [Timestamp] DESC LIMIT 10;" >> /tmp/conn-lastx.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
 	sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
 	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
@@ -860,6 +849,17 @@ Generate_LastXResults(){
 }
 
 Run_PingTest(){
+	if [ ! -f /opt/bin/xargs ]; then
+		Print_Output true "Installing findutils from Entware"
+		opkg update
+		opkg install findutils
+	fi
+	#shellcheck disable=SC2009
+	if [ -n "$PPID" ]; then
+		ps | grep -v grep | grep -v $$ | grep -v "$PPID" | grep -i "$SCRIPT_NAME" | grep generate | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
+	else
+		ps | grep -v grep | grep -v $$ | grep -i "$SCRIPT_NAME" | grep generate | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
+	fi
 	Create_Dirs
 	Conf_Exists
 	Auto_Startup create 2>/dev/null
@@ -882,13 +882,33 @@ Run_PingTest(){
 		return 1
 	fi
 	
-	iptables -I OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
-	iptables -t mangle -I OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
-	iptables -t mangle -I POSTROUTING -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+	stoppedqos="false"
+	if [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -eq 1 ]; then
+		for ACTION in -D -A ; do
+			iptables "$ACTION" OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+			iptables -t mangle "$ACTION" OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+			iptables -t mangle "$ACTION" POSTROUTING -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+			stoppedqos="true"
+		done
+	elif [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -ne 1 ] && [ -f /tmp/qos ]; then
+		/tmp/qos stop >/dev/null 2>&1
+		stoppedqos="true"
+	elif [ "$(nvram get qos_enable)" -eq 0 ] && [ -f /jffs/addons/cake-qos/cake-qos ]; then
+		/jffs/addons/cake-qos/cake-qos stop >/dev/null 2>&1
+		stoppedqos="true"
+	fi
 	ping -w "$(PingDuration check)" "$(PingServer check)" > "$pingfile"
-	iptables -D OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
-	iptables -t mangle -D OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
-	iptables -t mangle -D POSTROUTING -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+	if [ "$stoppedqos" = "true" ]; then
+		if [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -eq 1 ]; then
+			iptables -D OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+			iptables -t mangle -D OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+			iptables -t mangle -D POSTROUTING -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+		elif [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -ne 1 ] && [ -f /tmp/qos ]; then
+			/tmp/qos start >/dev/null 2>&1
+		elif [ "$(nvram get qos_enable)" -eq 0 ] && [ -f /jffs/addons/cake-qos/cake-qos ]; then
+			/jffs/addons/cake-qos/cake-qos start >/dev/null 2>&1
+		fi
+	fi
 	
 	ScriptStorageLocation load
 	
@@ -939,11 +959,12 @@ Run_PingTest(){
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	rm -f /tmp/connmon-stats.sql
 	
+	echo 'var connmonstatus = "GenerateCSV";' > /tmp/detect_connmon.js
+	
 	Generate_CSVs
 	
 	echo "Stats last updated: $timenowfriendly" > "/tmp/connstatstitle.txt"
 	WriteStats_ToJS /tmp/connstatstitle.txt "$SCRIPT_STORAGE_DIR/connstatstext.js" SetConnmonStatsTitle statstitle
-	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
 	Print_Output false "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %" "$PASS"
 	
 	{
@@ -953,21 +974,11 @@ Run_PingTest(){
 	
 	rm -f "$pingfile"
 	rm -f /tmp/connstatstitle.txt
-}
-
-Process_Upgrade(){
-	if [ ! -f "$SCRIPT_STORAGE_DIR/.tableupgraded" ]; then
-		{
-			echo "ALTER TABLE connstats RENAME COLUMN [Packet_Loss] TO [LineQuality];"
-		} > /tmp/conn-stats.sql
-		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-stats.sql >/dev/null 2>&1
-		touch "$SCRIPT_STORAGE_DIR/.tableupgraded"
-	fi
-	rm -f /tmp/conn-stats.sql
+	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
 }
 
 Generate_CSVs(){
-	OUTPUTDATAMODE="$(OutputDataMode check)"
+	Process_Upgrade
 	OUTPUTTIMEMODE="$(OutputTimeMode check)"
 	TZ=$(cat /etc/TZ)
 	export TZ
@@ -981,39 +992,48 @@ Generate_CSVs(){
 		{
 			echo ".mode csv"
 			echo ".headers on"
-			echo ".output $CSV_OUTPUT_DIR/${metric}daily.htm"
-			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400);"
+			echo ".output $CSV_OUTPUT_DIR/${metric}_raw_daily.htm"
+			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-1 day'))) ORDER BY [Timestamp] DESC;"
 		} > /tmp/connmon-stats.sql
 		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
-		rm -f /tmp/connmon-stats.sql
 		
-		if [ "$OUTPUTDATAMODE" = "raw" ]; then
-			{
-				echo ".mode csv"
-				echo ".headers on"
-				echo ".output $CSV_OUTPUT_DIR/${metric}weekly.htm"
-				echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400*7);"
-			} > /tmp/connmon-stats.sql
-			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
-			rm -f /tmp/connmon-stats.sql
-			
-			{
-				echo ".mode csv"
-				echo ".headers on"
-				echo ".output $CSV_OUTPUT_DIR/${metric}monthly.htm"
-				echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE [Timestamp] >= ($timenow - 86400*30);"
-			} > /tmp/connmon-stats.sql
-			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
-			rm -f /tmp/connmon-stats.sql
-		elif [ "$OUTPUTDATAMODE" = "average" ]; then
-			WriteSql_ToFile "$metric" connstats 1 7 "$CSV_OUTPUT_DIR/$metric" weekly /tmp/connmon-stats.sql "$timenow"
-			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
-			rm -f /tmp/connmon-stats.sql
-			
-			WriteSql_ToFile "$metric" connstats 3 30 "$CSV_OUTPUT_DIR/$metric" monthly /tmp/connmon-stats.sql "$timenow"
-			"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
-			rm -f /tmp/connmon-stats.sql
-		fi
+		{
+			echo ".mode csv"
+			echo ".headers on"
+			echo ".output $CSV_OUTPUT_DIR/${metric}_raw_weekly.htm"
+			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-7 day'))) ORDER BY [Timestamp] DESC;"
+		} > /tmp/connmon-stats.sql
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		{
+			echo ".mode csv"
+			echo ".headers on"
+			echo ".output $CSV_OUTPUT_DIR/${metric}_raw_monthly.htm"
+			echo "SELECT '$metric' Metric,[Timestamp] Time,[$metric] Value FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-30 day'))) ORDER BY [Timestamp] DESC;"
+		} > /tmp/connmon-stats.sql
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		WriteSql_ToFile "$metric" connstats 1 1 "$CSV_OUTPUT_DIR/${metric}_hour" daily /tmp/connmon-stats.sql "$timenow"
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		WriteSql_ToFile "$metric" connstats 1 7 "$CSV_OUTPUT_DIR/${metric}_hour" weekly /tmp/connmon-stats.sql "$timenow"
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		WriteSql_ToFile "$metric" connstats 1 30 "$CSV_OUTPUT_DIR/${metric}_hour" monthly /tmp/connmon-stats.sql "$timenow"
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		WriteSql_ToFile "$metric" connstats 24 1 "$CSV_OUTPUT_DIR/${metric}_day" daily /tmp/connmon-stats.sql "$timenow"
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		WriteSql_ToFile "$metric" connstats 24 7 "$CSV_OUTPUT_DIR/${metric}_day" weekly /tmp/connmon-stats.sql "$timenow"
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		WriteSql_ToFile "$metric" connstats 24 30 "$CSV_OUTPUT_DIR/${metric}_day" monthly /tmp/connmon-stats.sql "$timenow"
+		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+		
+		rm -f "${metric}daily.htm"
+		rm -f "${metric}weekly.htm"
+		rm -f "${metric}monthly.htm"
 	done
 	
 	rm -f /tmp/connmon-stats.sql
@@ -1024,7 +1044,7 @@ Generate_CSVs(){
 		echo ".headers on"
 		echo ".output $CSV_OUTPUT_DIR/CompleteResults.htm"
 	} > /tmp/connmon-complete.sql
-	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats WHERE [Timestamp] >= ($timenow - 86400*30) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
+	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-30 day'))) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-complete.sql
 	rm -f /tmp/connmon-complete.sql
 	
@@ -1071,6 +1091,27 @@ Reset_DB(){
 	fi
 }
 
+Process_Upgrade(){
+	if [ ! -f "$SCRIPT_STORAGE_DIR/.indexcreated" ]; then
+		Print_Output true "Creating database table indexes..." "$PASS"
+		echo "CREATE INDEX idx_time_ping ON connstats (Timestamp,Ping);" > /tmp/connmon-upgrade.sql
+		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
+			:
+		done
+		echo "CREATE INDEX idx_time_jitter ON connstats (Timestamp,Jitter);" > /tmp/connmon-upgrade.sql
+		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
+			:
+		done
+		echo "CREATE INDEX idx_time_linequality ON connstats (Timestamp,LineQuality);" > /tmp/connmon-upgrade.sql
+		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
+			:
+		done
+		rm -f /tmp/connmon-upgrade.sql
+		touch "$SCRIPT_STORAGE_DIR/.indexcreated"
+		Print_Output true "Database ready, continuing..." "$PASS"
+	fi
+}
+
 Shortcut_Script(){
 	case $1 in
 		create)
@@ -1103,17 +1144,17 @@ PressEnter(){
 ScriptHeader(){
 	clear
 	printf "\\n"
-	printf "\\e[1m############################################################\\e[0m\\n"
-	printf "\\e[1m##   ___   ___   _ __   _ __   _ __ ___    ___   _ __     ##\\e[0m\\n"
-	printf "\\e[1m##  / __| / _ \ | '_ \ | '_ \ | '_   _ \  / _ \ | '_ \    ##\\e[0m\\n"
-	printf "\\e[1m## | (__ | (_) || | | || | | || | | | | || (_) || | | |   ##\\e[0m\\n"
-	printf "\\e[1m##  \___| \___/ |_| |_||_| |_||_| |_| |_| \___/ |_| |_|   ##\\e[0m\\n"
-	printf "\\e[1m##                                                        ##\\e[0m\\n"
-	printf "\\e[1m##                  %s on %-11s                 ##\\e[0m\\n" "$SCRIPT_VERSION" "$ROUTER_MODEL"
-	printf "\\e[1m##                                                        ##\\e[0m\\n"
-	printf "\\e[1m##          https://github.com/jackyaz/connmon            ##\\e[0m\\n"
-	printf "\\e[1m##                                                        ##\\e[0m\\n"
-	printf "\\e[1m############################################################\\e[0m\\n"
+	printf "\\e[1m##############################################################\\e[0m\\n"
+	printf "\\e[1m##     ___   ___   _ __   _ __   _ __ ___    ___   _ __     ##\\e[0m\\n"
+	printf "\\e[1m##    / __| / _ \ | '_ \ | '_ \ | '_   _ \  / _ \ | '_ \    ##\\e[0m\\n"
+	printf "\\e[1m##   | (__ | (_) || | | || | | || | | | | || (_) || | | |   ##\\e[0m\\n"
+	printf "\\e[1m##    \___| \___/ |_| |_||_| |_||_| |_| |_| \___/ |_| |_|   ##\\e[0m\\n"
+	printf "\\e[1m##                                                          ##\\e[0m\\n"
+	printf "\\e[1m##                  %s on %-11s                  ##\\e[0m\\n" "$SCRIPT_VERSION" "$ROUTER_MODEL"
+	printf "\\e[1m##                                                          ##\\e[0m\\n"
+	printf "\\e[1m##            https://github.com/jackyaz/connmon            ##\\e[0m\\n"
+	printf "\\e[1m##                                                          ##\\e[0m\\n"
+	printf "\\e[1m##############################################################\\e[0m\\n"
 	printf "\\n"
 }
 
@@ -1141,8 +1182,7 @@ MainMenu(){
 	printf "3.    Set ping test duration\\n      Currently: ${SETTING}%ss\\e[0m\\n\\n" "$(PingDuration check)"
 	printf "4.    Toggle automatic ping tests\\n      Currently: \\e[1m$AUTOMATIC_ENABLED\\e[0m\\n\\n"
 	printf "5.    Set schedule for automatic ping tests\\n      ${SETTING}%s\\n      %s\\e[0m\\n\\n" "$TEST_SCHEDULE_MENU" "$TEST_SCHEDULE_MENU2"
-	printf "6.    Toggle data output mode\\n      Currently ${SETTING}%s\\e[0m values will be used for weekly and monthly charts\\n\\n" "$(OutputDataMode check)"
-	printf "7.    Toggle time output mode\\n      Currently ${SETTING}%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
+	printf "6.    Toggle time output mode\\n      Currently ${SETTING}%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
 	printf "s.    Toggle storage location for stats and config\\n      Current location is ${SETTING}%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
@@ -1150,7 +1190,7 @@ MainMenu(){
 	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
 	printf "z.    Uninstall %s\\n" "$SCRIPT_NAME"
 	printf "\\n"
-	printf "\\e[1m############################################################\\e[0m\\n"
+	printf "\\e[1m##############################################################\\e[0m\\n"
 	printf "\\n"
 	
 	while true; do
@@ -1194,15 +1234,6 @@ MainMenu(){
 				break
 			;;
 			6)
-				printf "\\n"
-				if [ "$(OutputDataMode check)" = "raw" ]; then
-					OutputDataMode average
-				elif [ "$(OutputDataMode check)" = "average" ]; then
-					OutputDataMode raw
-				fi
-				break
-			;;
-			7)
 				printf "\\n"
 				if [ "$(OutputTimeMode check)" = "unix" ]; then
 					OutputTimeMode non-unix
@@ -1303,6 +1334,7 @@ Check_Requirements(){
 		Print_Output true "Installing required packages from Entware" "$PASS"
 		opkg update
 		opkg install sqlite3-cli
+		opkg install findutils
 		return 0
 	else
 		return 1
@@ -1401,7 +1433,25 @@ Menu_EditSchedule(){
 			crudaystmp="$(echo "$day_choice" | sed "s/,/ /g")"
 			crudaysvalidated="true"
 			for i in $crudaystmp; do
-				if ! Validate_Number "$i"; then
+				if echo "$i" | grep -q "-"; then
+					if [ "$i" = "-" ]; then
+						printf "\\n\\e[31mPlease enter a valid number (0-6)\\e[0m\\n"
+						crudaysvalidated="false"
+						break
+					fi
+					crudaystmp2="$(echo "$i" | sed "s/-/ /")"
+					for i2 in $crudaystmp2; do
+						if ! Validate_Number "$i2"; then
+							printf "\\n\\e[31mPlease enter a valid number (0-6)\\e[0m\\n"
+							crudaysvalidated="false"
+							break
+						elif [ "$i2" -lt 0 ] || [ "$i2" -gt 6 ]; then
+							printf "\\n\\e[31mPlease enter a number between 0 and 6\\e[0m\\n"
+							crudaysvalidated="false"
+							break
+						fi
+					done
+				elif ! Validate_Number "$i"; then
 					printf "\\n\\e[31mPlease enter a valid number (0-6) or comma separated values\\e[0m\\n"
 					crudaysvalidated="false"
 					break
@@ -1497,13 +1547,13 @@ Menu_EditSchedule(){
 				elif [ "$hour_choice" -lt 1 ] || [ "$hour_choice" -gt 24 ]; then
 					printf "\\n\\e[31mPlease enter a number between 1 and 24\\e[0m\\n"
 				elif [ "$hour_choice" -eq 24 ]; then
-					cruhours="0"
-					crumins="0"
+					cruhours=0
+					crumins=0
 					printf "\\n"
 					break
 				else
 					cruhours="*/$hour_choice"
-					crumins="0"
+					crumins=0
 					printf "\\n"
 					break
 				fi
@@ -1857,11 +1907,11 @@ if [ -z "$1" ]; then
 	Conf_Exists
 	ScriptStorageLocation load
 	Create_Symlinks
-	Process_Upgrade
 	Auto_Startup create 2>/dev/null
 	if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
+	Process_Upgrade
 	ScriptHeader
 	MainMenu
 	exit 0
@@ -1905,6 +1955,7 @@ case "$1" in
 	;;
 	service_event)
 		if [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME" ]; then
+			rm -f /tmp/detect_connmon.js
 			Check_Lock webui
 			Run_PingTest
 			Clear_Lock
@@ -1929,26 +1980,11 @@ case "$1" in
 		Update_Version force
 		exit 0
 	;;
-	setversion)
-		Create_Dirs
-		Conf_Exists
-		ScriptStorageLocation load
-		Create_Symlinks
-		Process_Upgrade
-		Auto_Startup create 2>/dev/null
-		if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
-		Auto_ServiceEvent create 2>/dev/null
-		Shortcut_Script create
-		Set_Version_Custom_Settings local "$SCRIPT_VERSION"
-		Set_Version_Custom_Settings server "$SCRIPT_VERSION"
-		exit 0
-	;;
 	postupdate)
 		Create_Dirs
 		Conf_Exists
 		ScriptStorageLocation load
 		Create_Symlinks
-		Process_Upgrade
 		Auto_Startup create 2>/dev/null
 		if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 		Auto_ServiceEvent create 2>/dev/null
