@@ -1,26 +1,26 @@
 #!/bin/sh
 
-############################################################
-##                                                        ##
-##   ___   ___   _ __   _ __   _ __ ___    ___   _ __     ##
-##  / __| / _ \ | '_ \ | '_ \ | '_ ` _ \  / _ \ | '_ \    ##
-## | (__ | (_) || | | || | | || | | | | || (_) || | | |   ##
-##  \___| \___/ |_| |_||_| |_||_| |_| |_| \___/ |_| |_|   ##
-##                                                        ##
-##          https://github.com/jackyaz/connmon            ##
-##                                                        ##
-############################################################
+##############################################################
+##                                                          ##
+##     ___   ___   _ __   _ __   _ __ ___    ___   _ __     ##
+##    / __| / _ \ | '_ \ | '_ \ | '_ ` _ \  / _ \ | '_ \    ##
+##   | (__ | (_) || | | || | | || | | | | || (_) || | | |   ##
+##    \___| \___/ |_| |_||_| |_||_| |_| |_| \___/ |_| |_|   ##
+##                                                          ##
+##            https://github.com/jackyaz/connmon            ##
+##                                                          ##
+##############################################################
 
-#############        Shellcheck directives      ############
+##############        Shellcheck directives      #############
 # shellcheck disable=SC2018
 # shellcheck disable=SC2019
 # shellcheck disable=SC2059
-############################################################
+##############################################################
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
 readonly SCRIPT_VERSION="v2.10.0"
-SCRIPT_BRANCH="develop"
+SCRIPT_BRANCH="master"
 SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
 readonly SCRIPT_WEBPAGE_DIR="$(readlink /www/user)"
@@ -1144,17 +1144,17 @@ PressEnter(){
 ScriptHeader(){
 	clear
 	printf "\\n"
-	printf "\\e[1m############################################################\\e[0m\\n"
-	printf "\\e[1m##   ___   ___   _ __   _ __   _ __ ___    ___   _ __     ##\\e[0m\\n"
-	printf "\\e[1m##  / __| / _ \ | '_ \ | '_ \ | '_   _ \  / _ \ | '_ \    ##\\e[0m\\n"
-	printf "\\e[1m## | (__ | (_) || | | || | | || | | | | || (_) || | | |   ##\\e[0m\\n"
-	printf "\\e[1m##  \___| \___/ |_| |_||_| |_||_| |_| |_| \___/ |_| |_|   ##\\e[0m\\n"
-	printf "\\e[1m##                                                        ##\\e[0m\\n"
-	printf "\\e[1m##                  %s on %-11s                 ##\\e[0m\\n" "$SCRIPT_VERSION" "$ROUTER_MODEL"
-	printf "\\e[1m##                                                        ##\\e[0m\\n"
-	printf "\\e[1m##          https://github.com/jackyaz/connmon            ##\\e[0m\\n"
-	printf "\\e[1m##                                                        ##\\e[0m\\n"
-	printf "\\e[1m############################################################\\e[0m\\n"
+	printf "\\e[1m##############################################################\\e[0m\\n"
+	printf "\\e[1m##     ___   ___   _ __   _ __   _ __ ___    ___   _ __     ##\\e[0m\\n"
+	printf "\\e[1m##    / __| / _ \ | '_ \ | '_ \ | '_   _ \  / _ \ | '_ \    ##\\e[0m\\n"
+	printf "\\e[1m##   | (__ | (_) || | | || | | || | | | | || (_) || | | |   ##\\e[0m\\n"
+	printf "\\e[1m##    \___| \___/ |_| |_||_| |_||_| |_| |_| \___/ |_| |_|   ##\\e[0m\\n"
+	printf "\\e[1m##                                                          ##\\e[0m\\n"
+	printf "\\e[1m##                  %s on %-11s                  ##\\e[0m\\n" "$SCRIPT_VERSION" "$ROUTER_MODEL"
+	printf "\\e[1m##                                                          ##\\e[0m\\n"
+	printf "\\e[1m##            https://github.com/jackyaz/connmon            ##\\e[0m\\n"
+	printf "\\e[1m##                                                          ##\\e[0m\\n"
+	printf "\\e[1m##############################################################\\e[0m\\n"
 	printf "\\n"
 }
 
@@ -1190,7 +1190,7 @@ MainMenu(){
 	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
 	printf "z.    Uninstall %s\\n" "$SCRIPT_NAME"
 	printf "\\n"
-	printf "\\e[1m############################################################\\e[0m\\n"
+	printf "\\e[1m##############################################################\\e[0m\\n"
 	printf "\\n"
 	
 	while true; do
