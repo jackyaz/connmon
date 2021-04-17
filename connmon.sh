@@ -1031,9 +1031,9 @@ Generate_CSVs(){
 		WriteSql_ToFile "$metric" connstats 24 30 "$CSV_OUTPUT_DIR/${metric}_day" monthly /tmp/connmon-stats.sql "$timenow"
 		"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 		
-		rm -f "${metric}daily.htm"
-		rm -f "${metric}weekly.htm"
-		rm -f "${metric}monthly.htm"
+		rm -f "$CSV_OUTPUT_DIR/${metric}daily.htm"
+		rm -f "$CSV_OUTPUT_DIR/${metric}weekly.htm"
+		rm -f "$CSV_OUTPUT_DIR/${metric}monthly.htm"
 	done
 	
 	rm -f /tmp/connmon-stats.sql
