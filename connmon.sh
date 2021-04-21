@@ -383,9 +383,15 @@ Conf_Exists(){
 		if grep -q "OUTPUTDATAMODE" "$SCRIPT_CONF"; then
 			sed -i '/OUTPUTDATAMODE/d;' "$SCRIPT_CONF"
 		fi
+		if ! grep -q "DAYSTOKEEP" "$SCRIPT_CONF"; then
+			echo "DAYSTOKEEP=30" >> "$SCRIPT_CONF"
+		fi
+		if ! grep -q "LASTXRESULTS" "$SCRIPT_CONF"; then
+			echo "LASTXRESULTS=10" >> "$SCRIPT_CONF"
+		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; echo "DAYSTOKEEP=30"; echo "LASTXRESULTS=10"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -482,6 +488,88 @@ PingDuration(){
 		check)
 			PINGDURATION=$(grep "PINGDURATION" "$SCRIPT_CONF" | cut -f2 -d"=")
 			echo "$PINGDURATION"
+		;;
+	esac
+}
+
+DaysToKeep(){
+	case "$1" in
+		update)
+			daystokeep=30
+			exitmenu=""
+			ScriptHeader
+			while true; do
+				printf "\\n\\e[1mPlease enter the desired number of days to keep data for (30-365 days):\\e[0m  "
+				read -r daystokeep_choice
+				
+				if [ "$daystokeep_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif ! Validate_Number "$daystokeep_choice"; then
+					printf "\\n\\e[31mPlease enter a valid number (30-365)\\e[0m\\n"
+				else
+					if [ "$daystokeep_choice" -lt 30 ] || [ "$daystokeep_choice" -gt 365 ]; then
+						printf "\\n\\e[31mPlease enter a number between 30 and 365\\e[0m\\n"
+					else
+						daystokeep="$daystokeep_choice"
+						printf "\\n"
+						break
+					fi
+				fi
+			done
+			
+			if [ "$exitmenu" != "exit" ]; then
+				sed -i 's/^DAYSTOKEEP.*$/DAYSTOKEEP='"$daystokeep"'/' "$SCRIPT_CONF"
+				return 0
+			else
+				printf "\\n"
+				return 1
+			fi
+		;;
+		check)
+			DAYSTOKEEP=$(grep "DAYSTOKEEP" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$DAYSTOKEEP"
+		;;
+	esac
+}
+
+LastXResults(){
+	case "$1" in
+		update)
+			lastxresults=10
+			exitmenu=""
+			ScriptHeader
+			while true; do
+				printf "\\n\\e[1mPlease enter the desired number of results to display in the WebUI (1-100):\\e[0m  "
+				read -r lastx_choice
+				
+				if [ "$lastx_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif ! Validate_Number "$lastx_choice"; then
+					printf "\\n\\e[31mPlease enter a valid number (1-100)\\e[0m\\n"
+				else
+					if [ "$lastx_choice" -lt 1 ] || [ "$lastx_choice" -gt 100 ]; then
+						printf "\\n\\e[31mPlease enter a number between 1 and 100\\e[0m\\n"
+					else
+						lastxresults="$lastx_choice"
+						printf "\\n"
+						break
+					fi
+				fi
+			done
+			
+			if [ "$exitmenu" != "exit" ]; then
+				sed -i 's/^LASTXRESULTS.*$/LASTXRESULTS='"$lastxresults"'/' "$SCRIPT_CONF"
+				return 0
+			else
+				printf "\\n"
+				return 1
+			fi
+		;;
+		check)
+			LASTXRESULTS=$(grep "LASTXRESULTS" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$LASTXRESULTS"
 		;;
 	esac
 }
