@@ -932,7 +932,7 @@ Generate_LastXResults(){
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
 	sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
 	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
-	WritePlainData_ToJS /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/connjs.js" DataTimestamp DataPing DataJitter DataLineQuality
+	WritePlainData_ToJS /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/connjs.js" DataTimestamp DataPing DataJitter DataLineQuality DataPingTarget
 	rm -f /tmp/conn-lastx.sql
 	rm -f /tmp/conn-lastx.csv
 }
