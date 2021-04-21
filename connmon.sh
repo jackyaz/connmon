@@ -369,10 +369,10 @@ Conf_Exists(){
 		sed -i -e 's/"//g' "$SCRIPT_CONF"
 		
 		if grep -q "SCHEDULESTART" "$SCRIPT_CONF"; then
-			if [ "$(wc -l < "$SCRIPT_CONF")" -eq 8 ]; then
+			if ! grep -q "AUTOMATED" "$SCRIPT_CONF"; then
 				echo "AUTOMATED=true" >> "$SCRIPT_CONF"
 			fi
-			if [ "$(wc -l < "$SCRIPT_CONF")" -eq 9 ]; then
+			if ! grep -q "SCHDAYS" "$SCRIPT_CONF"; then
 				echo "SCHDAYS=*" >> "$SCRIPT_CONF"
 			fi
 			echo "SCHHOURS=*" >> "$SCRIPT_CONF"
