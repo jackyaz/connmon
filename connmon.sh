@@ -499,7 +499,7 @@ DaysToKeep(){
 			exitmenu=""
 			ScriptHeader
 			while true; do
-				printf "\\n\\e[1mPlease enter the desired number of days to keep data for (30-365 days):\\e[0m  "
+				printf "\\n\\e[1mPlease enter the desired number of days\\nto keep data for (30-365 days):\\e[0m  "
 				read -r daystokeep_choice
 				
 				if [ "$daystokeep_choice" = "e" ]; then
@@ -540,7 +540,7 @@ LastXResults(){
 			exitmenu=""
 			ScriptHeader
 			while true; do
-				printf "\\n\\e[1mPlease enter the desired number of results to display in the WebUI (1-100):\\e[0m  "
+				printf "\\n\\e[1mPlease enter the desired number of results\\nto display in the WebUI (1-100):\\e[0m  "
 				read -r lastx_choice
 				
 				if [ "$lastx_choice" = "e" ]; then
@@ -1519,7 +1519,7 @@ Menu_EditSchedule(){
 	crumins=""
 	
 	while true; do
-		printf "\\n\\e[1mPlease choose which day(s) to run ping test (0-6 - 0 = Sunday, * for every day, or comma separated days):\\e[0m    "
+		printf "\\n\\e[1mPlease choose which day(s) to run ping test\\n(0-6 - 0 = Sunday, * for every day, or comma separated days):\\e[0m  "
 		read -r day_choice
 		
 		if [ "$day_choice" = "e" ]; then
@@ -1575,7 +1575,7 @@ Menu_EditSchedule(){
 	
 	if [ "$exitmenu" != "exit" ]; then
 		while true; do
-			printf "\\n\\e[1mPlease choose the format to specify the hour/minute(s) to run ping test:\\e[0m\\n"
+			printf "\\n\\e[1mPlease choose the format to specify the hour/minute(s)\\nto run ping test:\\e[0m\\n"
 			printf "    1. Every X hours/minutes\\n"
 			printf "    2. Custom\\n\\n"
 			printf "Choose an option:  "
@@ -1606,7 +1606,7 @@ Menu_EditSchedule(){
 	if [ "$exitmenu" != "exit" ]; then
 		if [ "$formattype" = "everyx" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose whether to specify every X hours or every X minutes to run ping test:\\e[0m\\n"
+				printf "\\n\\e[1mPlease choose whether to specify every X hours or every X minutes\\nto run ping test:\\e[0m\\n"
 				printf "    1. Hours\\n"
 				printf "    2. Minutes\\n\\n"
 				printf "Choose an option:  "
@@ -1638,7 +1638,7 @@ Menu_EditSchedule(){
 	if [ "$exitmenu" != "exit" ]; then
 		if [ "$formattype" = "hours" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose how often to run ping test (every X hours, where X is 1-24):\\e[0m    "
+				printf "\\n\\e[1mPlease choose how often to run ping test\\n(every X hours, where X is 1-24):\\e[0m  "
 				read -r hour_choice
 				
 				if [ "$hour_choice" = "e" ]; then
@@ -1662,7 +1662,7 @@ Menu_EditSchedule(){
 			done
 		elif [ "$formattype" = "mins" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose how often to run ping test (every X minutes, where X is 1-30):\\e[0m    "
+				printf "\\n\\e[1mPlease choose how often to run ping test\\n(every X minutes, where X is 1-30):\\e[0m  "
 				read -r min_choice
 				
 				if [ "$min_choice" = "e" ]; then
@@ -1685,7 +1685,7 @@ Menu_EditSchedule(){
 	if [ "$exitmenu" != "exit" ]; then
 		if [ "$formattype" = "custom" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose which hour(s) to run ping test (0-23, * for every hour, or comma separated hours):\\e[0m    "
+				printf "\\n\\e[1mPlease choose which hour(s) to run ping test\\n(0-23, * for every hour, or comma separated hours):\\e[0m  "
 				read -r hour_choice
 				
 				if [ "$hour_choice" = "e" ]; then
@@ -1761,7 +1761,7 @@ Menu_EditSchedule(){
 	if [ "$exitmenu" != "exit" ]; then
 		if [ "$formattype" = "custom" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose which minutes(s) to run ping test (0-59, * for every minute, or comma separated minutes):\\e[0m    "
+				printf "\\n\\e[1mPlease choose which minutes(s) to run ping test\\n(0-59, * for every minute, or comma separated minutes):\\e[0m  "
 				read -r min_choice
 				
 				if [ "$min_choice" = "e" ]; then
