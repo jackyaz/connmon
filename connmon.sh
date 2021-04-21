@@ -1133,7 +1133,7 @@ Generate_CSVs(){
 		echo ".headers on"
 		echo ".output $CSV_OUTPUT_DIR/CompleteResults.htm"
 	} > /tmp/connmon-complete.sql
-	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-30 day'))) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
+	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-$(DaysToKeep check) day'))) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-complete.sql
 	rm -f /tmp/connmon-complete.sql
 	
