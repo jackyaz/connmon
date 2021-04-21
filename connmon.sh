@@ -926,7 +926,7 @@ Generate_LastXResults(){
 	{
 		echo ".mode csv"
 		echo ".output /tmp/conn-lastx.csv"
-		echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats ORDER BY [Timestamp] DESC LIMIT 10;"
+		echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats ORDER BY [Timestamp] DESC LIMIT $(LastXResults check);"
 	} > /tmp/conn-lastx.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
 	sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
@@ -1043,7 +1043,7 @@ Run_PingTest(){
 	} > /tmp/connmon-stats.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
-	echo "DELETE FROM [connstats] WHERE [Timestamp] < ($timenow - (86400*30));" > /tmp/connmon-stats.sql
+	echo "DELETE FROM [connstats] WHERE [Timestamp] < strftime('%s',datetime($timenow,'unixepoch','-$(DaysToKeep check) day'));" > /tmp/connmon-stats.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	rm -f /tmp/connmon-stats.sql
 	
