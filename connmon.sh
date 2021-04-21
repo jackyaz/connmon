@@ -561,6 +561,7 @@ LastXResults(){
 			
 			if [ "$exitmenu" != "exit" ]; then
 				sed -i 's/^LASTXRESULTS.*$/LASTXRESULTS='"$lastxresults"'/' "$SCRIPT_CONF"
+				Generate_LastXResults
 				return 0
 			else
 				printf "\\n"
