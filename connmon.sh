@@ -1272,7 +1272,7 @@ MainMenu(){
 	printf "5.    Set schedule for automatic ping tests\\n      ${SETTING}%s\\n      %s\\e[0m\\n\\n" "$TEST_SCHEDULE_MENU" "$TEST_SCHEDULE_MENU2"
 	printf "6.    Toggle time output mode\\n      Currently ${SETTING}%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
 	printf "7.    Set number of ping test results to show in WebUI\\n      Currently: ${SETTING}%s results will be shown\\e[0m\\n\\n" "$(LastXResults check)"
-	printf "8.    Set number of days' data to keep in database\\n      Currently: ${SETTING}%s days' data will be kept\\e[0m\\n\\n" "$(DaysToKeep check)"
+	printf "8.    Set number of days data to keep in database\\n      Currently: ${SETTING}%s days data will be kept\\e[0m\\n\\n" "$(DaysToKeep check)"
 	printf "s.    Toggle storage location for stats and config\\n      Current location is ${SETTING}%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
