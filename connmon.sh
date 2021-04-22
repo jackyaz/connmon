@@ -927,12 +927,12 @@ Generate_LastXResults(){
 	{
 		echo ".mode csv"
 		echo ".output /tmp/conn-lastx.csv"
-		echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget] FROM connstats ORDER BY [Timestamp] DESC LIMIT $(LastXResults check);"
+		echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration] FROM connstats ORDER BY [Timestamp] DESC LIMIT $(LastXResults check);"
 	} > /tmp/conn-lastx.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
 	sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
 	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
-	WritePlainData_ToJS /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/connjs.js" DataTimestamp DataPing DataJitter DataLineQuality DataPingTarget
+	WritePlainData_ToJS /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/connjs.js" DataTimestamp DataPing DataJitter DataLineQuality DataPingTarget DataPingDuration
 	rm -f /tmp/conn-lastx.sql
 	rm -f /tmp/conn-lastx.csv
 }
@@ -986,7 +986,9 @@ Run_PingTest(){
 		/jffs/addons/cake-qos/cake-qos stop >/dev/null 2>&1
 		stoppedqos="true"
 	fi
+	
 	ping -w "$(PingDuration check)" "$(PingServer check)" > "$pingfile"
+	
 	if [ "$stoppedqos" = "true" ]; then
 		if [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -eq 1 ]; then
 			iptables -D OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
@@ -1039,8 +1041,8 @@ Run_PingTest(){
 	fi
 	
 	{
-	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[LineQuality] REAL NOT NULL,[PingTarget] TEXT NOT NULL);"
-	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget]) values($timenow,$ping,$jitter,$linequal,'$(PingServer check)');"
+	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[LineQuality] REAL NOT NULL,[PingTarget] TEXT NOT NULL, [PingDuration] NUMERIC);"
+	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration]) values($timenow,$ping,$jitter,$linequal,'$(PingServer check)',$(PingDuration check));"
 	} > /tmp/connmon-stats.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
@@ -1134,7 +1136,7 @@ Generate_CSVs(){
 		echo ".headers on"
 		echo ".output $CSV_OUTPUT_DIR/CompleteResults.htm"
 	} > /tmp/connmon-complete.sql
-	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget] FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-$(DaysToKeep check) day'))) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
+	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration] FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-$(DaysToKeep check) day'))) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-complete.sql
 	rm -f /tmp/connmon-complete.sql
 	
@@ -1183,6 +1185,7 @@ Reset_DB(){
 }
 
 Process_Upgrade(){
+	rm -f "$SCRIPT_STORAGE_DIR/.tableupgraded"
 	if [ ! -f "$SCRIPT_STORAGE_DIR/.indexcreated" ]; then
 		renice 15 $$
 		Print_Output true "Creating database table indexes..." "$PASS"
@@ -1203,13 +1206,17 @@ Process_Upgrade(){
 		Print_Output true "Database ready, continuing..." "$PASS"
 		renice 0 $$
 	fi
-	if [ ! -f "$SCRIPT_STORAGE_DIR/.pingtarget" ]; then
+	if [ ! -f "$SCRIPT_STORAGE_DIR/.newcolumns" ]; then
 		echo "ALTER TABLE connstats ADD COLUMN PingTarget [TEXT] NOT NULL DEFAULT '';" > /tmp/connmon-upgrade.sql
 		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
 			:
 		done
+		echo "ALTER TABLE connstats ADD COLUMN PingDuration [TEXT];" > /tmp/connmon-upgrade.sql
+		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
+			:
+		done
 		rm -f /tmp/connmon-upgrade.sql
-		touch "$SCRIPT_STORAGE_DIR/.pingtarget"
+		touch "$SCRIPT_STORAGE_DIR/.newcolumns"
 	fi
 }
 
