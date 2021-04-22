@@ -1220,7 +1220,7 @@ Process_Upgrade(){
 		touch "$SCRIPT_STORAGE_DIR/.newcolumns"
 	fi
 	if [ ! -f "$SCRIPT_STORAGE_DIR/lastx.htm" ]; then
-		Generate_CSVs
+		Generate_LastXResults
 	fi
 }
 
