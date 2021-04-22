@@ -19,7 +19,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.10.0"
+readonly SCRIPT_VERSION="v2.11.0"
 SCRIPT_BRANCH="master"
 SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -351,7 +351,7 @@ Create_Symlinks(){
 	ln -s /tmp/detect_connmon.js "$SCRIPT_WEB_DIR/detect_connmon.js" 2>/dev/null
 	ln -s /tmp/ping-result.txt "$SCRIPT_WEB_DIR/ping-result.htm" 2>/dev/null
 	ln -s "$SCRIPT_STORAGE_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
-	ln -s "$SCRIPT_STORAGE_DIR/connjs.js" "$SCRIPT_WEB_DIR/connjs.js" 2>/dev/null
+	ln -s "$SCRIPT_STORAGE_DIR/lastx.htm" "$SCRIPT_WEB_DIR/lastx.htm" 2>/dev/null
 	
 	ln -s "$SCRIPT_CONF" "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
 	
@@ -369,10 +369,10 @@ Conf_Exists(){
 		sed -i -e 's/"//g' "$SCRIPT_CONF"
 		
 		if grep -q "SCHEDULESTART" "$SCRIPT_CONF"; then
-			if [ "$(wc -l < "$SCRIPT_CONF")" -eq 8 ]; then
+			if ! grep -q "AUTOMATED" "$SCRIPT_CONF"; then
 				echo "AUTOMATED=true" >> "$SCRIPT_CONF"
 			fi
-			if [ "$(wc -l < "$SCRIPT_CONF")" -eq 9 ]; then
+			if ! grep -q "SCHDAYS" "$SCRIPT_CONF"; then
 				echo "SCHDAYS=*" >> "$SCRIPT_CONF"
 			fi
 			echo "SCHHOURS=*" >> "$SCRIPT_CONF"
@@ -383,9 +383,15 @@ Conf_Exists(){
 		if grep -q "OUTPUTDATAMODE" "$SCRIPT_CONF"; then
 			sed -i '/OUTPUTDATAMODE/d;' "$SCRIPT_CONF"
 		fi
+		if ! grep -q "DAYSTOKEEP" "$SCRIPT_CONF"; then
+			echo "DAYSTOKEEP=30" >> "$SCRIPT_CONF"
+		fi
+		if ! grep -q "LASTXRESULTS" "$SCRIPT_CONF"; then
+			echo "LASTXRESULTS=10" >> "$SCRIPT_CONF"
+		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; echo "DAYSTOKEEP=30"; echo "LASTXRESULTS=10"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -482,6 +488,89 @@ PingDuration(){
 		check)
 			PINGDURATION=$(grep "PINGDURATION" "$SCRIPT_CONF" | cut -f2 -d"=")
 			echo "$PINGDURATION"
+		;;
+	esac
+}
+
+DaysToKeep(){
+	case "$1" in
+		update)
+			daystokeep=30
+			exitmenu=""
+			ScriptHeader
+			while true; do
+				printf "\\n\\e[1mPlease enter the desired number of days\\nto keep data for (30-365 days):\\e[0m  "
+				read -r daystokeep_choice
+				
+				if [ "$daystokeep_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif ! Validate_Number "$daystokeep_choice"; then
+					printf "\\n\\e[31mPlease enter a valid number (30-365)\\e[0m\\n"
+				else
+					if [ "$daystokeep_choice" -lt 30 ] || [ "$daystokeep_choice" -gt 365 ]; then
+						printf "\\n\\e[31mPlease enter a number between 30 and 365\\e[0m\\n"
+					else
+						daystokeep="$daystokeep_choice"
+						printf "\\n"
+						break
+					fi
+				fi
+			done
+			
+			if [ "$exitmenu" != "exit" ]; then
+				sed -i 's/^DAYSTOKEEP.*$/DAYSTOKEEP='"$daystokeep"'/' "$SCRIPT_CONF"
+				return 0
+			else
+				printf "\\n"
+				return 1
+			fi
+		;;
+		check)
+			DAYSTOKEEP=$(grep "DAYSTOKEEP" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$DAYSTOKEEP"
+		;;
+	esac
+}
+
+LastXResults(){
+	case "$1" in
+		update)
+			lastxresults=10
+			exitmenu=""
+			ScriptHeader
+			while true; do
+				printf "\\n\\e[1mPlease enter the desired number of results\\nto display in the WebUI (1-100):\\e[0m  "
+				read -r lastx_choice
+				
+				if [ "$lastx_choice" = "e" ]; then
+					exitmenu="exit"
+					break
+				elif ! Validate_Number "$lastx_choice"; then
+					printf "\\n\\e[31mPlease enter a valid number (1-100)\\e[0m\\n"
+				else
+					if [ "$lastx_choice" -lt 1 ] || [ "$lastx_choice" -gt 100 ]; then
+						printf "\\n\\e[31mPlease enter a number between 1 and 100\\e[0m\\n"
+					else
+						lastxresults="$lastx_choice"
+						printf "\\n"
+						break
+					fi
+				fi
+			done
+			
+			if [ "$exitmenu" != "exit" ]; then
+				sed -i 's/^LASTXRESULTS.*$/LASTXRESULTS='"$lastxresults"'/' "$SCRIPT_CONF"
+				Generate_LastXResults
+				return 0
+			else
+				printf "\\n"
+				return 1
+			fi
+		;;
+		check)
+			LASTXRESULTS=$(grep "LASTXRESULTS" "$SCRIPT_CONF" | cut -f2 -d"=")
+			echo "$LASTXRESULTS"
 		;;
 	esac
 }
@@ -733,9 +822,10 @@ ScriptStorageLocation(){
 			mv "/jffs/addons/$SCRIPT_NAME.d/config" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/config.bak" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstatstext.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
-			mv "/jffs/addons/$SCRIPT_NAME.d/connjs.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/jffs/addons/$SCRIPT_NAME.d/lastx.htm" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstats.db" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/.indexcreated" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/jffs/addons/$SCRIPT_NAME.d/.newcolumns" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			SCRIPT_CONF="/opt/share/$SCRIPT_NAME.d/config"
 			ScriptStorageLocation load
 		;;
@@ -746,9 +836,10 @@ ScriptStorageLocation(){
 			mv "/opt/share/$SCRIPT_NAME.d/config" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/config.bak" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstatstext.js" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
-			mv "/opt/share/$SCRIPT_NAME.d/connjs.js" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/opt/share/$SCRIPT_NAME.d/lastx.htm" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstats.db" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/.indexcreated" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/opt/share/$SCRIPT_NAME.d/.newcolumns" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			SCRIPT_CONF="/jffs/addons/$SCRIPT_NAME.d/config"
 			ScriptStorageLocation load
 		;;
@@ -838,14 +929,13 @@ Generate_LastXResults(){
 	{
 		echo ".mode csv"
 		echo ".output /tmp/conn-lastx.csv"
-		echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats ORDER BY [Timestamp] DESC LIMIT 10;"
+		echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration] FROM connstats ORDER BY [Timestamp] DESC LIMIT $(LastXResults check);"
 	} > /tmp/conn-lastx.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
-	sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
-	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
-	WritePlainData_ToJS /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/connjs.js" DataTimestamp DataPing DataJitter DataLineQuality
 	rm -f /tmp/conn-lastx.sql
-	rm -f /tmp/conn-lastx.csv
+	#sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
+	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
+	mv /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/lastx.htm"
 }
 
 Run_PingTest(){
@@ -897,7 +987,9 @@ Run_PingTest(){
 		/jffs/addons/cake-qos/cake-qos stop >/dev/null 2>&1
 		stoppedqos="true"
 	fi
+	
 	ping -w "$(PingDuration check)" "$(PingServer check)" > "$pingfile"
+	
 	if [ "$stoppedqos" = "true" ]; then
 		if [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -eq 1 ]; then
 			iptables -D OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
@@ -949,13 +1041,15 @@ Run_PingTest(){
 		linequal="$(echo 100 "$(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" | awk '{printf "%4.3f\n",$1-$2}')"
 	fi
 	
+	Process_Upgrade
+	
 	{
-	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[LineQuality] REAL NOT NULL);"
-	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[LineQuality]) values($timenow,$ping,$jitter,$linequal);"
+	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL, [Timestamp] NUMERIC NOT NULL, [Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[LineQuality] REAL NOT NULL,[PingTarget] TEXT NOT NULL,[PingDuration] NUMERIC);"
+	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration]) values($timenow,$ping,$jitter,$linequal,'$(PingServer check)',$(PingDuration check));"
 	} > /tmp/connmon-stats.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
-	echo "DELETE FROM [connstats] WHERE [Timestamp] < ($timenow - (86400*30));" > /tmp/connmon-stats.sql
+	echo "DELETE FROM [connstats] WHERE [Timestamp] < strftime('%s',datetime($timenow,'unixepoch','-$(DaysToKeep check) day'));" > /tmp/connmon-stats.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	rm -f /tmp/connmon-stats.sql
 	
@@ -979,6 +1073,7 @@ Run_PingTest(){
 
 Generate_CSVs(){
 	Process_Upgrade
+	renice 15 $$
 	OUTPUTTIMEMODE="$(OutputTimeMode check)"
 	TZ=$(cat /etc/TZ)
 	export TZ
@@ -1044,7 +1139,7 @@ Generate_CSVs(){
 		echo ".headers on"
 		echo ".output $CSV_OUTPUT_DIR/CompleteResults.htm"
 	} > /tmp/connmon-complete.sql
-	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality] FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-30 day'))) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
+	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration] FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-$(DaysToKeep check) day'))) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-complete.sql
 	rm -f /tmp/connmon-complete.sql
 	
@@ -1068,6 +1163,7 @@ Generate_CSVs(){
 	mv "$tmpoutputdir/CompleteResults.csv" "$CSV_OUTPUT_DIR/CompleteResults.htm"
 	rm -f "$CSV_OUTPUT_DIR/connmondata.zip"
 	rm -rf "$tmpoutputdir"
+	renice 0 $$
 }
 
 # shellcheck disable=SC2012
@@ -1092,7 +1188,9 @@ Reset_DB(){
 }
 
 Process_Upgrade(){
+	rm -f "$SCRIPT_STORAGE_DIR/.tableupgraded"
 	if [ ! -f "$SCRIPT_STORAGE_DIR/.indexcreated" ]; then
+		renice 15 $$
 		Print_Output true "Creating database table indexes..." "$PASS"
 		echo "CREATE INDEX idx_time_ping ON connstats (Timestamp,Ping);" > /tmp/connmon-upgrade.sql
 		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
@@ -1109,6 +1207,22 @@ Process_Upgrade(){
 		rm -f /tmp/connmon-upgrade.sql
 		touch "$SCRIPT_STORAGE_DIR/.indexcreated"
 		Print_Output true "Database ready, continuing..." "$PASS"
+		renice 0 $$
+	fi
+	if [ ! -f "$SCRIPT_STORAGE_DIR/.newcolumns" ]; then
+		echo "ALTER TABLE connstats ADD COLUMN PingTarget [TEXT] NOT NULL DEFAULT '';" > /tmp/connmon-upgrade.sql
+		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
+			:
+		done
+		echo "ALTER TABLE connstats ADD COLUMN PingDuration [NUMERIC];" > /tmp/connmon-upgrade.sql
+		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
+			:
+		done
+		rm -f /tmp/connmon-upgrade.sql
+		touch "$SCRIPT_STORAGE_DIR/.newcolumns"
+	fi
+	if [ ! -f "$SCRIPT_STORAGE_DIR/lastx.htm" ]; then
+		Generate_LastXResults
 	fi
 }
 
@@ -1183,6 +1297,8 @@ MainMenu(){
 	printf "4.    Toggle automatic ping tests\\n      Currently: \\e[1m$AUTOMATIC_ENABLED\\e[0m\\n\\n"
 	printf "5.    Set schedule for automatic ping tests\\n      ${SETTING}%s\\n      %s\\e[0m\\n\\n" "$TEST_SCHEDULE_MENU" "$TEST_SCHEDULE_MENU2"
 	printf "6.    Toggle time output mode\\n      Currently ${SETTING}%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
+	printf "7.    Set number of ping test results to show in WebUI\\n      Currently: ${SETTING}%s results will be shown\\e[0m\\n\\n" "$(LastXResults check)"
+	printf "8.    Set number of days data to keep in database\\n      Currently: ${SETTING}%s days data will be kept\\e[0m\\n\\n" "$(DaysToKeep check)"
 	printf "s.    Toggle storage location for stats and config\\n      Current location is ${SETTING}%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
@@ -1240,6 +1356,18 @@ MainMenu(){
 				elif [ "$(OutputTimeMode check)" = "non-unix" ]; then
 					OutputTimeMode unix
 				fi
+				break
+			;;
+			7)
+				printf "\\n"
+				LastXResults update
+				PressEnter
+				break
+			;;
+			8)
+				printf "\\n"
+				DaysToKeep update
+				PressEnter
 				break
 			;;
 			s)
@@ -1417,7 +1545,7 @@ Menu_EditSchedule(){
 	crumins=""
 	
 	while true; do
-		printf "\\n\\e[1mPlease choose which day(s) to run ping test (0-6 - 0 = Sunday, * for every day, or comma separated days):\\e[0m    "
+		printf "\\n\\e[1mPlease choose which day(s) to run ping test\\n(0-6 - 0 = Sunday, * for every day, or comma separated days):\\e[0m  "
 		read -r day_choice
 		
 		if [ "$day_choice" = "e" ]; then
@@ -1473,7 +1601,7 @@ Menu_EditSchedule(){
 	
 	if [ "$exitmenu" != "exit" ]; then
 		while true; do
-			printf "\\n\\e[1mPlease choose the format to specify the hour/minute(s) to run ping test:\\e[0m\\n"
+			printf "\\n\\e[1mPlease choose the format to specify the hour/minute(s)\\nto run ping test:\\e[0m\\n"
 			printf "    1. Every X hours/minutes\\n"
 			printf "    2. Custom\\n\\n"
 			printf "Choose an option:  "
@@ -1504,7 +1632,7 @@ Menu_EditSchedule(){
 	if [ "$exitmenu" != "exit" ]; then
 		if [ "$formattype" = "everyx" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose whether to specify every X hours or every X minutes to run ping test:\\e[0m\\n"
+				printf "\\n\\e[1mPlease choose whether to specify every X hours or every X minutes\\nto run ping test:\\e[0m\\n"
 				printf "    1. Hours\\n"
 				printf "    2. Minutes\\n\\n"
 				printf "Choose an option:  "
@@ -1536,7 +1664,7 @@ Menu_EditSchedule(){
 	if [ "$exitmenu" != "exit" ]; then
 		if [ "$formattype" = "hours" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose how often to run ping test (every X hours, where X is 1-24):\\e[0m    "
+				printf "\\n\\e[1mPlease choose how often to run ping test\\n(every X hours, where X is 1-24):\\e[0m  "
 				read -r hour_choice
 				
 				if [ "$hour_choice" = "e" ]; then
@@ -1560,7 +1688,7 @@ Menu_EditSchedule(){
 			done
 		elif [ "$formattype" = "mins" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose how often to run ping test (every X minutes, where X is 1-30):\\e[0m    "
+				printf "\\n\\e[1mPlease choose how often to run ping test\\n(every X minutes, where X is 1-30):\\e[0m  "
 				read -r min_choice
 				
 				if [ "$min_choice" = "e" ]; then
@@ -1583,7 +1711,7 @@ Menu_EditSchedule(){
 	if [ "$exitmenu" != "exit" ]; then
 		if [ "$formattype" = "custom" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose which hour(s) to run ping test (0-23, * for every hour, or comma separated hours):\\e[0m    "
+				printf "\\n\\e[1mPlease choose which hour(s) to run ping test\\n(0-23, * for every hour, or comma separated hours):\\e[0m  "
 				read -r hour_choice
 				
 				if [ "$hour_choice" = "e" ]; then
@@ -1659,7 +1787,7 @@ Menu_EditSchedule(){
 	if [ "$exitmenu" != "exit" ]; then
 		if [ "$formattype" = "custom" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose which minutes(s) to run ping test (0-59, * for every minute, or comma separated minutes):\\e[0m    "
+				printf "\\n\\e[1mPlease choose which minutes(s) to run ping test\\n(0-59, * for every minute, or comma separated minutes):\\e[0m  "
 				read -r min_choice
 				
 				if [ "$min_choice" = "e" ]; then
@@ -1989,6 +2117,7 @@ case "$1" in
 		if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 		Auto_ServiceEvent create 2>/dev/null
 		Shortcut_Script create
+		Process_Upgrade
 		exit 0
 	;;
 	uninstall)
