@@ -335,9 +335,28 @@ var $j=jQuery.noConflict(),daysofweek=["Mon","Tues","Wed","Thurs","Fri","Sat","S
 <td class="settingname">Ping test duration</td>
 <td class="settingvalue">
 <input autocomplete="off" type="text" maxlength="2" class="input_3_table removespacing" name="connmon_pingduration" value="60" onkeypress="return validator.isNumber(this,event)" onblur="Validate_PingDuration(this)" />
-seconds <span style="color:#FFCC00;">(between 10 and 60, default: 60)</span>
+&nbsp;seconds <span style="color:#FFCC00;">(between 10 and 60, default: 60)</span>
 </td>
 </tr>
+
+<tr class="even" id="rowlastxresults">
+<td class="settingname">Last X results to display</td>
+<td class="settingvalue">
+<input autocomplete="off" type="text" maxlength="3" class="input_6_table removespacing" name="connmon_lastxresults" value="10" onkeypress="return validator.isNumber(this,event)" onblur="Validate_PingDuration(this)" />
+&nbsp;results <span style="color:#FFCC00;">(between 1 and 100, default: 10)</span>
+</td>
+</tr>
+
+<tr class="even" id="rowdaystokeep">
+<td class="settingname">Number of days of data to keep</td>
+<td class="settingvalue">
+<input autocomplete="off" type="text" maxlength="3" class="input_6_table removespacing" name="connmon_daystokeep" value="30" onkeypress="return validator.isNumber(this,event)" onblur="Validate_PingDuration(this)" />
+&nbsp;days <span style="color:#FFCC00;">(between 30 and 365, default: 30)</span>
+</td>
+</tr>
+
+
+
 <tr class="even" id="rowautomatedtests">
 <td class="settingname">Enable automatic ping tests</td>
 <td class="settingvalue">
