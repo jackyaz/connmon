@@ -1,6 +1,12 @@
 var $j = jQuery.noConflict(); //avoid conflicts on John's fork (state.js)
 var daysofweek = ['Mon','Tues','Wed','Thurs','Fri','Sat','Sun'];
 var pingtestdur = 60;
+var arraysortlistlines = [];
+var originalarraysortlistlines = [];
+var sortfield = 'Time';
+var sortname = 'Time';
+var sortdir = 'desc';
+
 var maxNoCharts = 27;
 var currentNoCharts = 0;
 var ShowLines = GetCookie('ShowLines','string');
@@ -16,7 +22,7 @@ Chart.Tooltip.positioners.cursor = function(chartElements,coordinates){
 	return coordinates;
 };
 
-var dataintervallist = ["raw","hour","day"];
+var dataintervallist = ['raw','hour','day'];
 var metriclist = ['Ping','Jitter','LineQuality'];
 var titlelist = ['Ping','Jitter','Quality'];
 var measureunitlist = ['ms','ms','%'];
@@ -89,16 +95,29 @@ function Validate_Domain(forminput){
 	}
 }
 
-function Validate_PingDuration(forminput){
+function Validate_Number_Setting(forminput,upperlimit,lowerlimit){
 	var inputname = forminput.name;
 	var inputvalue = forminput.value*1;
 	
-	if(inputvalue > 60 || inputvalue < 10){
+	if(inputvalue > upperlimit || inputvalue < lowerlimit){
 		$j(forminput).addClass('invalid');
 		return false;
 	}
 	else{
 		$j(forminput).removeClass('invalid');
+		return true;
+	}
+}
+
+function Format_Number_Setting(forminput){
+	var inputname = forminput.name;
+	var inputvalue = forminput.value*1;
+	
+	if(forminput.value.length == 0 || inputvalue == NaN){
+		return false;
+	}
+	else{
+		forminput.value = parseInt(forminput.value);
 		return true;
 	}
 }
@@ -222,7 +241,9 @@ function Validate_All(){
 	var validationfailed = false;
 	if(! Validate_IP(document.form.connmon_ipaddr)){validationfailed=true;}
 	if(! Validate_Domain(document.form.connmon_domain)){validationfailed=true;}
-	if(! Validate_PingDuration(document.form.connmon_pingduration)){validationfailed=true;}
+	if(! Validate_Number_Setting(document.form.connmon_pingduration,60,10)){validationfailed=true;}
+	if(! Validate_Number_Setting(document.form.connmon_lastxresults,100,10)){validationfailed=true;}
+	if(! Validate_Number_Setting(document.form.connmon_daystokeep,365,30)){validationfailed=true;}
 	if(document.form.schedulemode.value == 'EveryX'){
 		if(! Validate_ScheduleValue(document.form.everyxvalue)) validationfailed=true;
 	}
@@ -283,12 +304,12 @@ function Draw_Chart_NoData(txtchartname){
 
 function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundcolourname){
 	var chartperiod = getChartPeriod($j('#'+txtchartname+'_Period option:selected').val());
-	var chartinterval = getChartInterval($j("#" + txtchartname + "_Interval option:selected").val());
+	var chartinterval = getChartInterval($j('#'+txtchartname+'_Interval option:selected').val());
 	var txtunitx = timeunitlist[$j('#'+txtchartname+'_Period option:selected').val()];
 	var numunitx = intervallist[$j('#'+txtchartname+'_Period option:selected').val()];
 	var chartxaxismax = null;
 	var chartaxismin = moment().subtract(numunitx,txtunitx+'s');
-	var charttype = "line";
+	var charttype = 'line';
 	var dataobject = window[txtchartname+'_'+chartinterval+'_'+chartperiod];
 	
 	if(typeof dataobject === 'undefined' || dataobject === null){ Draw_Chart_NoData(txtchartname); return; }
@@ -636,7 +657,6 @@ function SetGlobalDataset(txtchartname,dataobject){
 		showhide('imgConnTest',false);
 		showhide('conntest_text',false);
 		showhide('btnRunPingtest',true);
-		BuildLastXTable();
 		for(var i = 0; i < metriclist.length; i++){
 			$j('#'+metriclist[i]+'_Interval').val(GetCookie(metriclist[i]+'_Interval','number'));
 			changePeriod(document.getElementById(metriclist[i]+'_Interval'));
@@ -772,9 +792,9 @@ function SetCurrentPage(){
 }
 
 function ParseCSVExport(data){
-	var csvContent = 'Timestamp,Ping,Jitter,LineQuality\n';
+	var csvContent = 'Timestamp,Ping,Jitter,LineQuality,PingTarget,PingDuration\n';
 	for(var i = 0; i < data.length; i++){
-		var dataString = data[i].Timestamp+','+data[i].Ping+','+data[i].Jitter+','+data[i].LineQuality;
+		var dataString = data[i].Timestamp+','+data[i].Ping+','+data[i].Jitter+','+data[i].LineQuality+','+data[i].PingTarget+','+data[i].PingDuration;
 		csvContent += i < data.length-1 ? dataString+'\n' : dataString;
 	}
 	document.getElementById('aExport').href='data:text/csv;charset=utf-8,'+encodeURIComponent(csvContent);
@@ -1065,59 +1085,147 @@ function get_statstitle_file(){
 
 function get_lastx_file(){
 	$j.ajax({
-		url: '/ext/connmon/connjs.js',
-		dataType: 'script',
+		url: '/ext/connmon/lastx.htm',
+		dataType: 'text',
 		timeout: 3000,
 		error: function(xhr){
 			setTimeout(get_lastx_file, 1000);
 		},
-		success: function(){
-			var nodata='';
-			var objdataname = window['DataTimestamp'];
-			if(typeof objdataname === 'undefined' || objdataname === null){nodata='true'}
-			else if(objdataname.length == 0){nodata='true'}
-			else if(objdataname.length == 1 && objdataname[0] == ''){nodata='true'}
-
-			var tablehtml='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable StatsTable">';
-			if(nodata == 'true'){
-				tablehtml+='<tr>';
-				tablehtml+='<td colspan="4" class="nodata">';
-				tablehtml+='No data to display';
-				tablehtml+='</td>';
-				tablehtml+='</tr>';
-			}
-			else{
-				tablehtml+='<col style="width:145px;">';
-				tablehtml+='<col style="width:205px;">';
-				tablehtml+='<col style="width:125px;">';
-				tablehtml+='<col style="width:125px;">';
-				tablehtml+='<col style="width:125px;">';
-				tablehtml+='<thead>';
-				tablehtml+='<tr>';
-				tablehtml+='<th class="keystatsnumber">Time</th>';
-				tablehtml+='<th class="keystatsnumber">Target</th>';
-				tablehtml+='<th class="keystatsnumber">Ping (ms)</th>';
-				tablehtml+='<th class="keystatsnumber">Jitter (ms)</th>';
-				tablehtml+='<th class="keystatsnumber">Line Quality (%)</th>';
-				tablehtml+='</tr>';
-				tablehtml+='</thead>';
-				
-				for(var i = 0; i < objdataname.length; i++){
-					tablehtml+='<tr>';
-					tablehtml+='<td>'+moment.unix(window['DataTimestamp'][i]).format('YYYY-MM-DD HH:mm:ss')+'</td>';
-					tablehtml+='<td>'+window['DataPingTarget'][i].replace('null','')+'</td>';
-					tablehtml+='<td>'+window['DataPing'][i]+'</td>';
-					tablehtml+='<td>'+window['DataJitter'][i]+'</td>';
-					tablehtml+='<td>'+window['DataLineQuality'][i].replace('null','')+'</td>';
-					tablehtml+='</tr>';
-				};
-			}
-			tablehtml+='</table>';
-			
-			$j("#tablelastxresults").empty();
-			$j("#tablelastxresults").append(tablehtml);
+		success: function(data){
+			ParseLastXData(data);
 		}
 	});
+}
+
+function ParseLastXData(data){
+	var arraysortlines = data.split('\n');
+	arraysortlines = arraysortlines.filter(Boolean);
+	arraysortlistlines = [];
+	for(var i = 0; i < arraysortlines.length; i++){
+		try{
+			var resultfields = arraysortlines[i].split(',');
+			var parsedsortline = new Object();
+			parsedsortline.Time =  moment.unix(resultfields[0].trim()).format('YYYY-MM-DD HH:mm:ss');
+			parsedsortline.Ping = resultfields[1].trim();
+			parsedsortline.Jitter = resultfields[2].trim();
+			parsedsortline.LineQuality = resultfields[3].replace('null','').trim();
+			parsedsortline.Target = resultfields[4].replace('null','').trim();
+			parsedsortline.Duration = resultfields[5].replace('null','').trim();
+			arraysortlistlines.push(parsedsortline);
+		}
+		catch{
+			//do nothing, continue
+		}
+	}
+	originalarraysortlistlines = arraysortlistlines;
+	SortTable(sortname+' '+sortdir.replace('desc','↑').replace('asc','↓').trim());
+}
+
+function SortTable(sorttext){
+	sortname = sorttext.replace('↑','').replace('↓','').trim();
+	var sorttype = 'number';
+	sortfield=sortname;
+	switch(sortname){
+		case 'Time':
+			sorttype = 'date';
+		break;
+		case 'Target':
+			sorttype = 'string';
+		break;
+	}
+	
+	if(sorttype == 'string'){
+		if(sorttext.indexOf('↓') == -1 && sorttext.indexOf('↑') == -1){
+			eval('arraysortlistlines = arraysortlistlines.sort((a,b) => (a.'+sortfield+' > b.'+sortfield+') ? 1 : ((b.'+sortfield+' > a.'+sortfield+') ? -1 : 0));');
+			sortdir = 'asc';
+		}
+		else if(sorttext.indexOf('↓') != -1){
+			eval('arraysortlistlines = arraysortlistlines.sort((a,b) => (a.'+sortfield+' > b.'+sortfield+') ? 1 : ((b.'+sortfield+' > a.'+sortfield+') ? -1 : 0));');
+			sortdir = 'asc';
+		}
+		else{
+			eval('arraysortlistlines = arraysortlistlines.sort((a,b) => (a.'+sortfield+' < b.'+sortfield+') ? 1 : ((b.'+sortfield+' < a.'+sortfield+') ? -1 : 0));');
+			sortdir = 'desc';
+		}
+	}
+	else if(sorttype == 'number'){
+		if(sorttext.indexOf('↓') == -1 && sorttext.indexOf('↑') == -1){
+			eval('arraysortlistlines = arraysortlistlines.sort((a, b) => parseFloat(a.'+sortfield+'.replace("m","000")) - parseFloat(b.'+sortfield+'.replace("m","000")));');
+			sortdir = 'asc';
+		}
+		else if(sorttext.indexOf('↓') != -1){
+			eval('arraysortlistlines = arraysortlistlines.sort((a, b) => parseFloat(a.'+sortfield+'.replace("m","000")) - parseFloat(b.'+sortfield+'.replace("m","000"))); ');
+			sortdir = 'asc';
+		}
+		else{
+			eval('arraysortlistlines = arraysortlistlines.sort((a, b) => parseFloat(b.'+sortfield+'.replace("m","000")) - parseFloat(a.'+sortfield+'.replace("m","000")));');
+			sortdir = 'desc';
+		}
+	}
+	else if(sorttype == 'date'){
+		if(sorttext.indexOf('↓') == -1 && sorttext.indexOf('↑') == -1){
+			eval('arraysortlistlines = arraysortlistlines.sort((a, b) => new Date(a.'+sortfield+') - new Date(b.'+sortfield+'));');
+			sortdir = 'asc';
+		}
+		else if(sorttext.indexOf('↓') != -1){
+			eval('arraysortlistlines = arraysortlistlines.sort((a, b) => new Date(a.'+sortfield+') - new Date(b.'+sortfield+'));');
+			sortdir = 'asc';
+		}
+		else{
+			eval('arraysortlistlines = arraysortlistlines.sort((a, b) => new Date(b.'+sortfield+') - new Date(a.'+sortfield+'));');
+			sortdir = 'desc';
+		}
+	}
+	
+	$j('#sortTableContainer').empty();
+	$j('#sortTableContainer').append(BuildLastXTable());
+	
+	$j('.sortable').each(function(index,element){
+		if(element.innerHTML.replace(/ \(.*\)/,'').replace(' ','') == sortname){
+			if(sortdir == 'asc'){
+				element.innerHTML = element.innerHTML+' ↑';
+			}
+			else{
+				element.innerHTML = element.innerHTML+' ↓';
+			}
+		}
+	});
+}
+
+function BuildLastXTable(){
+	var tablehtml='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="sortTable">';
+	tablehtml+='<col style="width:130px;">';
+	tablehtml+='<col style="width:190px;">';
+	tablehtml+='<col style="width:95px;">';
+	tablehtml+='<col style="width:95px;">';
+	tablehtml+='<col style="width:95px;">';
+	tablehtml+='<col style="width:110px;">';
+	tablehtml+='<thead class="sortTableHeader">';
+	tablehtml+='<tr>';
+	tablehtml+='<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
+	tablehtml+='<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
+	tablehtml+='<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
+	tablehtml+='<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
+	tablehtml+='<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
+	tablehtml+='<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
+	tablehtml+='</tr>';
+	tablehtml+='</thead>';
+	tablehtml+='<tbody class="sortTableContent">';
+	
+	for(var i = 0; i < arraysortlistlines.length; i++){
+		tablehtml += '<tr class="sortRow">';
+		tablehtml += '<td>'+arraysortlistlines[i].Time+'</td>';
+		tablehtml += '<td>'+arraysortlistlines[i].Target+'</td>';
+		tablehtml += '<td>'+arraysortlistlines[i].Duration+'</td>';
+		tablehtml += '<td>'+arraysortlistlines[i].Ping+'</td>';
+		tablehtml += '<td>'+arraysortlistlines[i].Jitter+'</td>';
+		tablehtml += '<td>'+arraysortlistlines[i].LineQuality+'</td>';
+		tablehtml += '</tr>';
+	}
+		
+	tablehtml+='</tbody>';
+	tablehtml+='</table>';
+	return tablehtml;
 }
 
 function AutomaticTestEnableDisable(forminput){
@@ -1244,7 +1352,6 @@ function update_conntest(){
 
 function PostConnTest(){
 	currentNoCharts = 0;
-	$j('#resulttable_pings').remove();
 	$j('#Time_Format').val(GetCookie('Time_Format','number'));
 	get_statstitle_file();
 	setTimeout(RedrawAllCharts,3000);
@@ -1295,23 +1402,9 @@ function changePeriod(e){
 	value = e.value * 1;
 	name = e.id.substring(0,e.id.indexOf('_'));
 	if(value == 2){
-		$j('select[id="'+name+'_Period"] option:contains(24)').text("Today");
+		$j('select[id="'+name+'_Period"] option:contains(24)').text('Today');
 	}
 	else{
-		$j('select[id="'+name+'_Period"] option:contains("Today")').text("Last 24 hours");
+		$j('select[id="'+name+'_Period"] option:contains("Today")').text('Last 24 hours');
 	}
-}
-
-function BuildLastXTable(){
-	var tablehtml = '<div style="line-height:10px;">&nbsp;</div>';
-	tablehtml+='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="resulttable_pings">';
-	tablehtml+='<thead class="collapsible-jquery" id="resultthead_pings">';
-	tablehtml+='<tr><td colspan="2">Latest ping test results (click to expand/collapse)</td></tr>';
-	tablehtml+='</thead>';
-	tablehtml+='<tr>';
-	tablehtml+='<td colspan="2" align="center" style="padding: 0px;" id="tablelastxresults">';
-	tablehtml+='</td>';
-	tablehtml+='</tr>';
-	tablehtml+='</table>';
-	$j('#table_config').after(tablehtml);
 }
