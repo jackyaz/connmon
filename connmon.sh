@@ -351,7 +351,7 @@ Create_Symlinks(){
 	ln -s /tmp/detect_connmon.js "$SCRIPT_WEB_DIR/detect_connmon.js" 2>/dev/null
 	ln -s /tmp/ping-result.txt "$SCRIPT_WEB_DIR/ping-result.htm" 2>/dev/null
 	ln -s "$SCRIPT_STORAGE_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
-	ln -s "$SCRIPT_STORAGE_DIR/connjs.js" "$SCRIPT_WEB_DIR/connjs.js" 2>/dev/null
+	ln -s "$SCRIPT_STORAGE_DIR/lastx.htm" "$SCRIPT_WEB_DIR/lastx.htm" 2>/dev/null
 	
 	ln -s "$SCRIPT_CONF" "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
 	
@@ -822,7 +822,7 @@ ScriptStorageLocation(){
 			mv "/jffs/addons/$SCRIPT_NAME.d/config" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/config.bak" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstatstext.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
-			mv "/jffs/addons/$SCRIPT_NAME.d/connjs.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/jffs/addons/$SCRIPT_NAME.d/lastx.htm" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstats.db" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/.indexcreated" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/.newcolumns" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
@@ -836,7 +836,7 @@ ScriptStorageLocation(){
 			mv "/opt/share/$SCRIPT_NAME.d/config" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/config.bak" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstatstext.js" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
-			mv "/opt/share/$SCRIPT_NAME.d/connjs.js" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/opt/share/$SCRIPT_NAME.d/lastx.htm" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstats.db" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/.indexcreated" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/.newcolumns" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
@@ -932,11 +932,10 @@ Generate_LastXResults(){
 		echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration] FROM connstats ORDER BY [Timestamp] DESC LIMIT $(LastXResults check);"
 	} > /tmp/conn-lastx.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
-	sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
-	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
-	WritePlainData_ToJS /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/connjs.js" DataTimestamp DataPing DataJitter DataLineQuality DataPingTarget DataPingDuration
 	rm -f /tmp/conn-lastx.sql
-	rm -f /tmp/conn-lastx.csv
+	#sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
+	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
+	mv /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/lastx.htm"
 }
 
 Run_PingTest(){
@@ -1219,6 +1218,9 @@ Process_Upgrade(){
 		done
 		rm -f /tmp/connmon-upgrade.sql
 		touch "$SCRIPT_STORAGE_DIR/.newcolumns"
+	fi
+	if [ ! -f "$SCRIPT_STORAGE_DIR/lastx.htm" ]; then
+		Generate_CSVs
 	fi
 }
 
@@ -2113,6 +2115,7 @@ case "$1" in
 		if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 		Auto_ServiceEvent create 2>/dev/null
 		Shortcut_Script create
+		Process_Upgrade
 		exit 0
 	;;
 	uninstall)
