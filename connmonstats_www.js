@@ -1087,13 +1087,15 @@ function get_lastx_file(){
 				tablehtml+='</tr>';
 			}
 			else{
-				tablehtml+='<col style="width:185px;">';
-				tablehtml+='<col style="width:185px;">';
-				tablehtml+='<col style="width:185px;">';
-				tablehtml+='<col style="width:185px;">';
+				tablehtml+='<col style="width:145px;">';
+				tablehtml+='<col style="width:205px;">';
+				tablehtml+='<col style="width:125px;">';
+				tablehtml+='<col style="width:125px;">';
+				tablehtml+='<col style="width:125px;">';
 				tablehtml+='<thead>';
 				tablehtml+='<tr>';
 				tablehtml+='<th class="keystatsnumber">Time</th>';
+				tablehtml+='<th class="keystatsnumber">Target</th>';
 				tablehtml+='<th class="keystatsnumber">Ping (ms)</th>';
 				tablehtml+='<th class="keystatsnumber">Jitter (ms)</th>';
 				tablehtml+='<th class="keystatsnumber">Line Quality (%)</th>';
@@ -1103,6 +1105,7 @@ function get_lastx_file(){
 				for(var i = 0; i < objdataname.length; i++){
 					tablehtml+='<tr>';
 					tablehtml+='<td>'+moment.unix(window['DataTimestamp'][i]).format('YYYY-MM-DD HH:mm:ss')+'</td>';
+					tablehtml+='<td>'+window['DataPingTarget'][i].replace('null','')+'</td>';
 					tablehtml+='<td>'+window['DataPing'][i]+'</td>';
 					tablehtml+='<td>'+window['DataJitter'][i]+'</td>';
 					tablehtml+='<td>'+window['DataLineQuality'][i].replace('null','')+'</td>';
@@ -1303,7 +1306,7 @@ function BuildLastXTable(){
 	var tablehtml = '<div style="line-height:10px;">&nbsp;</div>';
 	tablehtml+='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="resulttable_pings">';
 	tablehtml+='<thead class="collapsible-jquery" id="resultthead_pings">';
-	tablehtml+='<tr><td colspan="2">Last 10 ping test results (click to expand/collapse)</td></tr>';
+	tablehtml+='<tr><td colspan="2">Latest ping test results (click to expand/collapse)</td></tr>';
 	tablehtml+='</thead>';
 	tablehtml+='<tr>';
 	tablehtml+='<td colspan="2" align="center" style="padding: 0px;" id="tablelastxresults">';
