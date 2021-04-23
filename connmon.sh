@@ -878,22 +878,6 @@ OutputTimeMode(){
 	esac
 }
 
-WritePlainData_ToJS(){
-	inputfile="$1"
-	outputfile="$2"
-	shift;shift
-	i=0
-	for var in "$@"; do
-		i=$((i+1))
-		{
-			echo "var $var;"
-			echo "$var = [];"
-			echo "${var}.unshift('$(awk -v i=$i '{printf t $i} {t=","}' "$inputfile" | sed "s~,~\\',\\'~g")');"
-			echo
-		} >> "$outputfile"
-	done
-}
-
 WriteStats_ToJS(){
 	echo "function $3(){" > "$2"
 	html='document.getElementById("'"$4"'").innerHTML="'
