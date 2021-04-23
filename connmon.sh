@@ -1482,6 +1482,14 @@ Menu_Install(){
 	if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
+	
+	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL,[Timestamp] NUMERIC NOT NULL,[Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[LineQuality] REAL NOT NULL,[PingTarget] TEXT NOT NULL,[PingDuration] NUMERIC);" > /tmp/connmon-stats.sql
+	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+	rm -f /tmp/connmon-stats.sql
+	touch "$SCRIPT_STORAGE_DIR/.newcolumns"
+	touch "$SCRIPT_STORAGE_DIR/lastx.htm"
+	Process_Upgrade
+	
 	Run_PingTest
 	
 	Clear_Lock
