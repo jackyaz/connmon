@@ -416,8 +416,7 @@ PingServer(){
 							read -r ipoption
 							if [ "$ipoption" = "e" ]; then
 								break
-							fi
-							if Validate_IP "$ipoption"; then
+							elif Validate_IP "$ipoption"; then
 								sed -i 's/^PINGSERVER.*$/PINGSERVER='"$ipoption"'/' "$SCRIPT_CONF"
 								break
 							fi
@@ -429,8 +428,7 @@ PingServer(){
 							read -r domainoption
 							if [ "$domainoption" = "e" ]; then
 								break
-							fi
-							if Validate_Domain "$domainoption"; then
+							elif Validate_Domain "$domainoption"; then
 								sed -i 's/^PINGSERVER.*$/PINGSERVER='"$domainoption"'/' "$SCRIPT_CONF"
 								break
 							fi
@@ -468,14 +466,12 @@ PingDuration(){
 					break
 				elif ! Validate_Number "$pingdur_choice"; then
 					printf "\\n${ERR}Please enter a valid number (10-60)${CLEARFORMAT}\\n"
-				else
-					if [ "$pingdur_choice" -lt 10 ] || [ "$pingdur_choice" -gt 60 ]; then
+				elif [ "$pingdur_choice" -lt 10 ] || [ "$pingdur_choice" -gt 60 ]; then
 						printf "\\n${ERR}Please enter a number between 10 and 60${CLEARFORMAT}\\n"
-					else
-						pingdur="$pingdur_choice"
-						printf "\\n"
-						break
-					fi
+				else
+					pingdur="$pingdur_choice"
+					printf "\\n"
+					break
 				fi
 			done
 			
@@ -509,14 +505,12 @@ DaysToKeep(){
 					break
 				elif ! Validate_Number "$daystokeep_choice"; then
 					printf "\\n${ERR}Please enter a valid number (30-365)${CLEARFORMAT}\\n"
-				else
-					if [ "$daystokeep_choice" -lt 30 ] || [ "$daystokeep_choice" -gt 365 ]; then
+				elif [ "$daystokeep_choice" -lt 30 ] || [ "$daystokeep_choice" -gt 365 ]; then
 						printf "\\n${ERR}Please enter a number between 30 and 365${CLEARFORMAT}\\n"
-					else
-						daystokeep="$daystokeep_choice"
-						printf "\\n"
-						break
-					fi
+				else
+					daystokeep="$daystokeep_choice"
+					printf "\\n"
+					break
 				fi
 			done
 			
@@ -550,14 +544,12 @@ LastXResults(){
 					break
 				elif ! Validate_Number "$lastx_choice"; then
 					printf "\\n${ERR}Please enter a valid number (1-100)${CLEARFORMAT}\\n"
-				else
-					if [ "$lastx_choice" -lt 1 ] || [ "$lastx_choice" -gt 100 ]; then
+				elif [ "$lastx_choice" -lt 1 ] || [ "$lastx_choice" -gt 100 ]; then
 						printf "\\n${ERR}Please enter a number between 1 and 100${CLEARFORMAT}\\n"
-					else
-						lastxresults="$lastx_choice"
-						printf "\\n"
-						break
-					fi
+				else
+					lastxresults="$lastx_choice"
+					printf "\\n"
+					break
 				fi
 			done
 			
@@ -1574,12 +1566,10 @@ Menu_EditSchedule(){
 					printf "\\n${ERR}Please enter a valid number (0-6) or comma separated values${CLEARFORMAT}\\n"
 					crudaysvalidated="false"
 					break
-				else
-					if [ "$i" -lt 0 ] || [ "$i" -gt 6 ]; then
-						printf "\\n${ERR}Please enter a number between 0 and 6 or comma separated values${CLEARFORMAT}\\n"
-						crudaysvalidated="false"
-						break
-					fi
+				elif [ "$i" -lt 0 ] || [ "$i" -gt 6 ]; then
+					printf "\\n${ERR}Please enter a number between 0 and 6 or comma separated values${CLEARFORMAT}\\n"
+					crudaysvalidated="false"
+					break
 				fi
 			done
 			if [ "$crudaysvalidated" = "true" ]; then
