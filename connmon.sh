@@ -902,19 +902,6 @@ WriteSql_ToFile(){
 	fi
 }
 
-Generate_LastXResults(){
-	{
-		echo ".mode csv"
-		echo ".output /tmp/conn-lastx.csv"
-		echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration] FROM connstats ORDER BY [Timestamp] DESC LIMIT $(LastXResults check);"
-	} > /tmp/conn-lastx.sql
-	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
-	rm -f /tmp/conn-lastx.sql
-	#sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
-	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
-	mv /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/lastx.htm"
-}
-
 Run_PingTest(){
 	if [ ! -f /opt/bin/xargs ]; then
 		Print_Output true "Installing findutils from Entware"
@@ -1140,6 +1127,19 @@ Generate_CSVs(){
 	rm -f "$CSV_OUTPUT_DIR/connmondata.zip"
 	rm -rf "$tmpoutputdir"
 	renice 0 $$
+}
+
+Generate_LastXResults(){
+	{
+		echo ".mode csv"
+		echo ".output /tmp/conn-lastx.csv"
+		echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration] FROM connstats ORDER BY [Timestamp] DESC LIMIT $(LastXResults check);"
+	} > /tmp/conn-lastx.sql
+	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
+	rm -f /tmp/conn-lastx.sql
+	#sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
+	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
+	mv /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/lastx.htm"
 }
 
 Reset_DB(){
