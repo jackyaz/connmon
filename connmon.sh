@@ -1483,6 +1483,9 @@ Menu_Install(){
 	Run_PingTest
 	
 	Clear_Lock
+	
+	ScriptHeader
+	MainMenu
 }
 
 Menu_Startup(){
