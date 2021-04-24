@@ -910,7 +910,7 @@ function update_status(){
 
 function CheckUpdate(){
 	showhide('btnChkUpdate',false);
-	document.formScriptActions.action_script.value='start_connmoncheckupdate'
+	document.formScriptActions.action_script.value = 'start_connmoncheckupdate'
 	document.formScriptActions.submit();
 	document.getElementById('imgChkUpdate').style.display = '';
 	setTimeout(update_status,2000);
@@ -1005,7 +1005,7 @@ function get_conf_file(){
 			setTimeout(get_conf_file,1000);
 		},
 		success: function(data){
-			var configdata=data.split('\n');
+			var configdata = data.split('\n');
 			configdata = configdata.filter(Boolean);
 			
 			for(var i = 0; i < configdata.length; i++){
@@ -1013,15 +1013,15 @@ function get_conf_file(){
 				let settingvalue = configdata[i].split('=')[1].replace(/(\r\n|\n|\r)/gm,'');
 				
 				if(configdata[i].indexOf('PINGSERVER') != -1){
-					var pingserver=settingvalue;
+					var pingserver = settingvalue;
 					document.form.connmon_pingserver.value = pingserver;
 					if(Validate_IP(document.form.connmon_pingserver)){
-						document.form.pingtype.value=0;
-						document.form.connmon_ipaddr.value=pingserver;
+						document.form.pingtype.value = 0;
+						document.form.connmon_ipaddr.value = pingserver;
 					}
 					else{
-						document.form.pingtype.value=1;
-						document.form.connmon_domain.value=pingserver;
+						document.form.pingtype.value = 1;
+						document.form.connmon_domain.value = pingserver;
 					}
 					document.form.pingtype.onchange();
 				}
@@ -1047,7 +1047,7 @@ function get_conf_file(){
 				}
 				
 				if(configdata[i].indexOf('PINGDURATION') != -1){
-					pingtestdur=document.form.connmon_pingduration.value;
+					pingtestdur = document.form.connmon_pingduration.value;
 				}
 			}
 			
@@ -1194,23 +1194,23 @@ function SortTable(sorttext){
 
 function BuildLastXTable(){
 	var tablehtml='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="sortTable">';
-	tablehtml+='<col style="width:130px;">';
-	tablehtml+='<col style="width:190px;">';
-	tablehtml+='<col style="width:95px;">';
-	tablehtml+='<col style="width:95px;">';
-	tablehtml+='<col style="width:95px;">';
-	tablehtml+='<col style="width:110px;">';
-	tablehtml+='<thead class="sortTableHeader">';
-	tablehtml+='<tr>';
-	tablehtml+='<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
-	tablehtml+='<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
-	tablehtml+='<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
-	tablehtml+='<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
-	tablehtml+='<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
-	tablehtml+='<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
-	tablehtml+='</tr>';
-	tablehtml+='</thead>';
-	tablehtml+='<tbody class="sortTableContent">';
+	tablehtml += '<col style="width:130px;">';
+	tablehtml += '<col style="width:190px;">';
+	tablehtml += '<col style="width:95px;">';
+	tablehtml += '<col style="width:95px;">';
+	tablehtml += '<col style="width:95px;">';
+	tablehtml += '<col style="width:110px;">';
+	tablehtml += '<thead class="sortTableHeader">';
+	tablehtml += '<tr>';
+	tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
+	tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
+	tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
+	tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
+	tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
+	tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
+	tablehtml += '</tr>';
+	tablehtml += '</thead>';
+	tablehtml += '<tbody class="sortTableContent">';
 	
 	for(var i = 0; i < arraysortlistlines.length; i++){
 		tablehtml += '<tr class="sortRow">';
@@ -1223,8 +1223,8 @@ function BuildLastXTable(){
 		tablehtml += '</tr>';
 	}
 		
-	tablehtml+='</tbody>';
-	tablehtml+='</table>';
+	tablehtml += '</tbody>';
+	tablehtml += '</table>';
 	return tablehtml;
 }
 
