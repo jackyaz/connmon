@@ -345,12 +345,12 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 	if(objchartname != undefined) objchartname.destroy();
 	var ctx = document.getElementById('divLineChart_'+txtchartname).getContext('2d');
 	var lineOptions = {
-		segmentShowStroke : false,
-		segmentStrokeColor : '#000',
-		animationEasing : 'easeOutQuart',
-		animationSteps : 100,
+		segmentShowStroke: false,
+		segmentStrokeColor: '#000',
+		animationEasing: 'easeOutQuart',
+		animationSteps: 100,
 		maintainAspectRatio: false,
-		animateScale : true,
+		animateScale: true,
 		hover: { mode: 'point' },
 		legend: { display: false,position: 'bottom',onClick: null },
 		title: { display: true,text: txttitle },
