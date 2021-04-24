@@ -1445,6 +1445,7 @@ Check_Requirements(){
 }
 
 Menu_Install(){
+	ScriptHeader
 	Print_Output true "Welcome to $SCRIPT_NAME $SCRIPT_VERSION, a script by JackYaz"
 	sleep 1
 	
