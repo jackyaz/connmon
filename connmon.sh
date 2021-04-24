@@ -1868,6 +1868,7 @@ Menu_ResetDB(){
 
 Menu_Uninstall(){
 	Print_Output true "Removing $SCRIPT_NAME..." "$PASS"
+	killall "$SCRIPT_NAME" 2>/dev/null
 	Auto_Startup delete 2>/dev/null
 	Auto_Cron delete 2>/dev/null
 	Auto_ServiceEvent delete 2>/dev/null
