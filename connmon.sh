@@ -12,6 +12,8 @@
 ##############################################################
 
 ##############        Shellcheck directives      #############
+# shellcheck disable=SC2009
+# shellcheck disable=SC2012
 # shellcheck disable=SC2016
 # shellcheck disable=SC2018
 # shellcheck disable=SC2019
@@ -919,7 +921,6 @@ Run_PingTest(){
 		opkg update
 		opkg install findutils
 	fi
-	#shellcheck disable=SC2009
 	if [ -n "$PPID" ]; then
 		ps | grep -v grep | grep -v $$ | grep -v "$PPID" | grep -i "$SCRIPT_NAME" | grep generate | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
 	else
@@ -1141,7 +1142,6 @@ Generate_CSVs(){
 	renice 0 $$
 }
 
-# shellcheck disable=SC2012
 Reset_DB(){
 	SIZEAVAIL="$(df -P -k "$SCRIPT_STORAGE_DIR" | awk '{print $4}' | tail -n 1)"
 	SIZEDB="$(ls -l "$SCRIPT_STORAGE_DIR/connstats.db" | awk '{print $5}')"
