@@ -890,29 +890,16 @@ WriteSql_ToFile(){
 			echo ".mode csv"
 			echo ".headers on"
 			echo ".output ${5}_${6}.htm"
-			echo "SELECT '$1' Metric, Min(strftime('%s',datetime(strftime('%Y-%m-%d %H:00:00',datetime([Timestamp],'unixepoch'))))) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-$maxcount hour'))) GROUP BY strftime('%m',datetime([Timestamp],'unixepoch')),strftime('%d',datetime([Timestamp],'unixepoch')),strftime('%H',datetime([Timestamp],'unixepoch')) ORDER BY [Timestamp] DESC;"
+			echo "SELECT '$1' Metric,Min(strftime('%s',datetime(strftime('%Y-%m-%d %H:00:00',datetime([Timestamp],'unixepoch'))))) Time,IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-$maxcount hour'))) GROUP BY strftime('%m',datetime([Timestamp],'unixepoch')),strftime('%d',datetime([Timestamp],'unixepoch')),strftime('%H',datetime([Timestamp],'unixepoch')) ORDER BY [Timestamp] DESC;"
 		} >> "$7"
 	else
 		{
 			echo ".mode csv"
 			echo ".headers on"
 			echo ".output ${5}_${6}.htm"
-			echo "SELECT '$1' Metric, Min(strftime('%s',datetime([Timestamp],'unixepoch','start of day'))) Time, IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] > strftime('%s',datetime($timenow,'unixepoch','start of day','+1 day','-$maxcount day'))) GROUP BY strftime('%m',datetime([Timestamp],'unixepoch')),strftime('%d',datetime([Timestamp],'unixepoch')) ORDER BY [Timestamp] DESC;"
+			echo "SELECT '$1' Metric,Min(strftime('%s',datetime([Timestamp],'unixepoch','start of day'))) Time,IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] > strftime('%s',datetime($timenow,'unixepoch','start of day','+1 day','-$maxcount day'))) GROUP BY strftime('%m',datetime([Timestamp],'unixepoch')),strftime('%d',datetime([Timestamp],'unixepoch')) ORDER BY [Timestamp] DESC;"
 		} >> "$7"
 	fi
-}
-
-Generate_LastXResults(){
-	{
-		echo ".mode csv"
-		echo ".output /tmp/conn-lastx.csv"
-		echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration] FROM connstats ORDER BY [Timestamp] DESC LIMIT $(LastXResults check);"
-	} > /tmp/conn-lastx.sql
-	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
-	rm -f /tmp/conn-lastx.sql
-	#sed -i 's/,,/,null,/g;s/,/ /g;s/"//g;' /tmp/conn-lastx.csv
-	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
-	mv /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/lastx.htm"
 }
 
 Run_PingTest(){
@@ -1140,6 +1127,18 @@ Generate_CSVs(){
 	rm -f "$CSV_OUTPUT_DIR/connmondata.zip"
 	rm -rf "$tmpoutputdir"
 	renice 0 $$
+}
+
+Generate_LastXResults(){
+	{
+		echo ".mode csv"
+		echo ".output /tmp/conn-lastx.csv"
+		echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration] FROM connstats ORDER BY [Timestamp] DESC LIMIT $(LastXResults check);"
+	} > /tmp/conn-lastx.sql
+	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
+	rm -f /tmp/conn-lastx.sql
+	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
+	mv /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/lastx.htm"
 }
 
 Reset_DB(){
@@ -1891,7 +1890,8 @@ Menu_Uninstall(){
 		sed -i "\\~$MyPage~d" /tmp/menuTree.js
 		umount /www/require/modules/menuTree.js
 		mount -o bind /tmp/menuTree.js /www/require/modules/menuTree.js
-		rm -rf "{$SCRIPT_WEBPAGE_DIR:?}/$MyPage"
+		rm -f "$SCRIPT_WEBPAGE_DIR/$MyPage"
+		rm -f "$SCRIPT_WEBPAGE_DIR/$(echo $MyPage | cut -f1 -d'.').title"
 	fi
 	flock -u "$FD"
 	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null

@@ -254,7 +254,7 @@ var $j=jQuery.noConflict(),daysofweek=["Mon","Tues","Wed","Thurs","Fri","Sat","S
 <tr><td colspan="2">Latest ping test results (click to expand/collapse)</td></tr>
 </thead>
 <tr>
-<td colspan="2" align="center" style="padding: 0px;" id="tablelastxresults">
+<td colspan="2" align="center" style="padding: 0px;">
 <div id="sortTableContainer" class="sortTableContainer"></div>
 </td>
 </tr>
