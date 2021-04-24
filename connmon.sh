@@ -12,6 +12,9 @@
 ##############################################################
 
 ##############        Shellcheck directives      #############
+# shellcheck disable=SC2009
+# shellcheck disable=SC2012
+# shellcheck disable=SC2016
 # shellcheck disable=SC2018
 # shellcheck disable=SC2019
 # shellcheck disable=SC2059
@@ -19,7 +22,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.11.0"
+readonly SCRIPT_VERSION="v2.11.1"
 SCRIPT_BRANCH="master"
 SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -37,16 +40,17 @@ readonly CRIT="\\e[41m"
 readonly ERR="\\e[31m"
 readonly WARN="\\e[33m"
 readonly PASS="\\e[32m"
-readonly SETTING="\\e[1m\\e[36m"
+readonly BOLD="\\e[1m"
+readonly SETTING="${BOLD}\\e[36m"
+readonly CLEARFORMAT="\\e[0m"
 ### End of output format variables ###
 
 # $1 = print to syslog, $2 = message to print, $3 = log level
-# shellcheck disable=SC2059
 Print_Output(){
 	if [ "$1" = "true" ]; then
 		logger -t "$SCRIPT_NAME" "$2"
 	fi
-	printf "\\e[1m${3}%s\\e[0m\\n\\n" "$2"
+	printf "${BOLD}${3}%s${CLEARFORMAT}\\n\\n" "$2"
 }
 
 Firmware_Version_Check(){
@@ -163,7 +167,7 @@ Update_Version(){
 		fi
 		
 		if [ "$isupdate" != "false" ]; then
-			printf "\\n\\e[1mDo you want to continue with the update? (y/n)\\e[0m  "
+			printf "\\n${BOLD}Do you want to continue with the update? (y/n)${CLEARFORMAT}  "
 			read -r confirm
 			case "$confirm" in
 				y|Y)
@@ -401,21 +405,20 @@ PingServer(){
 		update)
 			while true; do
 				ScriptHeader
-				printf "\\n\\e[1mCurrent ping destination: %s\\e[0m\\n\\n" "$(PingServer check)"
+				printf "\\n${BOLD}Current ping destination: %s${CLEARFORMAT}\\n\\n" "$(PingServer check)"
 				printf "1.    Enter IP Address\\n"
 				printf "2.    Enter Domain\\n"
 				printf "\\ne.    Go back\\n"
-				printf "\\n\\e[1mChoose an option:\\e[0m  "
+				printf "\\n${BOLD}Choose an option:${CLEARFORMAT}  "
 				read -r pingoption
 				case "$pingoption" in
 					1)
 						while true; do
-							printf "\\n\\e[1mPlease enter an IP address, or enter e to go back:\\e[0m  "
+							printf "\\n${BOLD}Please enter an IP address, or enter e to go back:${CLEARFORMAT}  "
 							read -r ipoption
 							if [ "$ipoption" = "e" ]; then
 								break
-							fi
-							if Validate_IP "$ipoption"; then
+							elif Validate_IP "$ipoption"; then
 								sed -i 's/^PINGSERVER.*$/PINGSERVER='"$ipoption"'/' "$SCRIPT_CONF"
 								break
 							fi
@@ -423,12 +426,11 @@ PingServer(){
 					;;
 					2)
 						while true; do
-							printf "\\n\\e[1mPlease enter a domain name, or enter e to go back:\\e[0m  "
+							printf "\\n${BOLD}Please enter a domain name, or enter e to go back:${CLEARFORMAT}  "
 							read -r domainoption
 							if [ "$domainoption" = "e" ]; then
 								break
-							fi
-							if Validate_Domain "$domainoption"; then
+							elif Validate_Domain "$domainoption"; then
 								sed -i 's/^PINGSERVER.*$/PINGSERVER='"$domainoption"'/' "$SCRIPT_CONF"
 								break
 							fi
@@ -458,22 +460,20 @@ PingDuration(){
 			exitmenu=""
 			ScriptHeader
 			while true; do
-				printf "\\n\\e[1mPlease enter the desired test duration (10-60 seconds):\\e[0m  "
+				printf "\\n${BOLD}Please enter the desired test duration (10-60 seconds):${CLEARFORMAT}  "
 				read -r pingdur_choice
 				
 				if [ "$pingdur_choice" = "e" ]; then
 					exitmenu="exit"
 					break
 				elif ! Validate_Number "$pingdur_choice"; then
-					printf "\\n\\e[31mPlease enter a valid number (10-60)\\e[0m\\n"
+					printf "\\n${ERR}Please enter a valid number (10-60)${CLEARFORMAT}\\n"
+				elif [ "$pingdur_choice" -lt 10 ] || [ "$pingdur_choice" -gt 60 ]; then
+						printf "\\n${ERR}Please enter a number between 10 and 60${CLEARFORMAT}\\n"
 				else
-					if [ "$pingdur_choice" -lt 10 ] || [ "$pingdur_choice" -gt 60 ]; then
-						printf "\\n\\e[31mPlease enter a number between 10 and 60\\e[0m\\n"
-					else
-						pingdur="$pingdur_choice"
-						printf "\\n"
-						break
-					fi
+					pingdur="$pingdur_choice"
+					printf "\\n"
+					break
 				fi
 			done
 			
@@ -499,22 +499,20 @@ DaysToKeep(){
 			exitmenu=""
 			ScriptHeader
 			while true; do
-				printf "\\n\\e[1mPlease enter the desired number of days\\nto keep data for (30-365 days):\\e[0m  "
+				printf "\\n${BOLD}Please enter the desired number of days\\nto keep data for (30-365 days):${CLEARFORMAT}  "
 				read -r daystokeep_choice
 				
 				if [ "$daystokeep_choice" = "e" ]; then
 					exitmenu="exit"
 					break
 				elif ! Validate_Number "$daystokeep_choice"; then
-					printf "\\n\\e[31mPlease enter a valid number (30-365)\\e[0m\\n"
+					printf "\\n${ERR}Please enter a valid number (30-365)${CLEARFORMAT}\\n"
+				elif [ "$daystokeep_choice" -lt 30 ] || [ "$daystokeep_choice" -gt 365 ]; then
+						printf "\\n${ERR}Please enter a number between 30 and 365${CLEARFORMAT}\\n"
 				else
-					if [ "$daystokeep_choice" -lt 30 ] || [ "$daystokeep_choice" -gt 365 ]; then
-						printf "\\n\\e[31mPlease enter a number between 30 and 365\\e[0m\\n"
-					else
-						daystokeep="$daystokeep_choice"
-						printf "\\n"
-						break
-					fi
+					daystokeep="$daystokeep_choice"
+					printf "\\n"
+					break
 				fi
 			done
 			
@@ -540,22 +538,20 @@ LastXResults(){
 			exitmenu=""
 			ScriptHeader
 			while true; do
-				printf "\\n\\e[1mPlease enter the desired number of results\\nto display in the WebUI (1-100):\\e[0m  "
+				printf "\\n${BOLD}Please enter the desired number of results\\nto display in the WebUI (1-100):${CLEARFORMAT}  "
 				read -r lastx_choice
 				
 				if [ "$lastx_choice" = "e" ]; then
 					exitmenu="exit"
 					break
 				elif ! Validate_Number "$lastx_choice"; then
-					printf "\\n\\e[31mPlease enter a valid number (1-100)\\e[0m\\n"
+					printf "\\n${ERR}Please enter a valid number (1-100)${CLEARFORMAT}\\n"
+				elif [ "$lastx_choice" -lt 1 ] || [ "$lastx_choice" -gt 100 ]; then
+						printf "\\n${ERR}Please enter a number between 1 and 100${CLEARFORMAT}\\n"
 				else
-					if [ "$lastx_choice" -lt 1 ] || [ "$lastx_choice" -gt 100 ]; then
-						printf "\\n\\e[31mPlease enter a number between 1 and 100\\e[0m\\n"
-					else
-						lastxresults="$lastx_choice"
-						printf "\\n"
-						break
-					fi
+					lastxresults="$lastx_choice"
+					printf "\\n"
+					break
 				fi
 			done
 			
@@ -580,7 +576,6 @@ Auto_ServiceEvent(){
 		create)
 			if [ -f /jffs/scripts/service-event ]; then
 				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/service-event)
-				# shellcheck disable=SC2016
 				STARTUPLINECOUNTEX=$(grep -cx "/jffs/scripts/$SCRIPT_NAME service_event"' "$@" & # '"$SCRIPT_NAME" /jffs/scripts/service-event)
 				
 				if [ "$STARTUPLINECOUNT" -gt 1 ] || { [ "$STARTUPLINECOUNTEX" -eq 0 ] && [ "$STARTUPLINECOUNT" -gt 0 ]; }; then
@@ -588,13 +583,11 @@ Auto_ServiceEvent(){
 				fi
 				
 				if [ "$STARTUPLINECOUNTEX" -eq 0 ]; then
-					# shellcheck disable=SC2016
 					echo "/jffs/scripts/$SCRIPT_NAME service_event"' "$@" & # '"$SCRIPT_NAME" >> /jffs/scripts/service-event
 				fi
 			else
 				echo "#!/bin/sh" > /jffs/scripts/service-event
 				echo "" >> /jffs/scripts/service-event
-				# shellcheck disable=SC2016
 				echo "/jffs/scripts/$SCRIPT_NAME service_event"' "$@" & # '"$SCRIPT_NAME" >> /jffs/scripts/service-event
 				chmod 0755 /jffs/scripts/service-event
 			fi
@@ -877,22 +870,6 @@ OutputTimeMode(){
 	esac
 }
 
-WritePlainData_ToJS(){
-	inputfile="$1"
-	outputfile="$2"
-	shift;shift
-	i=0
-	for var in "$@"; do
-		i=$((i+1))
-		{
-			echo "var $var;"
-			echo "$var = [];"
-			echo "${var}.unshift('$(awk -v i=$i '{printf t $i} {t=","}' "$inputfile" | sed "s~,~\\',\\'~g")');"
-			echo
-		} >> "$outputfile"
-	done
-}
-
 WriteStats_ToJS(){
 	echo "function $3(){" > "$2"
 	html='document.getElementById("'"$4"'").innerHTML="'
@@ -944,7 +921,6 @@ Run_PingTest(){
 		opkg update
 		opkg install findutils
 	fi
-	#shellcheck disable=SC2009
 	if [ -n "$PPID" ]; then
 		ps | grep -v grep | grep -v $$ | grep -v "$PPID" | grep -i "$SCRIPT_NAME" | grep generate | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
 	else
@@ -1166,7 +1142,6 @@ Generate_CSVs(){
 	renice 0 $$
 }
 
-# shellcheck disable=SC2012
 Reset_DB(){
 	SIZEAVAIL="$(df -P -k "$SCRIPT_STORAGE_DIR" | awk '{print $4}' | tail -n 1)"
 	SIZEDB="$(ls -l "$SCRIPT_STORAGE_DIR/connstats.db" | awk '{print $5}')"
@@ -1258,17 +1233,17 @@ PressEnter(){
 ScriptHeader(){
 	clear
 	printf "\\n"
-	printf "\\e[1m##############################################################\\e[0m\\n"
-	printf "\\e[1m##     ___   ___   _ __   _ __   _ __ ___    ___   _ __     ##\\e[0m\\n"
-	printf "\\e[1m##    / __| / _ \ | '_ \ | '_ \ | '_   _ \  / _ \ | '_ \    ##\\e[0m\\n"
-	printf "\\e[1m##   | (__ | (_) || | | || | | || | | | | || (_) || | | |   ##\\e[0m\\n"
-	printf "\\e[1m##    \___| \___/ |_| |_||_| |_||_| |_| |_| \___/ |_| |_|   ##\\e[0m\\n"
-	printf "\\e[1m##                                                          ##\\e[0m\\n"
-	printf "\\e[1m##                  %s on %-11s                  ##\\e[0m\\n" "$SCRIPT_VERSION" "$ROUTER_MODEL"
-	printf "\\e[1m##                                                          ##\\e[0m\\n"
-	printf "\\e[1m##            https://github.com/jackyaz/connmon            ##\\e[0m\\n"
-	printf "\\e[1m##                                                          ##\\e[0m\\n"
-	printf "\\e[1m##############################################################\\e[0m\\n"
+	printf "${BOLD}##############################################################${CLEARFORMAT}\\n"
+	printf "${BOLD}##     ___   ___   _ __   _ __   _ __ ___    ___   _ __     ##${CLEARFORMAT}\\n"
+	printf "${BOLD}##    / __| / _ \ | '_ \ | '_ \ | '_   _ \  / _ \ | '_ \    ##${CLEARFORMAT}\\n"
+	printf "${BOLD}##   | (__ | (_) || | | || | | || | | | | || (_) || | | |   ##${CLEARFORMAT}\\n"
+	printf "${BOLD}##    \___| \___/ |_| |_||_| |_||_| |_| |_| \___/ |_| |_|   ##${CLEARFORMAT}\\n"
+	printf "${BOLD}##                                                          ##${CLEARFORMAT}\\n"
+	printf "${BOLD}##                  %s on %-11s                  ##${CLEARFORMAT}\\n" "$SCRIPT_VERSION" "$ROUTER_MODEL"
+	printf "${BOLD}##                                                          ##${CLEARFORMAT}\\n"
+	printf "${BOLD}##            https://github.com/jackyaz/connmon            ##${CLEARFORMAT}\\n"
+	printf "${BOLD}##                                                          ##${CLEARFORMAT}\\n"
+	printf "${BOLD}##############################################################${CLEARFORMAT}\\n"
 	printf "\\n"
 }
 
@@ -1290,23 +1265,23 @@ MainMenu(){
 		TEST_SCHEDULE_MENU2="Days of week: $(echo "$TEST_SCHEDULE" | cut -f1 -d'|')"
 	fi
 	
-	printf "WebUI for %s is available at:\\n${SETTING}%s\\e[0m\\n\\n" "$SCRIPT_NAME" "$(Get_WebUI_URL)"
+	printf "WebUI for %s is available at:\\n${SETTING}%s${CLEARFORMAT}\\n\\n" "$SCRIPT_NAME" "$(Get_WebUI_URL)"
 	printf "1.    Check connection now\\n\\n"
-	printf "2.    Set preferred ping server\\n      Currently: ${SETTING}%s\\e[0m\\n\\n" "$(PingServer check)"
-	printf "3.    Set ping test duration\\n      Currently: ${SETTING}%ss\\e[0m\\n\\n" "$(PingDuration check)"
-	printf "4.    Toggle automatic ping tests\\n      Currently: \\e[1m$AUTOMATIC_ENABLED\\e[0m\\n\\n"
-	printf "5.    Set schedule for automatic ping tests\\n      ${SETTING}%s\\n      %s\\e[0m\\n\\n" "$TEST_SCHEDULE_MENU" "$TEST_SCHEDULE_MENU2"
-	printf "6.    Toggle time output mode\\n      Currently ${SETTING}%s\\e[0m time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
-	printf "7.    Set number of ping test results to show in WebUI\\n      Currently: ${SETTING}%s results will be shown\\e[0m\\n\\n" "$(LastXResults check)"
-	printf "8.    Set number of days data to keep in database\\n      Currently: ${SETTING}%s days data will be kept\\e[0m\\n\\n" "$(DaysToKeep check)"
-	printf "s.    Toggle storage location for stats and config\\n      Current location is ${SETTING}%s\\e[0m \\n\\n" "$(ScriptStorageLocation check)"
+	printf "2.    Set preferred ping server\\n      Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(PingServer check)"
+	printf "3.    Set ping test duration\\n      Currently: ${SETTING}%ss${CLEARFORMAT}\\n\\n" "$(PingDuration check)"
+	printf "4.    Toggle automatic ping tests\\n      Currently: ${BOLD}$AUTOMATIC_ENABLED${CLEARFORMAT}\\n\\n"
+	printf "5.    Set schedule for automatic ping tests\\n      ${SETTING}%s\\n      %s${CLEARFORMAT}\\n\\n" "$TEST_SCHEDULE_MENU" "$TEST_SCHEDULE_MENU2"
+	printf "6.    Toggle time output mode\\n      Currently ${SETTING}%s${CLEARFORMAT} time values will be used for CSV exports\\n\\n" "$(OutputTimeMode check)"
+	printf "7.    Set number of ping test results to show in WebUI\\n      Currently: ${SETTING}%s results will be shown${CLEARFORMAT}\\n\\n" "$(LastXResults check)"
+	printf "8.    Set number of days data to keep in database\\n      Currently: ${SETTING}%s days data will be kept${CLEARFORMAT}\\n\\n" "$(DaysToKeep check)"
+	printf "s.    Toggle storage location for stats and config\\n      Current location is ${SETTING}%s${CLEARFORMAT} \\n\\n" "$(ScriptStorageLocation check)"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
 	printf "r.    Reset %s database / delete all data\\n\\n" "$SCRIPT_NAME"
 	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
 	printf "z.    Uninstall %s\\n" "$SCRIPT_NAME"
 	printf "\\n"
-	printf "\\e[1m##############################################################\\e[0m\\n"
+	printf "${BOLD}##############################################################${CLEARFORMAT}\\n"
 	printf "\\n"
 	
 	while true; do
@@ -1410,12 +1385,12 @@ MainMenu(){
 			;;
 			e)
 				ScriptHeader
-				printf "\\n\\e[1mThanks for using %s!\\e[0m\\n\\n\\n" "$SCRIPT_NAME"
+				printf "\\n${BOLD}Thanks for using %s!${CLEARFORMAT}\\n\\n\\n" "$SCRIPT_NAME"
 				exit 0
 			;;
 			z)
 				while true; do
-					printf "\\n\\e[1mAre you sure you want to uninstall %s? (y/n)\\e[0m  " "$SCRIPT_NAME"
+					printf "\\n${BOLD}Are you sure you want to uninstall %s? (y/n)${CLEARFORMAT}  " "$SCRIPT_NAME"
 					read -r confirm
 					case "$confirm" in
 						y|Y)
@@ -1470,6 +1445,7 @@ Check_Requirements(){
 }
 
 Menu_Install(){
+	ScriptHeader
 	Print_Output true "Welcome to $SCRIPT_NAME $SCRIPT_VERSION, a script by JackYaz"
 	sleep 1
 	
@@ -1497,9 +1473,20 @@ Menu_Install(){
 	if AutomaticMode check; then Auto_Cron create 2>/dev/null; else Auto_Cron delete 2>/dev/null; fi
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
+	
+	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL,[Timestamp] NUMERIC NOT NULL,[Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[LineQuality] REAL NOT NULL,[PingTarget] TEXT NOT NULL,[PingDuration] NUMERIC);" > /tmp/connmon-stats.sql
+	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+	rm -f /tmp/connmon-stats.sql
+	touch "$SCRIPT_STORAGE_DIR/.newcolumns"
+	touch "$SCRIPT_STORAGE_DIR/lastx.htm"
+	Process_Upgrade
+	
 	Run_PingTest
 	
 	Clear_Lock
+	
+	ScriptHeader
+	MainMenu
 }
 
 Menu_Startup(){
@@ -1545,7 +1532,7 @@ Menu_EditSchedule(){
 	crumins=""
 	
 	while true; do
-		printf "\\n\\e[1mPlease choose which day(s) to run ping test\\n(0-6 - 0 = Sunday, * for every day, or comma separated days):\\e[0m  "
+		printf "\\n${BOLD}Please choose which day(s) to run ping test\\n(0-6 - 0 = Sunday, * for every day, or comma separated days):${CLEARFORMAT}  "
 		read -r day_choice
 		
 		if [ "$day_choice" = "e" ]; then
@@ -1556,39 +1543,37 @@ Menu_EditSchedule(){
 			printf "\\n"
 			break
 		elif [ -z "$day_choice" ]; then
-			printf "\\n\\e[31mPlease enter a valid number (0-6) or comma separated values\\e[0m\\n"
+			printf "\\n${ERR}Please enter a valid number (0-6) or comma separated values${CLEARFORMAT}\\n"
 		else
 			crudaystmp="$(echo "$day_choice" | sed "s/,/ /g")"
 			crudaysvalidated="true"
 			for i in $crudaystmp; do
 				if echo "$i" | grep -q "-"; then
 					if [ "$i" = "-" ]; then
-						printf "\\n\\e[31mPlease enter a valid number (0-6)\\e[0m\\n"
+						printf "\\n${ERR}Please enter a valid number (0-6)${CLEARFORMAT}\\n"
 						crudaysvalidated="false"
 						break
 					fi
 					crudaystmp2="$(echo "$i" | sed "s/-/ /")"
 					for i2 in $crudaystmp2; do
 						if ! Validate_Number "$i2"; then
-							printf "\\n\\e[31mPlease enter a valid number (0-6)\\e[0m\\n"
+							printf "\\n${ERR}Please enter a valid number (0-6)${CLEARFORMAT}\\n"
 							crudaysvalidated="false"
 							break
 						elif [ "$i2" -lt 0 ] || [ "$i2" -gt 6 ]; then
-							printf "\\n\\e[31mPlease enter a number between 0 and 6\\e[0m\\n"
+							printf "\\n${ERR}Please enter a number between 0 and 6${CLEARFORMAT}\\n"
 							crudaysvalidated="false"
 							break
 						fi
 					done
 				elif ! Validate_Number "$i"; then
-					printf "\\n\\e[31mPlease enter a valid number (0-6) or comma separated values\\e[0m\\n"
+					printf "\\n${ERR}Please enter a valid number (0-6) or comma separated values${CLEARFORMAT}\\n"
 					crudaysvalidated="false"
 					break
-				else
-					if [ "$i" -lt 0 ] || [ "$i" -gt 6 ]; then
-						printf "\\n\\e[31mPlease enter a number between 0 and 6 or comma separated values\\e[0m\\n"
-						crudaysvalidated="false"
-						break
-					fi
+				elif [ "$i" -lt 0 ] || [ "$i" -gt 6 ]; then
+					printf "\\n${ERR}Please enter a number between 0 and 6 or comma separated values${CLEARFORMAT}\\n"
+					crudaysvalidated="false"
+					break
 				fi
 			done
 			if [ "$crudaysvalidated" = "true" ]; then
@@ -1601,7 +1586,7 @@ Menu_EditSchedule(){
 	
 	if [ "$exitmenu" != "exit" ]; then
 		while true; do
-			printf "\\n\\e[1mPlease choose the format to specify the hour/minute(s)\\nto run ping test:\\e[0m\\n"
+			printf "\\n${BOLD}Please choose the format to specify the hour/minute(s)\\nto run ping test:${CLEARFORMAT}\\n"
 			printf "    1. Every X hours/minutes\\n"
 			printf "    2. Custom\\n\\n"
 			printf "Choose an option:  "
@@ -1623,7 +1608,7 @@ Menu_EditSchedule(){
 					break
 				;;
 				*)
-					printf "\\n\\e[31mPlease enter a valid choice (1-2)\\e[0m\\n"
+					printf "\\n${ERR}Please enter a valid choice (1-2)${CLEARFORMAT}\\n"
 				;;
 			esac
 		done
@@ -1632,7 +1617,7 @@ Menu_EditSchedule(){
 	if [ "$exitmenu" != "exit" ]; then
 		if [ "$formattype" = "everyx" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose whether to specify every X hours or every X minutes\\nto run ping test:\\e[0m\\n"
+				printf "\\n${BOLD}Please choose whether to specify every X hours or every X minutes\\nto run ping test:${CLEARFORMAT}\\n"
 				printf "    1. Hours\\n"
 				printf "    2. Minutes\\n\\n"
 				printf "Choose an option:  "
@@ -1654,7 +1639,7 @@ Menu_EditSchedule(){
 						break
 					;;
 					*)
-						printf "\\n\\e[31mPlease enter a valid choice (1-2)\\e[0m\\n"
+						printf "\\n${ERR}Please enter a valid choice (1-2)${CLEARFORMAT}\\n"
 					;;
 				esac
 			done
@@ -1664,16 +1649,16 @@ Menu_EditSchedule(){
 	if [ "$exitmenu" != "exit" ]; then
 		if [ "$formattype" = "hours" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose how often to run ping test\\n(every X hours, where X is 1-24):\\e[0m  "
+				printf "\\n${BOLD}Please choose how often to run ping test\\n(every X hours, where X is 1-24):${CLEARFORMAT}  "
 				read -r hour_choice
 				
 				if [ "$hour_choice" = "e" ]; then
 					exitmenu="exit"
 					break
 				elif ! Validate_Number "$hour_choice"; then
-						printf "\\n\\e[31mPlease enter a valid number (1-24)\\e[0m\\n"
+						printf "\\n${ERR}Please enter a valid number (1-24)${CLEARFORMAT}\\n"
 				elif [ "$hour_choice" -lt 1 ] || [ "$hour_choice" -gt 24 ]; then
-					printf "\\n\\e[31mPlease enter a number between 1 and 24\\e[0m\\n"
+					printf "\\n${ERR}Please enter a number between 1 and 24${CLEARFORMAT}\\n"
 				elif [ "$hour_choice" -eq 24 ]; then
 					cruhours=0
 					crumins=0
@@ -1688,16 +1673,16 @@ Menu_EditSchedule(){
 			done
 		elif [ "$formattype" = "mins" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose how often to run ping test\\n(every X minutes, where X is 1-30):\\e[0m  "
+				printf "\\n${BOLD}Please choose how often to run ping test\\n(every X minutes, where X is 1-30):${CLEARFORMAT}  "
 				read -r min_choice
 				
 				if [ "$min_choice" = "e" ]; then
 					exitmenu="exit"
 					break
 				elif ! Validate_Number "$min_choice"; then
-						printf "\\n\\e[31mPlease enter a valid number (1-30)\\e[0m\\n"
+						printf "\\n${ERR}Please enter a valid number (1-30)${CLEARFORMAT}\\n"
 				elif [ "$min_choice" -lt 1 ] || [ "$min_choice" -gt 30 ]; then
-					printf "\\n\\e[31mPlease enter a number between 1 and 30\\e[0m\\n"
+					printf "\\n${ERR}Please enter a number between 1 and 30${CLEARFORMAT}\\n"
 				else
 					crumins="*/$min_choice"
 					cruhours="*"
@@ -1711,7 +1696,7 @@ Menu_EditSchedule(){
 	if [ "$exitmenu" != "exit" ]; then
 		if [ "$formattype" = "custom" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose which hour(s) to run ping test\\n(0-23, * for every hour, or comma separated hours):\\e[0m  "
+				printf "\\n${BOLD}Please choose which hour(s) to run ping test\\n(0-23, * for every hour, or comma separated hours):${CLEARFORMAT}  "
 				read -r hour_choice
 				
 				if [ "$hour_choice" = "e" ]; then
@@ -1727,18 +1712,18 @@ Menu_EditSchedule(){
 					for i in $cruhourstmp; do
 						if echo "$i" | grep -q "-"; then
 							if [ "$i" = "-" ]; then
-								printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+								printf "\\n${ERR}Please enter a valid number (0-23)${CLEARFORMAT}\\n"
 								cruhoursvalidated="false"
 								break
 							fi
 							cruhourstmp2="$(echo "$i" | sed "s/-/ /")"
 							for i2 in $cruhourstmp2; do
 								if ! Validate_Number "$i2"; then
-									printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+									printf "\\n${ERR}Please enter a valid number (0-23)${CLEARFORMAT}\\n"
 									cruhoursvalidated="false"
 									break
 								elif [ "$i2" -lt 0 ] || [ "$i2" -gt 23 ]; then
-									printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
+									printf "\\n${ERR}Please enter a number between 0 and 23${CLEARFORMAT}\\n"
 									cruhoursvalidated="false"
 									break
 								fi
@@ -1746,20 +1731,20 @@ Menu_EditSchedule(){
 						elif echo "$i" | grep -q "/"; then
 							cruhourstmp3="$(echo "$i" | sed "s/\*\///")"
 							if ! Validate_Number "$cruhourstmp3"; then
-								printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+								printf "\\n${ERR}Please enter a valid number (0-23)${CLEARFORMAT}\\n"
 								cruhoursvalidated="false"
 								break
 							elif [ "$cruhourstmp3" -lt 0 ] || [ "$cruhourstmp3" -gt 23 ]; then
-								printf "\\n\\e[31mPlease enter a number between 0 and 23\\e[0m\\n"
+								printf "\\n${ERR}Please enter a number between 0 and 23${CLEARFORMAT}\\n"
 								cruhoursvalidated="false"
 								break
 							fi
 						elif ! Validate_Number "$i"; then
-							printf "\\n\\e[31mPlease enter a valid number (0-23) or comma separated values\\e[0m\\n"
+							printf "\\n${ERR}Please enter a valid number (0-23) or comma separated values${CLEARFORMAT}\\n"
 							cruhoursvalidated="false"
 							break
 						elif [ "$i" -lt 0 ] || [ "$i" -gt 23 ]; then
-							printf "\\n\\e[31mPlease enter a number between 0 and 23 or comma separated values\\e[0m\\n"
+							printf "\\n${ERR}Please enter a number between 0 and 23 or comma separated values${CLEARFORMAT}\\n"
 							cruhoursvalidated="false"
 							break
 						fi
@@ -1787,7 +1772,7 @@ Menu_EditSchedule(){
 	if [ "$exitmenu" != "exit" ]; then
 		if [ "$formattype" = "custom" ]; then
 			while true; do
-				printf "\\n\\e[1mPlease choose which minutes(s) to run ping test\\n(0-59, * for every minute, or comma separated minutes):\\e[0m  "
+				printf "\\n${BOLD}Please choose which minutes(s) to run ping test\\n(0-59, * for every minute, or comma separated minutes):${CLEARFORMAT}  "
 				read -r min_choice
 				
 				if [ "$min_choice" = "e" ]; then
@@ -1803,18 +1788,18 @@ Menu_EditSchedule(){
 					for i in $cruminstmp; do
 						if echo "$i" | grep -q "-"; then
 							if [ "$i" = "-" ]; then
-								printf "\\n\\e[31mPlease enter a valid number (0-23)\\e[0m\\n"
+								printf "\\n${ERR}Please enter a valid number (0-23)${CLEARFORMAT}\\n"
 								cruminsvalidated="false"
 								break
 							fi
 							cruminstmp2="$(echo "$i" | sed "s/-/ /")"
 							for i2 in $cruminstmp2; do
 								if ! Validate_Number "$i2"; then
-									printf "\\n\\e[31mPlease enter a valid number (0-59)\\e[0m\\n"
+									printf "\\n${ERR}Please enter a valid number (0-59)${CLEARFORMAT}\\n"
 									cruminsvalidated="false"
 									break
 								elif [ "$i2" -lt 0 ] || [ "$i2" -gt 59 ]; then
-									printf "\\n\\e[31mPlease enter a number between 0 and 59\\e[0m\\n"
+									printf "\\n${ERR}Please enter a number between 0 and 59${CLEARFORMAT}\\n"
 									cruminsvalidated="false"
 									break
 								fi
@@ -1822,20 +1807,20 @@ Menu_EditSchedule(){
 						elif echo "$i" | grep -q "/"; then
 							cruminstmp3="$(echo "$i" | sed "s/\*\///")"
 							if ! Validate_Number "$cruminstmp3"; then
-								printf "\\n\\e[31mPlease enter a valid number (0-30)\\e[0m\\n"
+								printf "\\n${ERR}Please enter a valid number (0-30)${CLEARFORMAT}\\n"
 								cruminsvalidated="false"
 								break
 							elif [ "$cruminstmp3" -lt 0 ] || [ "$cruminstmp3" -gt 30 ]; then
-								printf "\\n\\e[31mPlease enter a number between 0 and 30\\e[0m\\n"
+								printf "\\n${ERR}Please enter a number between 0 and 30${CLEARFORMAT}\\n"
 								cruminsvalidated="false"
 								break
 							fi
 						elif ! Validate_Number "$i"; then
-							printf "\\n\\e[31mPlease enter a valid number (0-59) or comma separated values\\e[0m\\n"
+							printf "\\n${ERR}Please enter a valid number (0-59) or comma separated values${CLEARFORMAT}\\n"
 							cruminsvalidated="false"
 							break
 						elif [ "$i" -lt 0 ] || [ "$i" -gt 59 ]; then
-							printf "\\n\\e[31mPlease enter a number between 0 and 59 or comma separated values\\e[0m\\n"
+							printf "\\n${ERR}Please enter a number between 0 and 59 or comma separated values${CLEARFORMAT}\\n"
 							cruminsvalidated="false"
 							break
 						fi
@@ -1870,9 +1855,9 @@ Menu_EditSchedule(){
 }
 
 Menu_ResetDB(){
-	printf "\\e[1m\\e[33mWARNING: This will reset the %s database by deleting all database records.\\n" "$SCRIPT_NAME"
-	printf "A backup of the database will be created if you change your mind.\\e[0m\\n"
-	printf "\\n\\e[1mDo you want to continue? (y/n)\\e[0m  "
+	printf "${BOLD}\\e[33mWARNING: This will reset the %s database by deleting all database records.\\n" "$SCRIPT_NAME"
+	printf "A backup of the database will be created if you change your mind.${CLEARFORMAT}\\n"
+	printf "\\n${BOLD}Do you want to continue? (y/n)${CLEARFORMAT}  "
 	read -r confirm
 	case "$confirm" in
 		y|Y)
@@ -1880,13 +1865,18 @@ Menu_ResetDB(){
 			Reset_DB
 		;;
 		*)
-			printf "\\n\\e[1m\\e[33mDatabase reset cancelled\\e[0m\\n\\n"
+			printf "\\n${BOLD}\\e[33mDatabase reset cancelled${CLEARFORMAT}\\n\\n"
 		;;
 	esac
 }
 
 Menu_Uninstall(){
 	Print_Output true "Removing $SCRIPT_NAME..." "$PASS"
+	if [ -n "$PPID" ]; then
+		ps | grep -v grep | grep -v $$ | grep -v "$PPID" | grep -i "$SCRIPT_NAME" | grep generate | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
+	else
+		ps | grep -v grep | grep -v $$ | grep -i "$SCRIPT_NAME" | grep generate | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
+	fi
 	Auto_Startup delete 2>/dev/null
 	Auto_Cron delete 2>/dev/null
 	Auto_ServiceEvent delete 2>/dev/null
@@ -1906,7 +1896,7 @@ Menu_Uninstall(){
 	flock -u "$FD"
 	rm -f "$SCRIPT_DIR/connmonstats_www.asp" 2>/dev/null
 	
-	printf "\\n\\e[1mDo you want to delete %s config and stats? (y/n)\\e[0m  " "$SCRIPT_NAME"
+	printf "\\n${BOLD}Do you want to delete %s config and stats? (y/n)${CLEARFORMAT}  " "$SCRIPT_NAME"
 	read -r confirm
 	case "$confirm" in
 		y|Y)
@@ -2121,7 +2111,6 @@ case "$1" in
 		exit 0
 	;;
 	uninstall)
-		Check_Lock
 		Menu_Uninstall
 		exit 0
 	;;
