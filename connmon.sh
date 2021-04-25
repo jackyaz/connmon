@@ -941,16 +941,28 @@ Run_PingTest(){
 	
 	pingfile=/tmp/pingresult.txt
 	resultfile=/tmp/ping-result.txt
+	pingduration="$(PingDuration check)"
+	pingtarget="$(PingServer check)"
+	pingtargetip=""
+	completepingtarget=""
 	printf "" > "$resultfile"
 	
 	echo 'var connmonstatus = "InProgress";' > /tmp/detect_connmon.js
 	
-	Print_Output false "$(PingDuration check) second ping test to $(PingServer check) starting..." "$PASS"
-	if ! Validate_IP "$(PingServer check)" >/dev/null 2>&1 && ! Validate_Domain "$(PingServer check)" >/dev/null 2>&1; then
-		Print_Output true "$(PingServer check) not valid, aborting test. Please correct ASAP" "$ERR"
+	Print_Output false "$pingduration second ping test to $pingtarget starting..." "$PASS"
+	if ! Validate_IP "$pingtarget" >/dev/null 2>&1 && ! Validate_Domain "$pingtarget" >/dev/null 2>&1; then
+		Print_Output true "$pingtarget not valid, aborting test. Please correct ASAP" "$ERR"
 		echo 'var connmonstatus = "InvalidServer";' > /tmp/detect_connmon.js
 		Clear_Lock
 		return 1
+	fi
+	
+	if ! expr "$pingtarget" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null && nslookup "$pingtarget" >/dev/null 2>&1; then
+		pingtargetip="$(dig +short +answer $pingtarget | head -n 1)"
+		completepingtarget="$pingtarget ($pingtargetip)"
+	else
+		pingtargetip="$pingtarget"
+		completepingtarget="$pingtarget"
 	fi
 	
 	stoppedqos="false"
@@ -971,7 +983,7 @@ Run_PingTest(){
 		fi
 	fi
 	
-	ping -w "$(PingDuration check)" "$(PingServer check)" > "$pingfile"
+	ping -w "$pingduration" "$pingtargetip" > "$pingfile"
 	
 	if [ "$stoppedqos" = "true" ]; then
 		if [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -eq 1 ]; then
@@ -1028,7 +1040,7 @@ Run_PingTest(){
 	
 	{
 	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL,[Timestamp] NUMERIC NOT NULL,[Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[LineQuality] REAL NOT NULL,[PingTarget] TEXT NOT NULL,[PingDuration] NUMERIC);"
-	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration]) values($timenow,$ping,$jitter,$linequal,'$(PingServer check)',$(PingDuration check));"
+	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration]) values($timenow,$ping,$jitter,$linequal,'$completepingtarget',$pingduration);"
 	} > /tmp/connmon-stats.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
@@ -1217,6 +1229,10 @@ Process_Upgrade(){
 	fi
 	if [ ! -f "$SCRIPT_STORAGE_DIR/lastx.htm" ]; then
 		Generate_LastXResults
+	fi
+	if [ ! -f /opt/bin/dig ]; then
+		opkg update
+		opkg install bind-dig
 	fi
 }
 
@@ -1469,6 +1485,7 @@ Check_Requirements(){
 		opkg update
 		opkg install sqlite3-cli
 		opkg install findutils
+		opkg install bind-dig
 		return 0
 	else
 		return 1
