@@ -22,7 +22,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.11.1"
+readonly SCRIPT_VERSION="v2.11.2"
 SCRIPT_BRANCH="master"
 SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -393,9 +393,12 @@ Conf_Exists(){
 		if ! grep -q "LASTXRESULTS" "$SCRIPT_CONF"; then
 			echo "LASTXRESULTS=10" >> "$SCRIPT_CONF"
 		fi
+		if ! grep -q "EXCLUDEFROMQOS" "$SCRIPT_CONF"; then
+			echo "EXCLUDEFROMQOS=true" >> "$SCRIPT_CONF"
+		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; echo "DAYSTOKEEP=30"; echo "LASTXRESULTS=10"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; echo "DAYSTOKEEP=30"; echo "LASTXRESULTS=10"; echo "EXCLUDEFROMQOS=true"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -770,6 +773,21 @@ Mount_WebUI(){
 	Print_Output true "Mounted $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
 }
 
+ExcludeFromQoS(){
+	case "$1" in
+	enable)
+		sed -i 's/^EXCLUDEFROMQOS.*$/EXCLUDEFROMQOS=true/' "$SCRIPT_CONF"
+	;;
+	disable)
+		sed -i 's/^EXCLUDEFROMQOS.*$/EXCLUDEFROMQOS=false/' "$SCRIPT_CONF"
+	;;
+	check)
+		EXCLUDEFROMQOS=$(grep "EXCLUDEFROMQOS" "$SCRIPT_CONF" | cut -f2 -d"=")
+		echo "$EXCLUDEFROMQOS"
+	;;
+	esac
+}
+
 AutomaticMode(){
 	case "$1" in
 		enable)
@@ -923,35 +941,49 @@ Run_PingTest(){
 	
 	pingfile=/tmp/pingresult.txt
 	resultfile=/tmp/ping-result.txt
+	pingduration="$(PingDuration check)"
+	pingtarget="$(PingServer check)"
+	pingtargetip=""
+	completepingtarget=""
 	printf "" > "$resultfile"
 	
 	echo 'var connmonstatus = "InProgress";' > /tmp/detect_connmon.js
 	
-	Print_Output false "$(PingDuration check) second ping test to $(PingServer check) starting..." "$PASS"
-	if ! Validate_IP "$(PingServer check)" >/dev/null 2>&1 && ! Validate_Domain "$(PingServer check)" >/dev/null 2>&1; then
-		Print_Output true "$(PingServer check) not valid, aborting test. Please correct ASAP" "$ERR"
+	Print_Output false "$pingduration second ping test to $pingtarget starting..." "$PASS"
+	if ! Validate_IP "$pingtarget" >/dev/null 2>&1 && ! Validate_Domain "$pingtarget" >/dev/null 2>&1; then
+		Print_Output true "$pingtarget not valid, aborting test. Please correct ASAP" "$ERR"
 		echo 'var connmonstatus = "InvalidServer";' > /tmp/detect_connmon.js
 		Clear_Lock
 		return 1
 	fi
 	
-	stoppedqos="false"
-	if [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -eq 1 ]; then
-		for ACTION in -D -A ; do
-			iptables "$ACTION" OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
-			iptables -t mangle "$ACTION" OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
-			iptables -t mangle "$ACTION" POSTROUTING -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
-			stoppedqos="true"
-		done
-	elif [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -ne 1 ] && [ -f /tmp/qos ]; then
-		/tmp/qos stop >/dev/null 2>&1
-		stoppedqos="true"
-	elif [ "$(nvram get qos_enable)" -eq 0 ] && [ -f /jffs/addons/cake-qos/cake-qos ]; then
-		/jffs/addons/cake-qos/cake-qos stop >/dev/null 2>&1
-		stoppedqos="true"
+	if ! expr "$pingtarget" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null && nslookup "$pingtarget" >/dev/null 2>&1; then
+		pingtargetip="$(dig +short +answer "$pingtarget" | head -n 1)"
+		completepingtarget="$pingtarget ($pingtargetip)"
+	else
+		pingtargetip="$pingtarget"
+		completepingtarget="$pingtarget"
 	fi
 	
-	ping -w "$(PingDuration check)" "$(PingServer check)" > "$pingfile"
+	stoppedqos="false"
+	if [ "$(ExcludeFromQoS check)" = "true" ]; then
+		if [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -eq 1 ]; then
+			for ACTION in -D -A ; do
+				iptables "$ACTION" OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+				iptables -t mangle "$ACTION" OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+				iptables -t mangle "$ACTION" POSTROUTING -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+				stoppedqos="true"
+			done
+		elif [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -ne 1 ] && [ -f /tmp/qos ]; then
+			/tmp/qos stop >/dev/null 2>&1
+			stoppedqos="true"
+		elif [ "$(nvram get qos_enable)" -eq 0 ] && [ -f /jffs/addons/cake-qos/cake-qos ]; then
+			/jffs/addons/cake-qos/cake-qos stop >/dev/null 2>&1
+			stoppedqos="true"
+		fi
+	fi
+	
+	ping -w "$pingduration" "$pingtargetip" > "$pingfile"
 	
 	if [ "$stoppedqos" = "true" ]; then
 		if [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -eq 1 ]; then
@@ -1008,7 +1040,7 @@ Run_PingTest(){
 	
 	{
 	echo "CREATE TABLE IF NOT EXISTS [connstats] ([StatID] INTEGER PRIMARY KEY NOT NULL,[Timestamp] NUMERIC NOT NULL,[Ping] REAL NOT NULL,[Jitter] REAL NOT NULL,[LineQuality] REAL NOT NULL,[PingTarget] TEXT NOT NULL,[PingDuration] NUMERIC);"
-	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration]) values($timenow,$ping,$jitter,$linequal,'$(PingServer check)',$(PingDuration check));"
+	echo "INSERT INTO connstats ([Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration]) values($timenow,$ping,$jitter,$linequal,'$completepingtarget',$pingduration);"
 	} > /tmp/connmon-stats.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
@@ -1105,6 +1137,7 @@ Generate_CSVs(){
 	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration] FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-$(DaysToKeep check) day'))) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-complete.sql
 	rm -f /tmp/connmon-complete.sql
+	sed -i 's/"//g' "$CSV_OUTPUT_DIR/CompleteResults.htm"
 	
 	dos2unix "$CSV_OUTPUT_DIR/"*.htm
 	
@@ -1130,6 +1163,7 @@ Generate_CSVs(){
 }
 
 Generate_LastXResults(){
+	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
 	{
 		echo ".mode csv"
 		echo ".output /tmp/conn-lastx.csv"
@@ -1137,7 +1171,7 @@ Generate_LastXResults(){
 	} > /tmp/conn-lastx.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
 	rm -f /tmp/conn-lastx.sql
-	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
+	sed -i 's/"//g' /tmp/conn-lastx.csv
 	mv /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/lastx.htm"
 }
 
@@ -1198,6 +1232,10 @@ Process_Upgrade(){
 	if [ ! -f "$SCRIPT_STORAGE_DIR/lastx.htm" ]; then
 		Generate_LastXResults
 	fi
+	if [ ! -f /opt/bin/dig ]; then
+		opkg update
+		opkg install bind-dig
+	fi
 }
 
 Shortcut_Script(){
@@ -1247,6 +1285,8 @@ ScriptHeader(){
 }
 
 MainMenu(){
+	EXCLUDEFROMQOS_MENU=""
+	if [ "$(ExcludeFromQoS check)" = "true" ]; then EXCLUDEFROMQOS_MENU="excluded from"; else EXCLUDEFROMQOS_MENU="included in"; fi
 	AUTOMATIC_ENABLED=""
 	if AutomaticMode check; then AUTOMATIC_ENABLED="${PASS}Enabled"; else AUTOMATIC_ENABLED="${ERR}Disabled"; fi
 	TEST_SCHEDULE="$(TestSchedule check)"
@@ -1274,6 +1314,7 @@ MainMenu(){
 	printf "7.    Set number of ping test results to show in WebUI\\n      Currently: ${SETTING}%s results will be shown${CLEARFORMAT}\\n\\n" "$(LastXResults check)"
 	printf "8.    Set number of days data to keep in database\\n      Currently: ${SETTING}%s days data will be kept${CLEARFORMAT}\\n\\n" "$(DaysToKeep check)"
 	printf "s.    Toggle storage location for stats and config\\n      Current location is ${SETTING}%s${CLEARFORMAT} \\n\\n" "$(ScriptStorageLocation check)"
+	printf "q.    Toggle exclusion of %s ping tests from QoS\\n      Currently %s ping tests are ${SETTING}%s\\e[0m QoS\\n\\n" "$SCRIPT_NAME" "$SCRIPT_NAME" "$EXCLUDEFROMQOS_MENU"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
 	printf "r.    Reset %s database / delete all data\\n\\n" "$SCRIPT_NAME"
@@ -1352,6 +1393,15 @@ MainMenu(){
 				elif [ "$(ScriptStorageLocation check)" = "usb" ]; then
 					ScriptStorageLocation jffs
 					Create_Symlinks
+				fi
+				break
+			;;
+			q)
+				printf "\\n"
+				if [ "$(ExcludeFromQoS check)" = "true" ]; then
+					ExcludeFromQoS disable
+				elif [ "$(ExcludeFromQoS check)" = "false" ]; then
+					ExcludeFromQoS enable
 				fi
 				break
 			;;
@@ -1437,6 +1487,7 @@ Check_Requirements(){
 		opkg update
 		opkg install sqlite3-cli
 		opkg install findutils
+		opkg install bind-dig
 		return 0
 	else
 		return 1
