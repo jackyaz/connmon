@@ -1137,6 +1137,7 @@ Generate_CSVs(){
 	echo "SELECT [Timestamp],[Ping],[Jitter],[LineQuality],[PingTarget],[PingDuration] FROM connstats WHERE ([Timestamp] >= strftime('%s',datetime($timenow,'unixepoch','-$(DaysToKeep check) day'))) ORDER BY [Timestamp] DESC;" >> /tmp/connmon-complete.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-complete.sql
 	rm -f /tmp/connmon-complete.sql
+	sed -i 's/"//g' "$CSV_OUTPUT_DIR/CompleteResults.htm"
 	
 	dos2unix "$CSV_OUTPUT_DIR/"*.htm
 	
@@ -1162,6 +1163,7 @@ Generate_CSVs(){
 }
 
 Generate_LastXResults(){
+	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
 	{
 		echo ".mode csv"
 		echo ".output /tmp/conn-lastx.csv"
@@ -1169,7 +1171,7 @@ Generate_LastXResults(){
 	} > /tmp/conn-lastx.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
 	rm -f /tmp/conn-lastx.sql
-	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
+	sed -i 's/"//g' /tmp/conn-lastx.csv
 	mv /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/lastx.htm"
 }
 
