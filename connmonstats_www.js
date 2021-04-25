@@ -1195,10 +1195,10 @@ function SortTable(sorttext){
 function BuildLastXTable(){
 	var tablehtml='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="sortTable">';
 	tablehtml += '<col style="width:130px;">';
-	tablehtml += '<col style="width:190px;">';
+	tablehtml += '<col style="width:200px;">';
 	tablehtml += '<col style="width:95px;">';
-	tablehtml += '<col style="width:95px;">';
-	tablehtml += '<col style="width:95px;">';
+	tablehtml += '<col style="width:90px;">';
+	tablehtml += '<col style="width:90px;">';
 	tablehtml += '<col style="width:110px;">';
 	tablehtml += '<thead class="sortTableHeader">';
 	tablehtml += '<tr>';
