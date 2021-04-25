@@ -242,6 +242,15 @@ var $j=jQuery.noConflict(),daysofweek=["Mon","Tues","Wed","Thurs","Fri","Sat","S
 <label for="connmon_storageloc_usb">USB</label>
 </td>
 </tr>
+<tr class="even" id="rowexcludefromqos">
+<td class="settingname">Exclude ping tests from QoS</td>
+<td class="settingvalue">
+<input type="radio" name="connmon_excludefromqos" id="connmon_exclude_true" class="input" value="true" checked>
+<label for="connmon_exclude_true">Yes</label>
+<input type="radio" name="connmon_excludefromqos" id="connmon_exclude_false" class="input" value="false">
+<label for="connmon_exclude_false">No</label>
+</td>
+</tr>
 <tr class="apply_gen" valign="top" height="35px">
 <td colspan="2" class="savebutton">
 <input type="button" onclick="SaveConfig();" value="Save" class="button_gen savebutton" name="button">

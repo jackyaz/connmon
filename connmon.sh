@@ -393,9 +393,12 @@ Conf_Exists(){
 		if ! grep -q "LASTXRESULTS" "$SCRIPT_CONF"; then
 			echo "LASTXRESULTS=10" >> "$SCRIPT_CONF"
 		fi
+		if ! grep -q "EXCLUDEFROMQOS" "$SCRIPT_CONF"; then
+			echo "EXCLUDEFROMQOS=true" >> "$SCRIPT_CONF"
+		fi
 		return 0
 	else
-		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; echo "DAYSTOKEEP=30"; echo "LASTXRESULTS=10"; } > "$SCRIPT_CONF"
+		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; echo "DAYSTOKEEP=30"; echo "LASTXRESULTS=10"; echo "EXCLUDEFROMQOS=true"; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -770,6 +773,21 @@ Mount_WebUI(){
 	Print_Output true "Mounted $SCRIPT_NAME WebUI page as $MyPage" "$PASS"
 }
 
+ExcludeFromQoS(){
+	case "$1" in
+	enable)
+		sed -i 's/^EXCLUDEFROMQOS.*$/EXCLUDEFROMQOS=true/' "$SCRIPT_CONF"
+	;;
+	disable)
+		sed -i 's/^EXCLUDEFROMQOS.*$/EXCLUDEFROMQOS=false/' "$SCRIPT_CONF"
+	;;
+	check)
+		EXCLUDEFROMQOS=$(grep "EXCLUDEFROMQOS" "$SCRIPT_CONF" | cut -f2 -d"=")
+		echo "$EXCLUDEFROMQOS"
+	;;
+	esac
+}
+
 AutomaticMode(){
 	case "$1" in
 		enable)
@@ -936,19 +954,21 @@ Run_PingTest(){
 	fi
 	
 	stoppedqos="false"
-	if [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -eq 1 ]; then
-		for ACTION in -D -A ; do
-			iptables "$ACTION" OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
-			iptables -t mangle "$ACTION" OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
-			iptables -t mangle "$ACTION" POSTROUTING -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+	if [ "$(ExcludeFromQoS check)" = "true" ]; then
+		if [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -eq 1 ]; then
+			for ACTION in -D -A ; do
+				iptables "$ACTION" OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+				iptables -t mangle "$ACTION" OUTPUT -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+				iptables -t mangle "$ACTION" POSTROUTING -p icmp -j MARK --set-xmark 0x80000000/0xC0000000 2>/dev/null
+				stoppedqos="true"
+			done
+		elif [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -ne 1 ] && [ -f /tmp/qos ]; then
+			/tmp/qos stop >/dev/null 2>&1
 			stoppedqos="true"
-		done
-	elif [ "$(nvram get qos_enable)" -eq 1 ] && [ "$(nvram get qos_type)" -ne 1 ] && [ -f /tmp/qos ]; then
-		/tmp/qos stop >/dev/null 2>&1
-		stoppedqos="true"
-	elif [ "$(nvram get qos_enable)" -eq 0 ] && [ -f /jffs/addons/cake-qos/cake-qos ]; then
-		/jffs/addons/cake-qos/cake-qos stop >/dev/null 2>&1
-		stoppedqos="true"
+		elif [ "$(nvram get qos_enable)" -eq 0 ] && [ -f /jffs/addons/cake-qos/cake-qos ]; then
+			/jffs/addons/cake-qos/cake-qos stop >/dev/null 2>&1
+			stoppedqos="true"
+		fi
 	fi
 	
 	ping -w "$(PingDuration check)" "$(PingServer check)" > "$pingfile"
@@ -1247,6 +1267,8 @@ ScriptHeader(){
 }
 
 MainMenu(){
+	EXCLUDEFROMQOS_MENU=""
+	if [ "$(ExcludeFromQoS check)" = "true" ]; then EXCLUDEFROMQOS_MENU="excluded from"; else EXCLUDEFROMQOS_MENU="included in"; fi
 	AUTOMATIC_ENABLED=""
 	if AutomaticMode check; then AUTOMATIC_ENABLED="${PASS}Enabled"; else AUTOMATIC_ENABLED="${ERR}Disabled"; fi
 	TEST_SCHEDULE="$(TestSchedule check)"
@@ -1274,6 +1296,7 @@ MainMenu(){
 	printf "7.    Set number of ping test results to show in WebUI\\n      Currently: ${SETTING}%s results will be shown${CLEARFORMAT}\\n\\n" "$(LastXResults check)"
 	printf "8.    Set number of days data to keep in database\\n      Currently: ${SETTING}%s days data will be kept${CLEARFORMAT}\\n\\n" "$(DaysToKeep check)"
 	printf "s.    Toggle storage location for stats and config\\n      Current location is ${SETTING}%s${CLEARFORMAT} \\n\\n" "$(ScriptStorageLocation check)"
+	printf "q.    Toggle exclusion of %s ping tests from QoS\\n      Currently %s ping tests are ${SETTING}%s\\e[0m QoS\\n\\n" "$SCRIPT_NAME" "$SCRIPT_NAME" "$EXCLUDEFROMQOS_MENU"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
 	printf "r.    Reset %s database / delete all data\\n\\n" "$SCRIPT_NAME"
@@ -1352,6 +1375,15 @@ MainMenu(){
 				elif [ "$(ScriptStorageLocation check)" = "usb" ]; then
 					ScriptStorageLocation jffs
 					Create_Symlinks
+				fi
+				break
+			;;
+			q)
+				printf "\\n"
+				if [ "$(ExcludeFromQoS check)" = "true" ]; then
+					ExcludeFromQoS disable
+				elif [ "$(ExcludeFromQoS check)" = "false" ]; then
+					ExcludeFromQoS enable
 				fi
 				break
 			;;
