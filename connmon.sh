@@ -958,7 +958,7 @@ Run_PingTest(){
 	fi
 	
 	if ! expr "$pingtarget" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null && nslookup "$pingtarget" >/dev/null 2>&1; then
-		pingtargetip="$(dig +short +answer $pingtarget | head -n 1)"
+		pingtargetip="$(dig +short +answer "$pingtarget" | head -n 1)"
 		completepingtarget="$pingtarget ($pingtargetip)"
 	else
 		pingtargetip="$pingtarget"
