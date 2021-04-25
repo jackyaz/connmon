@@ -642,6 +642,7 @@ function ToggleFill(){
 
 function RedrawAllCharts(){
 	for(var i = 0; i < metriclist.length; i++){
+		Draw_Chart_NoData(metriclist[i]);
 		for(var i2 = 0; i2 < chartlist.length; i2++){
 			for(var i3 = 0; i3 < dataintervallist.length; i3++){
 				d3.csv('/ext/connmon/csv/'+metriclist[i]+'_'+dataintervallist[i3]+'_'+chartlist[i2]+'.htm').then(SetGlobalDataset.bind(null,metriclist[i]+'_'+dataintervallist[i3]+'_'+chartlist[i2]));
@@ -808,6 +809,8 @@ function initial(){
 	SetCurrentPage();
 	LoadCustomSettings();
 	show_menu();
+	$j('#sortTableContainer').empty();
+	$j('#sortTableContainer').append(BuildLastXTableNoData());
 	get_conf_file();
 	d3.csv('/ext/connmon/csv/CompleteResults.htm').then(function(data){ParseCSVExport(data);}).catch(function(){ErrorCSVExport();});
 	$j('#Time_Format').val(GetCookie('Time_Format','number'));
@@ -1190,6 +1193,17 @@ function SortTable(sorttext){
 			}
 		}
 	});
+}
+
+function BuildLastXTableNoData(){
+	var tablehtml='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="sortTable">';
+	tablehtml+='<tr>';
+	tablehtml+='<td colspan="6" class="nodata">';
+	tablehtml+='No data to display';
+	tablehtml+='</td>';
+	tablehtml+='</tr>';
+	tablehtml += '</table>';
+	return tablehtml;
 }
 
 function BuildLastXTable(){

@@ -17,6 +17,8 @@ td.nodata {
   font-weight: bolder !important;
   height: 65px !important;
   font-family: Arial !important;
+  border: none !important;
+  text-align: center !important;
 }
 
 .StatsTable {
