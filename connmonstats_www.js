@@ -298,7 +298,7 @@ function Draw_Chart_NoData(txtchartname){
 	ctx.textBaseline = 'middle';
 	ctx.font = 'normal normal bolder 48px Arial';
 	ctx.fillStyle = 'white';
-	ctx.fillText('No data to display',365,250);
+	ctx.fillText('Data loading...',365,250);
 	ctx.restore();
 }
 
@@ -1199,7 +1199,7 @@ function BuildLastXTableNoData(){
 	var tablehtml='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="sortTable">';
 	tablehtml+='<tr>';
 	tablehtml+='<td colspan="6" class="nodata">';
-	tablehtml+='No data to display';
+	tablehtml+='Data loading...';
 	tablehtml+='</td>';
 	tablehtml+='</tr>';
 	tablehtml += '</table>';
