@@ -1,17 +1,22 @@
 var $j = jQuery.noConflict(); //avoid conflicts on John's fork (state.js)
 var daysofweek = ['Mon','Tues','Wed','Thurs','Fri','Sat','Sun'];
 var pingtestdur = 60;
+
 var arraysortlistlines = [];
 var originalarraysortlistlines = [];
 var sortfield = 'Time';
 var sortname = 'Time';
 var sortdir = 'desc';
+var AltLayout = GetCookie('AltLayout','string');
+if(AltLayout == ''){
+	AltLayout = 'false';
+}
 
 var maxNoCharts = 27;
 var currentNoCharts = 0;
 var ShowLines = GetCookie('ShowLines','string');
 var ShowFill = GetCookie('ShowFill','string');
-if( ShowFill == '' ){
+if(ShowFill == ''){
 	ShowFill = 'origin';
 }
 var DragZoom = true;
@@ -809,6 +814,7 @@ function initial(){
 	SetCurrentPage();
 	LoadCustomSettings();
 	show_menu();
+	$j('#alternatelayout').prop('checked', AltLayout == "false" ? false : true);
 	$j('#sortTableContainer').empty();
 	$j('#sortTableContainer').append(BuildLastXTableNoData());
 	get_conf_file();
@@ -879,6 +885,12 @@ function ToggleDragZoom(button){
 		button.value = buttonvalue;
 		chartobj.update();
 	}
+}
+
+function ToggleAlternateLayout(checkbox){
+	AltLayout = checkbox.checked.toString();
+	SetCookie('AltLayout',AltLayout);
+	SortTable(sortname+' '+sortdir.replace('desc','↑').replace('asc','↓').trim());
 }
 
 function update_status(){
@@ -1208,35 +1220,66 @@ function BuildLastXTableNoData(){
 
 function BuildLastXTable(){
 	var tablehtml='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="sortTable">';
-	tablehtml += '<col style="width:130px;">';
-	tablehtml += '<col style="width:200px;">';
-	tablehtml += '<col style="width:95px;">';
-	tablehtml += '<col style="width:90px;">';
-	tablehtml += '<col style="width:90px;">';
-	tablehtml += '<col style="width:110px;">';
-	tablehtml += '<thead class="sortTableHeader">';
-	tablehtml += '<tr>';
-	tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
-	tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
-	tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
-	tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
-	tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
-	tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
-	tablehtml += '</tr>';
-	tablehtml += '</thead>';
-	tablehtml += '<tbody class="sortTableContent">';
 	
-	for(var i = 0; i < arraysortlistlines.length; i++){
-		tablehtml += '<tr class="sortRow">';
-		tablehtml += '<td>'+arraysortlistlines[i].Time+'</td>';
-		tablehtml += '<td>'+arraysortlistlines[i].Target+'</td>';
-		tablehtml += '<td>'+arraysortlistlines[i].Duration+'</td>';
-		tablehtml += '<td>'+arraysortlistlines[i].Ping+'</td>';
-		tablehtml += '<td>'+arraysortlistlines[i].Jitter+'</td>';
-		tablehtml += '<td>'+arraysortlistlines[i].LineQuality+'</td>';
+	if(AltLayout == 'false'){
+		tablehtml += '<col style="width:130px;">';
+		tablehtml += '<col style="width:200px;">';
+		tablehtml += '<col style="width:95px;">';
+		tablehtml += '<col style="width:90px;">';
+		tablehtml += '<col style="width:90px;">';
+		tablehtml += '<col style="width:110px;">';
+		tablehtml += '<thead class="sortTableHeader">';
+		tablehtml += '<tr>';
+		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
+		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
+		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
+		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
+		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
+		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
 		tablehtml += '</tr>';
+		tablehtml += '</thead>';
+		tablehtml += '<tbody class="sortTableContent">';
+		for(var i = 0; i < arraysortlistlines.length; i++){
+			tablehtml += '<tr class="sortRow">';
+			tablehtml += '<td>'+arraysortlistlines[i].Time+'</td>';
+			tablehtml += '<td>'+arraysortlistlines[i].Target+'</td>';
+			tablehtml += '<td>'+arraysortlistlines[i].Duration+'</td>';
+			tablehtml += '<td>'+arraysortlistlines[i].Ping+'</td>';
+			tablehtml += '<td>'+arraysortlistlines[i].Jitter+'</td>';
+			tablehtml += '<td>'+arraysortlistlines[i].LineQuality+'</td>';
+			tablehtml += '</tr>';
+		}
 	}
-		
+	else{
+		tablehtml += '<col style="width:130px;">';
+		tablehtml += '<col style="width:90px;">';
+		tablehtml += '<col style="width:90px;">';
+		tablehtml += '<col style="width:110px;">';
+		tablehtml += '<col style="width:200px;">';
+		tablehtml += '<col style="width:95px;">';
+		tablehtml += '<thead class="sortTableHeader">';
+		tablehtml += '<tr>';
+		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
+		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
+		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
+		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
+		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
+		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
+		tablehtml += '</tr>';
+		tablehtml += '</thead>';
+		tablehtml += '<tbody class="sortTableContent">';
+		for(var i = 0; i < arraysortlistlines.length; i++){
+			tablehtml += '<tr class="sortRow">';
+			tablehtml += '<td>'+arraysortlistlines[i].Time+'</td>';
+			tablehtml += '<td>'+arraysortlistlines[i].Ping+'</td>';
+			tablehtml += '<td>'+arraysortlistlines[i].Jitter+'</td>';
+			tablehtml += '<td>'+arraysortlistlines[i].LineQuality+'</td>';
+			tablehtml += '<td>'+arraysortlistlines[i].Target+'</td>';
+			tablehtml += '<td>'+arraysortlistlines[i].Duration+'</td>';
+			tablehtml += '</tr>';
+			}
+	}
+	
 	tablehtml += '</tbody>';
 	tablehtml += '</table>';
 	return tablehtml;
