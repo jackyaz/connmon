@@ -1200,15 +1200,15 @@ Process_Upgrade(){
 	if [ ! -f "$SCRIPT_STORAGE_DIR/.indexcreated" ]; then
 		renice 15 $$
 		Print_Output true "Creating database table indexes..." "$PASS"
-		echo "CREATE INDEX idx_time_ping ON connstats (Timestamp,Ping);" > /tmp/connmon-upgrade.sql
+		echo "CREATE INDEX IF NOT EXISTS idx_time_ping ON connstats (Timestamp,Ping);" > /tmp/connmon-upgrade.sql
 		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
 			:
 		done
-		echo "CREATE INDEX idx_time_jitter ON connstats (Timestamp,Jitter);" > /tmp/connmon-upgrade.sql
+		echo "CREATE INDEX IF NOT EXISTS idx_time_jitter ON connstats (Timestamp,Jitter);" > /tmp/connmon-upgrade.sql
 		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
 			:
 		done
-		echo "CREATE INDEX idx_time_linequality ON connstats (Timestamp,LineQuality);" > /tmp/connmon-upgrade.sql
+		echo "CREATE INDEX IF NOT EXISTS idx_time_linequality ON connstats (Timestamp,LineQuality);" > /tmp/connmon-upgrade.sql
 		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
 			:
 		done
