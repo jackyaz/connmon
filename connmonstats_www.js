@@ -3,7 +3,6 @@ var daysofweek = ['Mon','Tues','Wed','Thurs','Fri','Sat','Sun'];
 var pingtestdur = 60;
 
 var arraysortlistlines = [];
-var originalarraysortlistlines = [];
 var sortfield = 'Time';
 var sortname = 'Time';
 var sortdir = 'desc';
@@ -1135,7 +1134,6 @@ function ParseLastXData(data){
 			//do nothing, continue
 		}
 	}
-	originalarraysortlistlines = arraysortlistlines;
 	SortTable(sortname+' '+sortdir.replace('desc','↑').replace('asc','↓').trim());
 }
 
