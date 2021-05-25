@@ -1202,15 +1202,15 @@ Process_Upgrade(){
 		Print_Output true "Creating database table indexes..." "$PASS"
 		echo "CREATE INDEX IF NOT EXISTS idx_time_ping ON connstats (Timestamp,Ping);" > /tmp/connmon-upgrade.sql
 		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
-			:
+			sleep 1
 		done
 		echo "CREATE INDEX IF NOT EXISTS idx_time_jitter ON connstats (Timestamp,Jitter);" > /tmp/connmon-upgrade.sql
 		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
-			:
+			sleep 1
 		done
 		echo "CREATE INDEX IF NOT EXISTS idx_time_linequality ON connstats (Timestamp,LineQuality);" > /tmp/connmon-upgrade.sql
 		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
-			:
+			sleep 1
 		done
 		rm -f /tmp/connmon-upgrade.sql
 		touch "$SCRIPT_STORAGE_DIR/.indexcreated"
@@ -1220,11 +1220,11 @@ Process_Upgrade(){
 	if [ ! -f "$SCRIPT_STORAGE_DIR/.newcolumns" ]; then
 		echo "ALTER TABLE connstats ADD COLUMN PingTarget [TEXT] NOT NULL DEFAULT '';" > /tmp/connmon-upgrade.sql
 		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
-			:
+			sleep 1
 		done
 		echo "ALTER TABLE connstats ADD COLUMN PingDuration [NUMERIC];" > /tmp/connmon-upgrade.sql
 		while ! "$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-upgrade.sql >/dev/null 2>&1; do
-			:
+			sleep 1
 		done
 		rm -f /tmp/connmon-upgrade.sql
 		touch "$SCRIPT_STORAGE_DIR/.newcolumns"
