@@ -22,7 +22,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.11.3"
+readonly SCRIPT_VERSION="v2.11.4"
 SCRIPT_BRANCH="master"
 SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -1033,7 +1033,9 @@ Run_PingTest(){
 	if [ "$PINGCOUNT" -gt 1 ]; then
 		ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
 		jitter="$(echo "$TOTALDIFF" "$DIFFCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
-		linequal="$(echo 100 "$(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" | awk '{printf "%4.3f\n",$1-$2}')"
+		pkt_trans="$(tail -n 2 "$pingfile" | head -n 1 | cut -f1 -d"," | cut -f1 -d" ")"
+		pkt_rec="$(tail -n 2 "$pingfile" | head -n 1 | cut -f2 -d"," | cut -f2 -d" ")"
+		linequal="$(echo "$pkt_rec" "$pkt_trans" | awk '{printf "%4.3f\n",100*$1/$2}')"
 	fi
 	
 	Process_Upgrade

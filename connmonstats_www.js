@@ -3,7 +3,6 @@ var daysofweek = ['Mon','Tues','Wed','Thurs','Fri','Sat','Sun'];
 var pingtestdur = 60;
 
 var arraysortlistlines = [];
-var originalarraysortlistlines = [];
 var sortfield = 'Time';
 var sortname = 'Time';
 var sortdir = 'desc';
@@ -312,8 +311,9 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 	var chartinterval = getChartInterval($j('#'+txtchartname+'_Interval option:selected').val());
 	var txtunitx = timeunitlist[$j('#'+txtchartname+'_Period option:selected').val()];
 	var numunitx = intervallist[$j('#'+txtchartname+'_Period option:selected').val()];
+	var zoompanxaxismax = moment();
 	var chartxaxismax = null;
-	var chartaxismin = moment().subtract(numunitx,txtunitx+'s');
+	var chartxaxismin = moment().subtract(numunitx,txtunitx+'s');
 	var charttype = 'line';
 	var dataobject = window[txtchartname+'_'+chartinterval+'_'+chartperiod];
 	
@@ -330,14 +330,16 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 	if(chartinterval == 'day'){
 		charttype = 'bar';
 		chartxaxismax = moment().endOf('day').subtract(9,'hours');
-		chartaxismin = moment().startOf('day').subtract(numunitx-1,txtunitx+'s').subtract(12,'hours');
+		chartxaxismin = moment().startOf('day').subtract(numunitx-1,txtunitx+'s').subtract(12,'hours');
+		zoompanxaxismax = chartxaxismax;
 	}
 	
 	if(chartperiod == 'daily' && chartinterval == 'day'){
 		txtunitx = 'day';
 		numunitx = 1;
 		chartxaxismax = moment().endOf('day').subtract(9,'hours');
-		chartaxismin = moment().startOf('day').subtract(12,'hours');
+		chartxaxismin = moment().startOf('day').subtract(12,'hours');
+		zoompanxaxismax = chartxaxismax;
 	}
 	
 	factor = 0;
@@ -380,7 +382,7 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 				type: 'time',
 				gridLines: { display: true,color: '#282828' },
 				ticks: {
-					min: chartaxismin,
+					min: chartxaxismin,
 					max: chartxaxismax,
 					display: true
 				},
@@ -413,11 +415,11 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 					enabled: ChartPan,
 					mode: 'xy',
 					rangeMin: {
-						x: new Date().getTime() - (factor * numunitx),
+						x: chartxaxismin,
 						y: 0
 					},
 					rangeMax: {
-						x: new Date().getTime(),
+						x: zoompanxaxismax,
 						y: getLimit(chartData,'y','max',false)+getLimit(chartData,'y','max',false)*0.1
 					},
 				},
@@ -426,11 +428,11 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 					drag: DragZoom,
 					mode: 'xy',
 					rangeMin: {
-						x: new Date().getTime() - (factor * numunitx),
+						x: chartxaxismin,
 						y: 0
 					},
 					rangeMax: {
-						x: new Date().getTime(),
+						x: zoompanxaxismax,
 						y: getLimit(chartData,'y','max',false)+getLimit(chartData,'y','max',false)*0.1
 					},
 					speed: 0.1
@@ -1132,7 +1134,6 @@ function ParseLastXData(data){
 			//do nothing, continue
 		}
 	}
-	originalarraysortlistlines = arraysortlistlines;
 	SortTable(sortname+' '+sortdir.replace('desc','↑').replace('asc','↓').trim());
 }
 
