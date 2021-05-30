@@ -1033,10 +1033,9 @@ Run_PingTest(){
 	if [ "$PINGCOUNT" -gt 1 ]; then
 		ping="$(tail -n 1 "$pingfile"  | cut -f4 -d"/")"
 		jitter="$(echo "$TOTALDIFF" "$DIFFCOUNT" | awk '{printf "%4.3f\n",$1/$2}')"
-#		linequal="$(echo 100 "$(tail -n 2 "$pingfile" | head -n 1 | cut -f3 -d"," | awk '{$1=$1};1' | cut -f1 -d"%")" | awk '{printf "%4.3f\n",$1-$2}')"
 		pkt_trans="$(tail -n 2 "$pingfile" | head -n 1 | cut -f1 -d"," | cut -f1 -d" ")"
 		pkt_rec="$(tail -n 2 "$pingfile" | head -n 1 | cut -f2 -d"," | cut -f2 -d" ")"
-       		linequal="$(echo "$pkt_rec" "$pkt_trans" | awk '{printf "%4.2f\n",100*$1/$2}')"   
+		linequal="$(echo "$pkt_rec" "$pkt_trans" | awk '{printf "%4.3f\n",100*$1/$2}')"
 	fi
 	
 	Process_Upgrade
