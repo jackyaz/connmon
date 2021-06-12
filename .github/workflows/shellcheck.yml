@@ -1,6 +1,6 @@
 on: push
 
-name: 'Run ShellCheck on Push'
+name: 'ShellCheck'
 
 jobs:
   shellcheck:
