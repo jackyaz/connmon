@@ -23,7 +23,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v2.11.4"
+readonly SCRIPT_VERSION="v2.11.5"
 SCRIPT_BRANCH="master"
 SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -1047,7 +1047,12 @@ Run_PingTest(){
 	} > /tmp/connmon-stats.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	
-	echo "DELETE FROM [connstats] WHERE [Timestamp] < strftime('%s',datetime($timenow,'unixepoch','-$(DaysToKeep check) day'));" > /tmp/connmon-stats.sql
+	{
+		echo "DELETE FROM [connstats] WHERE [Timestamp] < strftime('%s',datetime($timenow,'unixepoch','-$(DaysToKeep check) day'));"
+		echo "PRAGMA analysis_limit=0;"
+		echo "PRAGMA cache_size=-20000;"
+		echo "ANALYZE connstats;"
+	} > /tmp/connmon-stats.sql
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	rm -f /tmp/connmon-stats.sql
 	
