@@ -356,7 +356,7 @@ Create_Symlinks(){
 	ln -s /tmp/detect_connmon.js "$SCRIPT_WEB_DIR/detect_connmon.js" 2>/dev/null
 	ln -s /tmp/ping-result.txt "$SCRIPT_WEB_DIR/ping-result.htm" 2>/dev/null
 	ln -s "$SCRIPT_STORAGE_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
-	ln -s "$SCRIPT_STORAGE_DIR/lastx.htm" "$SCRIPT_WEB_DIR/lastx.htm" 2>/dev/null
+	ln -s "$SCRIPT_STORAGE_DIR/lastx.csv" "$SCRIPT_WEB_DIR/lastx.htm" 2>/dev/null
 	
 	ln -s "$SCRIPT_CONF" "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
 	
@@ -834,7 +834,7 @@ ScriptStorageLocation(){
 			mv "/jffs/addons/$SCRIPT_NAME.d/config" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/config.bak" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstatstext.js" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
-			mv "/jffs/addons/$SCRIPT_NAME.d/lastx.htm" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/jffs/addons/$SCRIPT_NAME.d/lastx.csv" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/connstats.db" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/.indexcreated" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/.newcolumns" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
@@ -848,7 +848,7 @@ ScriptStorageLocation(){
 			mv "/opt/share/$SCRIPT_NAME.d/config" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/config.bak" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstatstext.js" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
-			mv "/opt/share/$SCRIPT_NAME.d/lastx.htm" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/opt/share/$SCRIPT_NAME.d/lastx.csv" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/connstats.db" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/.indexcreated" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/.newcolumns" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
@@ -1172,6 +1172,7 @@ Generate_CSVs(){
 
 Generate_LastXResults(){
 	rm -f "$SCRIPT_STORAGE_DIR/connjs.js"
+	rm -f "$SCRIPT_STORAGE_DIR/lastx.htm"
 	{
 		echo ".mode csv"
 		echo ".output /tmp/conn-lastx.csv"
@@ -1180,7 +1181,7 @@ Generate_LastXResults(){
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/conn-lastx.sql
 	rm -f /tmp/conn-lastx.sql
 	sed -i 's/"//g' /tmp/conn-lastx.csv
-	mv /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/lastx.htm"
+	mv /tmp/conn-lastx.csv "$SCRIPT_STORAGE_DIR/lastx.csv"
 }
 
 Reset_DB(){
@@ -1237,7 +1238,7 @@ Process_Upgrade(){
 		rm -f /tmp/connmon-upgrade.sql
 		touch "$SCRIPT_STORAGE_DIR/.newcolumns"
 	fi
-	if [ ! -f "$SCRIPT_STORAGE_DIR/lastx.htm" ]; then
+	if [ ! -f "$SCRIPT_STORAGE_DIR/lastx.csv" ]; then
 		Generate_LastXResults
 	fi
 	if [ ! -f /opt/bin/dig ]; then
@@ -1538,7 +1539,7 @@ Menu_Install(){
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
 	rm -f /tmp/connmon-stats.sql
 	touch "$SCRIPT_STORAGE_DIR/.newcolumns"
-	touch "$SCRIPT_STORAGE_DIR/lastx.htm"
+	touch "$SCRIPT_STORAGE_DIR/lastx.csv"
 	Process_Upgrade
 	
 	Run_PingTest
