@@ -291,7 +291,7 @@ function changePingType(forminput){
 	}
 }
 
-function Draw_Chart_NoData(txtchartname){
+function Draw_Chart_NoData(txtchartname,texttodisplay){
 	document.getElementById('divLineChart_'+txtchartname).width = '730';
 	document.getElementById('divLineChart_'+txtchartname).height = '500';
 	document.getElementById('divLineChart_'+txtchartname).style.width = '730px';
@@ -302,7 +302,7 @@ function Draw_Chart_NoData(txtchartname){
 	ctx.textBaseline = 'middle';
 	ctx.font = 'normal normal bolder 48px Arial';
 	ctx.fillStyle = 'white';
-	ctx.fillText('Data loading...',365,250);
+	ctx.fillText(texttodisplay,365,250);
 	ctx.restore();
 }
 
@@ -317,8 +317,8 @@ function Draw_Chart(txtchartname,txttitle,txtunity,bordercolourname,backgroundco
 	var charttype = 'line';
 	var dataobject = window[txtchartname+'_'+chartinterval+'_'+chartperiod];
 	
-	if(typeof dataobject === 'undefined' || dataobject === null){ Draw_Chart_NoData(txtchartname); return; }
-	if(dataobject.length == 0){ Draw_Chart_NoData(txtchartname); return; }
+	if(typeof dataobject === 'undefined' || dataobject === null){ Draw_Chart_NoData(txtchartname,'No data to display'); return; }
+	if(dataobject.length == 0){ Draw_Chart_NoData(txtchartname,'No data to display'); return; }
 	
 	var chartLabels = dataobject.map(function(d){return d.Metric});
 	var chartData = dataobject.map(function(d){return {x: d.Time,y: d.Value}});
@@ -649,7 +649,7 @@ function ToggleFill(){
 
 function RedrawAllCharts(){
 	for(var i = 0; i < metriclist.length; i++){
-		Draw_Chart_NoData(metriclist[i]);
+		Draw_Chart_NoData(metriclist[i],'Data loading...');
 		for(var i2 = 0; i2 < chartlist.length; i2++){
 			for(var i3 = 0; i3 < dataintervallist.length; i3++){
 				d3.csv('/ext/connmon/csv/'+metriclist[i]+'_'+dataintervallist[i3]+'_'+chartlist[i2]+'.htm').then(SetGlobalDataset.bind(null,metriclist[i]+'_'+dataintervallist[i3]+'_'+chartlist[i2]));
