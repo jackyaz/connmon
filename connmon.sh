@@ -1053,7 +1053,7 @@ Run_PingTest(){
 		echo "PRAGMA cache_size=-20000;"
 		echo "ANALYZE connstats;"
 	} > /tmp/connmon-stats.sql
-	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql
+	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql >/dev/null 2>&1
 	rm -f /tmp/connmon-stats.sql
 	
 	echo 'var connmonstatus = "GenerateCSV";' > /tmp/detect_connmon.js
