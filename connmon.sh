@@ -1070,10 +1070,10 @@ Run_PingTest(){
 		printf "\\nPing %s ms - Jitter - %s ms - Line Quality %s %%\\n" "$ping" "$jitter" "$linequal"
 	} >> "$resultfile"
 	
-	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
-	
 	rm -f "$pingfile"
 	rm -f /tmp/connstatstitle.txt
+	
+	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
 }
 
 Generate_CSVs(){
