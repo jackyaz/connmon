@@ -1375,11 +1375,14 @@ function update_conntest(){
 				document.getElementById('conntest_text').innerHTML = 'Retrieving data for charts...';
 			}
 			else if(connmonstatus == 'Done'){
-				pingcount = 2;
 				clearInterval(myinterval);
-				get_conntestresult_file();
-				document.getElementById('conntest_text').innerHTML = 'Refreshing charts...';
-				PostConnTest();
+				if(intervalclear == false){
+					intervalclear = true;
+					pingcount = 2;
+					get_conntestresult_file();
+					document.getElementById('conntest_text').innerHTML = 'Refreshing charts...';
+					PostConnTest();
+				}
 			}
 			else if(connmonstatus == 'LOCKED'){
 				pingcount = 2;
@@ -1422,7 +1425,9 @@ function runPingTest(){
 }
 
 var myinterval;
+var intervalclear = false;
 function StartConnTestInterval(){
+	intervalclear = false;
 	myinterval = setInterval(update_conntest,1000);
 }
 
