@@ -899,7 +899,6 @@ function update_status(){
 	$j.ajax({
 		url: '/ext/connmon/detect_update.js',
 		dataType: 'script',
-		timeout: 3000,
 		error: function(xhr){
 			setTimeout(update_status,1000);
 		},
@@ -1001,7 +1000,6 @@ function get_conntestresult_file(){
 	$j.ajax({
 		url: '/ext/connmon/ping-result.htm',
 		dataType: 'text',
-		timeout: 1000,
 		error: function(xhr){
 			setTimeout(get_conntestresult_file,500);
 		},
@@ -1090,7 +1088,6 @@ function get_statstitle_file(){
 	$j.ajax({
 		url: '/ext/connmon/connstatstext.js',
 		dataType: 'script',
-		timeout: 3000,
 		error: function(xhr){
 			setTimeout(get_statstitle_file,1000);
 		},
@@ -1104,7 +1101,6 @@ function get_lastx_file(){
 	$j.ajax({
 		url: '/ext/connmon/lastx.htm',
 		dataType: 'text',
-		timeout: 3000,
 		error: function(xhr){
 			setTimeout(get_lastx_file,1000);
 		},
@@ -1366,7 +1362,6 @@ function update_conntest(){
 	$j.ajax({
 		url: '/ext/connmon/detect_connmon.js',
 		dataType: 'script',
-		timeout: 1000,
 		error: function(xhr){
 			//do nothing
 		},
