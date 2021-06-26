@@ -946,7 +946,8 @@ Run_PingTest(){
 	pingtarget="$(PingServer check)"
 	pingtargetip=""
 	completepingtarget=""
-	printf "" > "$resultfile"
+	rm -f "$resultfile"
+	rm -f "$pingfile"
 	
 	echo 'var connmonstatus = "InProgress";' > /tmp/detect_connmon.js
 	
@@ -1069,9 +1070,10 @@ Run_PingTest(){
 		printf "\\nPing %s ms - Jitter - %s ms - Line Quality %s %%\\n" "$ping" "$jitter" "$linequal"
 	} >> "$resultfile"
 	
+	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
+	
 	rm -f "$pingfile"
 	rm -f /tmp/connstatstitle.txt
-	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
 }
 
 Generate_CSVs(){
