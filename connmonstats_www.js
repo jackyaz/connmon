@@ -1421,7 +1421,7 @@ function runPingTest(){
 	document.formScriptActions.submit();
 	showhide('imgConnTest',true);
 	showhide('conntest_text',false);
-	setTimeout(StartConnTestInterval,2000);
+	setTimeout(StartConnTestInterval,5000);
 }
 
 var myinterval;

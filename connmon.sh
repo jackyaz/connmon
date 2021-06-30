@@ -2138,7 +2138,10 @@ case "$1" in
 	service_event)
 		if [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME" ]; then
 			rm -f /tmp/detect_connmon.js
+			rm -f /tmp/pingresult.txt
+			rm -f /tmp/ping-result.txt
 			Check_Lock webui
+			sleep 3
 			Run_PingTest
 			Clear_Lock
 			exit 0
