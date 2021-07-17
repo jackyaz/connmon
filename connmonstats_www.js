@@ -3,7 +3,6 @@ var daysofweek = ['Mon','Tues','Wed','Thurs','Fri','Sat','Sun'];
 var pingtestdur = 60;
 
 var arraysortlistlines = [];
-var sortfield = 'Time';
 var sortname = 'Time';
 var sortdir = 'desc';
 var AltLayout = GetCookie('AltLayout','string');
@@ -1136,7 +1135,7 @@ function ParseLastXData(data){
 function SortTable(sorttext){
 	sortname = sorttext.replace('↑','').replace('↓','').trim();
 	var sorttype = 'number';
-	sortfield=sortname;
+	var sortfield = sortname;
 	switch(sortname){
 		case 'Time':
 			sorttype = 'date';
