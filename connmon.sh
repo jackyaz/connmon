@@ -1191,9 +1191,6 @@ Reset_DB(){
 	SIZEDB="$(ls -l "$SCRIPT_STORAGE_DIR/connstats.db" | awk '{print $5}')"
 	SIZEAVAIL="$(echo "$SIZEAVAIL" | awk '{printf("%s", $1*1024);}')"
 	
-	echo "$SIZEDB"
-	echo "$SIZEAVAIL"
-	
 	if [ "$(echo "$SIZEAVAIL $SIZEDB" | awk '{print ($1 < $2)}')" -eq 1 ]; then
 		Print_Output true "Database size exceeds available space. $(ls -lh "$SCRIPT_STORAGE_DIR/connstats.db" | awk '{print $5}')B is required to create backup." "$ERR"
 		return 1
