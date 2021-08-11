@@ -1189,7 +1189,12 @@ Generate_LastXResults(){
 Reset_DB(){
 	SIZEAVAIL="$(df -P -k "$SCRIPT_STORAGE_DIR" | awk '{print $4}' | tail -n 1)"
 	SIZEDB="$(ls -l "$SCRIPT_STORAGE_DIR/connstats.db" | awk '{print $5}')"
-	if [ "$SIZEDB" -gt "$((SIZEAVAIL*1024))" ]; then
+	SIZEAVAIL="$(echo "$SIZEAVAIL" | awk '{printf("%s", $1*1024);}')"
+	
+	echo "$SIZEDB"
+	echo "$SIZEAVAIL"
+	
+	if [ "$(echo "$SIZEAVAIL $SIZEDB" | awk '{print ($1 < $2)}')" -eq 1 ]; then
 		Print_Output true "Database size exceeds available space. $(ls -lh "$SCRIPT_STORAGE_DIR/connstats.db" | awk '{print $5}')B is required to create backup." "$ERR"
 		return 1
 	else
