@@ -21,6 +21,7 @@
 # shellcheck disable=SC2039
 # shellcheck disable=SC2059
 # shellcheck disable=SC2155
+# shellcheck disable=SC3003
 ##############################################################
 
 ### Start of script variables ###
