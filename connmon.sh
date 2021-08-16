@@ -2178,7 +2178,7 @@ Menu_EmailNotifications(){
 		printf "c9.    Set SMTP protocol         Currently: ${SETTING}%s${CLEARFORMAT}\\n" "$PROTOCOL"
 		printf "c10.   Set SSL requirement       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$SSL_FLAG"
 		printf "cs.    Send a test email\\n\\n"
-		printf "e.    Go back\\n\\n"
+		printf "e.     Go back\\n\\n"
 		printf "${BOLD}##############################################################${CLEARFORMAT}\\n"
 		printf "\\n"
 		
@@ -2373,8 +2373,8 @@ Menu_CustomActions(){
 		fi
 		
 		printf "\\nScripts are passed arguments, which change depending on the type of trigger\\n"
-		printf '      For ping tests: PingTest FormattedDateTime "Ping ms" "Jitter ms" "Latency %%"'"\\n\\n"
-		printf "e.    Go back\\n\\n"
+		printf '       For ping tests: PingTest FormattedDateTime "Ping ms" "Jitter ms" "Latency %%"'"\\n\\n"
+		printf "e.     Go back\\n\\n"
 		printf "${BOLD}##############################################################${CLEARFORMAT}\\n"
 		printf "\\n"
 		
@@ -2427,7 +2427,7 @@ Menu_HealthcheckNotifications(){
 		printf "c1.    Set Healthcheck UUID\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$NOTIFICATIONS_HEALTHCHECK_UUID"
 		printf "Cron schedule for Healthchecks.io configuration: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(cru l | grep "$SCRIPT_NAME" | cut -f1-5 -d' ')"
 		printf "cs.    Send a test healthcheck notification\\n\\n"
-		printf "e.    Go back\\n\\n"
+		printf "e.     Go back\\n\\n"
 		printf "${BOLD}##############################################################${CLEARFORMAT}\\n"
 		printf "\\n"
 		
@@ -2465,10 +2465,10 @@ Menu_Notifications(){
 		ScriptHeader
 		
 		printf "${BOLD}${UNDERLINE}Notification Types${CLEARFORMAT}\\n"
-		printf "1.    Ping test\\n      Current methods: ${SETTING}$(NotificationMethods check PingTest)${CLEARFORMAT}\\n\\n"
-		printf "2.    Ping threshold (values above this will trigger an alert)\\n      Current methods: ${SETTING}$(NotificationMethods check PingThreshold)${CLEARFORMAT}\\n\\n"
-		printf "3.    Jitter threshold (values above this will trigger an alert)\\n      Current methods: ${SETTING}$(NotificationMethods check JitterThreshold)${CLEARFORMAT}\\n\\n"
-		printf "4.    Line Quality threshold (values below this will trigger an alert)\\n      Current methods: ${SETTING}$(NotificationMethods check LineQualityThreshold)${CLEARFORMAT}\\n\\n"
+		printf "1.     Ping test\\n       Current methods: ${SETTING}$(NotificationMethods check PingTest)${CLEARFORMAT}\\n\\n"
+		printf "2.     Ping threshold (values above this will trigger an alert)\\n       Current methods: ${SETTING}$(NotificationMethods check PingThreshold)${CLEARFORMAT}\\n\\n"
+		printf "3.     Jitter threshold (values above this will trigger an alert)\\n       Current methods: ${SETTING}$(NotificationMethods check JitterThreshold)${CLEARFORMAT}\\n\\n"
+		printf "4.     Line Quality threshold (values below this will trigger an alert)\\n       Current methods: ${SETTING}$(NotificationMethods check LineQualityThreshold)${CLEARFORMAT}\\n\\n"
 		printf "\\n${BOLD}${UNDERLINE}Notification Methods${CLEARFORMAT}\\n"
 		NOTIFICATION_SETTING=""
 		if ToggleNotificationTypes check NOTIFICATIONS_EMAIL; then NOTIFICATION_SETTING="${PASS}Enabled"; else NOTIFICATION_SETTING="${ERR}Disabled"; fi
