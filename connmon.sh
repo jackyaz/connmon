@@ -1119,18 +1119,18 @@ Run_PingTest(){
 	rm -f "$pingfile"
 	rm -f /tmp/connstatstitle.txt
 	
-	TriggerNotifications "PingTest" "$timenowfriendly" "$ping ms" "$jitter ms" "$linequal %"
+	TriggerNotifications PingTest "$timenowfriendly" "$ping ms" "$jitter ms" "$linequal %" "$timenow"
 	
 	if [ "$(echo "$ping" "$(Conf_Parameters check NOTIFICATIONS_PINGTHRESHOLD_VALUE)" | awk '{print ($1 > $2)}')" -eq 1 ]; then
-		TriggerNotifications "PingThreshold" "$timenowfriendly" "$ping ms" "$(Conf_Parameters check NOTIFICATIONS_PINGTHRESHOLD_VALUE) ms"
+		TriggerNotifications PingThreshold "$timenowfriendly" "$ping ms" "$(Conf_Parameters check NOTIFICATIONS_PINGTHRESHOLD_VALUE) ms"
 	fi
 	
 	if [ "$(echo "$jitter" "$(Conf_Parameters check NOTIFICATIONS_JITTERTHRESHOLD_VALUE)" | awk '{print ($1 > $2)}')" -eq 1 ]; then
-		TriggerNotifications "JitterThreshold" "$timenowfriendly" "$jitter ms" "$(Conf_Parameters check NOTIFICATIONS_JITTERTHRESHOLD_VALUE) ms"
+		TriggerNotifications JitterThreshold "$timenowfriendly" "$jitter ms" "$(Conf_Parameters check NOTIFICATIONS_JITTERTHRESHOLD_VALUE) ms"
 	fi
 	
 	if [ "$(echo "$linequal" "$(Conf_Parameters check NOTIFICATIONS_LINEQUALITYTHRESHOLD_VALUE)" | awk '{print ($1 < $2)}')" -eq 1 ]; then
-		TriggerNotifications "LineQualityThreshold" "$timenowfriendly" "$linequal %" "$(Conf_Parameters check NOTIFICATIONS_LINEQUALITYTHRESHOLD_VALUE) %"
+		TriggerNotifications LineQualityThreshold "$timenowfriendly" "$linequal %" "$(Conf_Parameters check NOTIFICATIONS_LINEQUALITYTHRESHOLD_VALUE) %"
 	fi
 	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
 }
@@ -2420,11 +2420,10 @@ Menu_HealthcheckNotifications(){
 		ScriptHeader
 		NOTIFICATIONS_HEALTHCHECK=""
 		if ToggleNotificationTypes check NOTIFICATIONS_HEALTHCHECK; then NOTIFICATIONS_HEALTHCHECK="${PASS}Enabled"; else NOTIFICATIONS_HEALTHCHECK="${ERR}Disabled"; fi
-		NOTIFICATIONS_HEALTHCHECK_UUID=$(Conf_Parameters check "NOTIFICATIONS_HEALTHCHECK_UUID")
 		printf "1.    Toggle healthcheck notifications\\n      Currently: ${BOLD}${NOTIFICATIONS_HEALTHCHECK}${CLEARFORMAT}\\n\\n"
 		
 		printf "\\n${BOLD}${UNDERLINE}Healthcheck Configuration${CLEARFORMAT}\\n\\n"
-		printf "c1.    Set Healthcheck UUID\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$NOTIFICATIONS_HEALTHCHECK_UUID"
+		printf "c1.    Set Healthcheck UUID\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_HEALTHCHECK_UUID")"
 		printf "Cron schedule for Healthchecks.io configuration: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(cru l | grep "$SCRIPT_NAME" | cut -f1-5 -d' ')"
 		printf "cs.    Send a test healthcheck notification\\n\\n"
 		printf "e.     Go back\\n\\n"
