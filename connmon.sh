@@ -422,6 +422,7 @@ Conf_Exists(){
 				echo "NOTIFICATIONS_PUSHOVER=false"
 				echo "NOTIFICATIONS_CUSTOM=false"
 				echo "NOTIFICATIONS_HEALTHCHECK=false"
+				echo "NOTIFICATIONS_INFLUXDB=false"
 				echo "NOTIFICATIONS_PINGTEST=None"
 				echo "NOTIFICATIONS_PINGTHRESHOLD=None"
 				echo "NOTIFICATIONS_JITTERTHRESHOLD=None"
@@ -435,15 +436,23 @@ Conf_Exists(){
 				echo "NOTIFICATIONS_PINGTHRESHOLD_VALUE=30"
 				echo "NOTIFICATIONS_JITTERTHRESHOLD_VALUE=15"
 				echo "NOTIFICATIONS_LINEQUALITYTHRESHOLD_VALUE=75"
+				echo "NOTIFICATIONS_INFLUXDB_HOST="
+				echo "NOTIFICATIONS_INFLUXDB_PORT="
+				echo "NOTIFICATIONS_INFLUXDB_DB="
+				echo "NOTIFICATIONS_INFLUXDB_VERSION=1.8"
+				echo "NOTIFICATIONS_INFLUXDB_USERNAME="
+				echo "NOTIFICATIONS_INFLUXDB_PASSWORD="
+				echo "NOTIFICATIONS_INFLUXDB_APITOKEN="
 			} >> "$SCRIPT_CONF"
 		fi
 		
 		return 0
 	else
 		{ echo "PINGSERVER=8.8.8.8"; echo "OUTPUTTIMEMODE=unix"; echo "STORAGELOCATION=jffs"; echo "PINGDURATION=60"; echo "AUTOMATED=true"; echo "SCHDAYS=*"; echo "SCHHOURS=*"; echo "SCHMINS=*/3"; echo "DAYSTOKEEP=30"; echo "LASTXRESULTS=10"; echo "EXCLUDEFROMQOS=true";
-		echo "NOTIFICATIONS_EMAIL=false"; echo "NOTIFICATIONS_WEBHOOK=false"; echo "NOTIFICATIONS_PUSHOVER=false"; echo "NOTIFICATIONS_CUSTOM=false"; echo "NOTIFICATIONS_HEALTHCHECK=false";
+		echo "NOTIFICATIONS_EMAIL=false"; echo "NOTIFICATIONS_WEBHOOK=false"; echo "NOTIFICATIONS_PUSHOVER=false"; echo "NOTIFICATIONS_CUSTOM=false"; echo "NOTIFICATIONS_HEALTHCHECK=false"; echo "NOTIFICATIONS_INFLUXDB=false";
 		echo "NOTIFICATIONS_PINGTEST=None"; echo "NOTIFICATIONS_PINGTHRESHOLD=None"; echo "NOTIFICATIONS_JITTERTHRESHOLD=None"; echo "NOTIFICATIONS_LINEQUALITYTHRESHOLD=None"; echo "NOTIFICATIONS_EMAIL_LIST="; echo "NOTIFICATIONS_HEALTHCHECK_UUID=";
-		echo "NOTIFICATIONS_WEBHOOK_LIST="; echo "NOTIFICATIONS_PUSHOVER_LIST="; echo "NOTIFICATIONS_PUSHOVER_API="; echo "NOTIFICATIONS_PUSHOVER_USERKEY="; echo "NOTIFICATIONS_PINGTHRESHOLD_VALUE=30"; echo "NOTIFICATIONS_JITTERTHRESHOLD_VALUE=15"; echo "NOTIFICATIONS_LINEQUALITYTHRESHOLD_VALUE=75"; } > "$SCRIPT_CONF"
+		echo "NOTIFICATIONS_WEBHOOK_LIST="; echo "NOTIFICATIONS_PUSHOVER_LIST="; echo "NOTIFICATIONS_PUSHOVER_API="; echo "NOTIFICATIONS_PUSHOVER_USERKEY="; echo "NOTIFICATIONS_PINGTHRESHOLD_VALUE=30"; echo "NOTIFICATIONS_JITTERTHRESHOLD_VALUE=15"; echo "NOTIFICATIONS_LINEQUALITYTHRESHOLD_VALUE=75";
+		echo "NOTIFICATIONS_INFLUXDB_HOST="; echo "NOTIFICATIONS_INFLUXDB_PORT="; echo "NOTIFICATIONS_INFLUXDB_DB="; echo "NOTIFICATIONS_INFLUXDB_VERSION=1.8"; echo "NOTIFICATIONS_INFLUXDB_USERNAME="; echo "NOTIFICATIONS_INFLUXDB_PASSWORD="; echo "NOTIFICATIONS_INFLUXDB_APITOKEN="; } > "$SCRIPT_CONF"
 		return 1
 	fi
 }
@@ -1890,6 +1899,39 @@ SendHealthcheckPing(){
 	fi
 }
 
+SendToInfluxDB(){
+	TIMESTAMP="$1"
+	PING="$2"
+	JITTER="$3"
+	LINEQUAL="$4"
+	NOTIFICATIONS_INFLUXDB_HOST=$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_HOST")
+	NOTIFICATIONS_INFLUXDB_PORT=$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_PORT")
+	NOTIFICATIONS_INFLUXDB_DB=$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_DB")
+	NOTIFICATIONS_INFLUXDB_VERSION=$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_VERSION")
+	
+	if [ "$NOTIFICATIONS_INFLUXDB_VERSION" = "1.8" ]; then
+		INFLUX_AUTHHEADER="$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_USERNAME"):$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_PASSWORD")"
+	elif [ "$NOTIFICATIONS_INFLUXDB_VERSION" = "2.0" ]; then
+		INFLUX_AUTHHEADER=$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_APITOKEN")
+	fi
+	
+	/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 --output /dev/null -XPOST "http://$NOTIFICATIONS_INFLUXDB_HOST:$NOTIFICATIONS_INFLUXDB_PORT/api/v2/write?bucket=$NOTIFICATIONS_INFLUXDB_DB&precision=s" \
+--header "Authorization: Token $INFLUX_AUTHHEADER" --header "Accept-Encoding: gzip" \
+--data-raw "ping value=$PING $TIMESTAMP
+jitter value=$JITTER $TIMESTAMP
+linequality value=$LINEQUAL $TIMESTAMP"
+
+	if [ $? -eq 0 ]; then
+		echo ""
+		Print_Output false "Data sent to InfluxDB successfully" "$PASS"
+		return 0
+	else
+		echo ""
+		Print_Output true "Data failed to send to InfluxDB" "$ERR"
+		return 1
+	fi
+}
+
 ToggleNotificationTypes(){
 	case "$1" in
 		enable)
@@ -1936,6 +1978,27 @@ Conf_Parameters(){
 				;;
 				"Pushover User Key")
 					sed -i 's/^NOTIFICATIONS_PUSHOVER_USERKEY=.*$/NOTIFICATIONS_PUSHOVER_USERKEY='"$3"'/' "$SCRIPT_CONF"
+				;;
+				"InfluxDB Host")
+					sed -i 's/^NOTIFICATIONS_INFLUXDB_HOST=.*$/NOTIFICATIONS_INFLUXDB_HOST='"$3"'/' "$SCRIPT_CONF"
+				;;
+				"InfluxDB Port")
+					sed -i 's/^NOTIFICATIONS_INFLUXDB_PORT=.*$/NOTIFICATIONS_INFLUXDB_PORT='"$3"'/' "$SCRIPT_CONF"
+				;;
+				"InfluxDB Database")
+					sed -i 's/^NOTIFICATIONS_INFLUXDB_DB=.*$/NOTIFICATIONS_INFLUXDB_DB='"$3"'/' "$SCRIPT_CONF"
+				;;
+				"InfluxDB Version")
+					sed -i 's/^NOTIFICATIONS_INFLUXDB_VERSION=.*$/NOTIFICATIONS_INFLUXDB_VERSION='"$3"'/' "$SCRIPT_CONF"
+				;;
+				"InfluxDB Username")
+					sed -i 's/^NOTIFICATIONS_INFLUXDB_USERNAME=.*$/NOTIFICATIONS_INFLUXDB_USERNAME='"$3"'/' "$SCRIPT_CONF"
+				;;
+				"InfluxDB Password")
+					sed -i 's/^NOTIFICATIONS_INFLUXDB_PASSWORD=.*$/NOTIFICATIONS_INFLUXDB_PASSWORD='"$3"'/' "$SCRIPT_CONF"
+				;;
+				"InfluxDB API Token")
+					sed -i 's/^NOTIFICATIONS_INFLUXDB_APITOKEN=.*$/NOTIFICATIONS_INFLUXDB_APITOKEN='"$3"'/' "$SCRIPT_CONF"
 				;;
 			esac
 		;;
@@ -2057,6 +2120,7 @@ TriggerNotifications(){
 		PING="$3"
 		JITTER="$4"
 		LINEQUAL="$5"
+		TIMESTAMP="$6"
 	elif [ "$TRIGGERTYPE" = "PingThreshold" ]; then
 		PING="$3"
 		THRESHOLD="$4"
@@ -2149,6 +2213,10 @@ TriggerNotifications(){
 		else
 			SendHealthcheckPing "Pass"
 		fi
+	fi
+	
+	if ToggleNotificationTypes check NOTIFICATIONS_INFLUXDB && [ "$TRIGGERTYPE" = "PingTest" ]; then
+		SendToInfluxDB "$TIMESTAMP" "$(echo "$PING" | cut -f1 -d' ')" "$(echo "$JITTER" | cut -f1 -d' ')" "$(echo "$LINEQUAL" | cut -f1 -d' ')"
 	fi
 }
 
@@ -2459,6 +2527,77 @@ Menu_HealthcheckNotifications(){
 	done
 }
 
+Menu_InfluxDB(){
+	while true; do
+		ScriptHeader
+		NOTIFICATIONS_INFLUXDB=""
+		if ToggleNotificationTypes check NOTIFICATIONS_INFLUXDB; then NOTIFICATIONS_INFLUXDB="${PASS}Enabled"; else NOTIFICATIONS_INFLUXDB="${ERR}Disabled"; fi
+		printf "1.    Toggle healthcheck notifications\\n      Currently: ${BOLD}${NOTIFICATIONS_INFLUXDB}${CLEARFORMAT}\\n\\n"
+		
+		printf "\\n${BOLD}${UNDERLINE}InfluxDB Configuration${CLEARFORMAT}\\n\\n"
+		printf "c1.    Set InfluxDB Host\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_HOST")"
+		printf "c2.    Set InfluxDB Port\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_PORT")"
+		printf "c3.    Set InfluxDB Database\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_DB")"
+		printf "c4.    Set InfluxDB Version\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_VERSION")"
+		printf "c5.    Set InfluxDB Username (v1.8+ only)\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_USERNAME")"
+		printf "c6.    Set InfluxDB Password (v1.8+ only)\\n\\n"
+		printf "c7.    Set InfluxDB API Token (v2.x only)\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_APITOKEN")"
+		printf "cs.    Send test data to InfluxDB\\n\\n"
+		printf "e.     Go back\\n\\n"
+		printf "${BOLD}##############################################################${CLEARFORMAT}\\n"
+		printf "\\n"
+		
+		printf "Choose an option:  "
+		read -r healthcheckmenu
+		case "$healthcheckmenu" in
+			1)
+				if ToggleNotificationTypes check NOTIFICATIONS_INFLUXDB; then
+					ToggleNotificationTypes disable NOTIFICATIONS_INFLUXDB
+				else
+					ToggleNotificationTypes enable NOTIFICATIONS_INFLUXDB
+				fi
+			;;
+			c1)
+				Notification_String "InfluxDB Host"
+			;;
+			c2)
+				Notification_Number "InfluxDB Port"
+			;;
+			c3)
+				Notification_String "InfluxDB Database"
+			;;
+			c4)
+				if [ "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_VERSION")" = "1.8" ]; then
+					Conf_Parameters update "InfluxDB Version" "2.0"
+				else
+					Conf_Parameters update "InfluxDB Version" "1.8"
+				fi
+			;;
+			c5)
+				Notification_String "InfluxDB Username"
+			;;
+			c6)
+				Notification_String "InfluxDB Password"
+			;;
+			c7)
+				Notification_String "InfluxDB API Token"
+			;;
+			cs)
+				SendToInfluxDB "$(date +%s)" 30 15 90
+				printf "\\n"
+				PressEnter
+			;;
+			e)
+				break
+			;;
+			*)
+				printf "\\n${BOLD}${ERR}Please choose a valid option${CLEARFORMAT}\\n\\n"
+				PressEnter
+			;;
+		esac
+	done
+}
+
 Menu_Notifications(){
 	while true; do
 		ScriptHeader
@@ -2480,6 +2619,8 @@ Menu_Notifications(){
 		printf "ca.    Custom actions\\n       Currently: ${BOLD}${NOTIFICATION_SETTING}${CLEARFORMAT}\\n\\n"
 		if ToggleNotificationTypes check NOTIFICATIONS_HEALTHCHECK; then NOTIFICATION_SETTING="${PASS}Enabled"; else NOTIFICATION_SETTING="${ERR}Disabled"; fi
 		printf "hc.    Healthchecks.io monitoring\\n       Currently: ${BOLD}${NOTIFICATION_SETTING}${CLEARFORMAT}\\n\\n"
+		if ToggleNotificationTypes check NOTIFICATIONS_INFLUXDB; then NOTIFICATION_SETTING="${PASS}Enabled"; else NOTIFICATION_SETTING="${ERR}Disabled"; fi
+		printf "id.    InfluxDB exporting\\n       Currently: ${BOLD}${NOTIFICATION_SETTING}${CLEARFORMAT}\\n\\n"
 		printf "e.     Go back\\n\\n"
 		printf "${BOLD}##############################################################${CLEARFORMAT}\\n"
 		printf "\\n"
@@ -2513,6 +2654,9 @@ Menu_Notifications(){
 			;;
 			hc)
 				Menu_HealthcheckNotifications
+			;;
+			id)
+				Menu_InfluxDB
 			;;
 			e)
 				break
