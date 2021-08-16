@@ -2144,7 +2144,7 @@ TriggerNotifications(){
 	if ToggleNotificationTypes check NOTIFICATIONS_HEALTHCHECK && [ "$TRIGGERTYPE" = "PingTest" ]; then
 		NOTIFICATIONS_HEALTHCHECK_UUID=$(Conf_Parameters check "NOTIFICATIONS_HEALTHCHECK_UUID")
 		TESTFAIL=""
-		if [ "$LINEQUAL" -eq 0 ]; then
+		if [ "$(echo "$LINEQUAL" | cut -f1 -d' ' | cut -f1 -d'.')" -eq 0 ]; then
 			SendHealthcheckPing "Fail"
 		else
 			SendHealthcheckPing "Pass"
