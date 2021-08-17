@@ -2607,7 +2607,7 @@ Menu_Notifications(){
 		printf "2.     Ping threshold (values above this will trigger an alert)\\n       Current methods: ${SETTING}$(NotificationMethods check PingThreshold)${CLEARFORMAT}\\n\\n"
 		printf "3.     Jitter threshold (values above this will trigger an alert)\\n       Current methods: ${SETTING}$(NotificationMethods check JitterThreshold)${CLEARFORMAT}\\n\\n"
 		printf "4.     Line Quality threshold (values below this will trigger an alert)\\n       Current methods: ${SETTING}$(NotificationMethods check LineQualityThreshold)${CLEARFORMAT}\\n\\n"
-		printf "\\n${BOLD}${UNDERLINE}Notification Methods${CLEARFORMAT}\\n"
+		printf "\\n${BOLD}${UNDERLINE}Notification Methods and Integrations${CLEARFORMAT}\\n"
 		NOTIFICATION_SETTING=""
 		if ToggleNotificationTypes check NOTIFICATIONS_EMAIL; then NOTIFICATION_SETTING="${PASS}Enabled"; else NOTIFICATION_SETTING="${ERR}Disabled"; fi
 		printf "em.    Email\\n       Currently: ${BOLD}${NOTIFICATION_SETTING}${CLEARFORMAT}\\n\\n"
@@ -2838,7 +2838,7 @@ MainMenu(){
 	printf "8.    Set number of days data to keep in database\\n      Currently: ${SETTING}%s days data will be kept${CLEARFORMAT}\\n\\n" "$(DaysToKeep check)"
 	printf "s.    Toggle storage location for stats and config\\n      Current location is ${SETTING}%s${CLEARFORMAT} \\n\\n" "$(ScriptStorageLocation check)"
 	printf "q.    Toggle exclusion of %s ping tests from QoS\\n      Currently %s ping tests are ${SETTING}%s\\e[0m QoS\\n\\n" "$SCRIPT_NAME" "$SCRIPT_NAME" "$EXCLUDEFROMQOS_MENU"
-	printf "n.    Configure notifications for %s\\n\\n" "$SCRIPT_NAME"
+	printf "n.    Configure notifications and integrations for %s\\n\\n" "$SCRIPT_NAME"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
 	printf "r.    Reset %s database / delete all data\\n\\n" "$SCRIPT_NAME"
