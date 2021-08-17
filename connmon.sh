@@ -1380,7 +1380,7 @@ Email_ConfExists(){
 			echo "# Email credentials #"
 			echo "USERNAME=\"\""
 			echo "# Encrypted Password is stored in emailpw.enc file."
-			echo "emailPwEnc=\"-pbkdf2\""
+			echo "emailPwEnc=\"\""
 			echo ""
 			echo "# Server settings #"
 			echo "SMTP=\"\""
