@@ -376,6 +376,7 @@ Create_Symlinks(){
 	ln -s "$SCRIPT_STORAGE_DIR/lastx.csv" "$SCRIPT_WEB_DIR/lastx.htm" 2>/dev/null
 	
 	ln -s "$SCRIPT_CONF" "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
+	ln -s "$SCRIPT_STORAGE_DIR/.cron" "$SCRIPT_WEB_DIR/cron.js" 2>/dev/null
 	
 	ln -s "$CSV_OUTPUT_DIR" "$SCRIPT_WEB_DIR/csv" 2>/dev/null
 	
@@ -720,6 +721,7 @@ Auto_Cron(){
 				CRU_MINUTES="$(Conf_Parameters check SCHMINS)"
 				
 				cru a "$SCRIPT_NAME" "$CRU_MINUTES $CRU_HOURS * * $CRU_DAYNUMBERS /jffs/scripts/$SCRIPT_NAME generate"
+				echo "var cronschedule = \"$CRU_MINUTES $CRU_HOURS * * $CRU_DAYNUMBERS\";" > "$SCRIPT_STORAGE_DIR/.cron"
 			fi
 		;;
 		delete)
@@ -3592,6 +3594,10 @@ fi
 
 CSV_OUTPUT_DIR="$SCRIPT_STORAGE_DIR/csv"
 USER_SCRIPT_DIR="$SCRIPT_STORAGE_DIR/userscripts.d"
+
+if [ ! -f "$SCRIPT_STORAGE_DIR/.cron" ]; then
+	echo "var cronschedule = \"$(cru l | grep "$SCRIPT_NAME" | cut -f1-5 -d' ')\";" > "$SCRIPT_STORAGE_DIR/.cron"
+fi
 
 if [ -z "$1" ]; then
 	NTP_Ready
