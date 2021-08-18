@@ -2601,12 +2601,11 @@ Menu_InfluxDB(){
 Menu_Notifications(){
 	while true; do
 		ScriptHeader
-		
 		printf "${BOLD}${UNDERLINE}Notification Types${CLEARFORMAT}\\n"
 		printf "1.     Ping test\\n       Current methods: ${SETTING}$(NotificationMethods check PingTest)${CLEARFORMAT}\\n\\n"
-		printf "2.     Ping threshold (values above this will trigger an alert)\\n       Current methods: ${SETTING}$(NotificationMethods check PingThreshold)${CLEARFORMAT}\\n\\n"
-		printf "3.     Jitter threshold (values above this will trigger an alert)\\n       Current methods: ${SETTING}$(NotificationMethods check JitterThreshold)${CLEARFORMAT}\\n\\n"
-		printf "4.     Line Quality threshold (values below this will trigger an alert)\\n       Current methods: ${SETTING}$(NotificationMethods check LineQualityThreshold)${CLEARFORMAT}\\n\\n"
+		printf "2.     Ping threshold (values above this will trigger an alert)\\n       Current threshold: ${SETTING}$(Conf_Parameters check NOTIFICATIONS_PINGTHRESHOLD_VALUE) ms${CLEARFORMAT}\\n       Current methods: ${SETTING}$(NotificationMethods check PingThreshold)${CLEARFORMAT}\\n\\n"
+		printf "3.     Jitter threshold (values above this will trigger an alert)\\n       Current threshold: ${SETTING}$(Conf_Parameters check NOTIFICATIONS_JITTERTHRESHOLD_VALUE) ms${CLEARFORMAT}\\n       Current methods: ${SETTING}$(NotificationMethods check JitterThreshold)${CLEARFORMAT}\\n\\n"
+		printf "4.     Line Quality threshold (values below this will trigger an alert)\\n       Current threshold: ${SETTING}$(Conf_Parameters check NOTIFICATIONS_LINEQUALITYTHRESHOLD_VALUE) %%${CLEARFORMAT}\\n       Current methods: ${SETTING}$(NotificationMethods check LineQualityThreshold)${CLEARFORMAT}\\n\\n"
 		printf "\\n${BOLD}${UNDERLINE}Notification Methods and Integrations${CLEARFORMAT}\\n"
 		NOTIFICATION_SETTING=""
 		if ToggleNotificationTypes check NOTIFICATIONS_EMAIL; then NOTIFICATION_SETTING="${PASS}Enabled"; else NOTIFICATION_SETTING="${ERR}Disabled"; fi
@@ -2690,7 +2689,7 @@ NotificationMethods(){
 							UNIT="%%"
 						;;
 					esac
-					printf "c1.    Set threshold value - Currently: $(Conf_Parameters check "$PARAMETERNAME") $UNIT\\n\\n"
+					printf "c1.    Set threshold value - Currently: ${SETTING}$(Conf_Parameters check "$PARAMETERNAME") $UNIT${CLEARFORMAT}\\n\\n"
 				fi
 				printf "Please choose the notification methods to enable\\n"
 				printf "${BOLD}Currently enabled: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(NotificationMethods check "$2")"
