@@ -398,7 +398,7 @@ Conf_Exists(){
 				echo "SCHDAYS=*" >> "$SCRIPT_CONF"
 			fi
 			echo "SCHHOURS=*" >> "$SCRIPT_CONF"
-			PINGFREQUENCY=$(Conf_Parameters check "PINGFREQUENCY")
+			PINGFREQUENCY=$(Conf_Parameters check PINGFREQUENCY)
 			echo "SCHMINS=*/$PINGFREQUENCY" >> "$SCRIPT_CONF"
 			sed -i '/SCHEDULESTART/d;/SCHEDULEEND/d;/PINGFREQUENCY/d;' "$SCRIPT_CONF"
 		fi
@@ -505,7 +505,7 @@ PingServer(){
 			done
 		;;
 		check)
-			PINGSERVER=$(Conf_Parameters check "PINGSERVER")
+			PINGSERVER=$(Conf_Parameters check PINGSERVER)
 			echo "$PINGSERVER"
 		;;
 	esac
@@ -544,7 +544,7 @@ PingDuration(){
 			fi
 		;;
 		check)
-			PINGDURATION=$(Conf_Parameters check "PINGDURATION")
+			PINGDURATION=$(Conf_Parameters check PINGDURATION)
 			echo "$PINGDURATION"
 		;;
 	esac
@@ -583,7 +583,7 @@ DaysToKeep(){
 			fi
 		;;
 		check)
-			DAYSTOKEEP=$(Conf_Parameters check "DAYSTOKEEP")
+			DAYSTOKEEP=$(Conf_Parameters check DAYSTOKEEP)
 			echo "$DAYSTOKEEP"
 		;;
 	esac
@@ -623,7 +623,7 @@ LastXResults(){
 			fi
 		;;
 		check)
-			LASTXRESULTS=$(Conf_Parameters check "LASTXRESULTS")
+			LASTXRESULTS=$(Conf_Parameters check LASTXRESULTS)
 			echo "$LASTXRESULTS"
 		;;
 	esac
@@ -715,9 +715,9 @@ Auto_Cron(){
 			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
 			
 			if [ "$STARTUPLINECOUNT" -eq 0 ]; then
-				CRU_DAYNUMBERS="$(Conf_Parameters check "SCHDAYS" | sed 's/Sun/0/;s/Mon/1/;s/Tues/2/;s/Wed/3/;s/Thurs/4/;s/Fri/5/;s/Sat/6/;')"
-				CRU_HOURS="$(Conf_Parameters check "SCHHOURS")"
-				CRU_MINUTES="$(Conf_Parameters check "SCHMINS")"
+				CRU_DAYNUMBERS="$(Conf_Parameters check SCHDAYS | sed 's/Sun/0/;s/Mon/1/;s/Tues/2/;s/Wed/3/;s/Thurs/4/;s/Fri/5/;s/Sat/6/;')"
+				CRU_HOURS="$(Conf_Parameters check SCHHOURS)"
+				CRU_MINUTES="$(Conf_Parameters check SCHMINS)"
 				
 				cru a "$SCRIPT_NAME" "$CRU_MINUTES $CRU_HOURS * * $CRU_DAYNUMBERS /jffs/scripts/$SCRIPT_NAME generate"
 			fi
@@ -837,7 +837,7 @@ ExcludeFromQoS(){
 		sed -i 's/^EXCLUDEFROMQOS=.*$/EXCLUDEFROMQOS=false/' "$SCRIPT_CONF"
 	;;
 	check)
-		EXCLUDEFROMQOS=$(Conf_Parameters check "EXCLUDEFROMQOS")
+		EXCLUDEFROMQOS=$(Conf_Parameters check EXCLUDEFROMQOS)
 		echo "$EXCLUDEFROMQOS"
 	;;
 	esac
@@ -854,7 +854,7 @@ AutomaticMode(){
 			Auto_Cron delete 2>/dev/null
 		;;
 		check)
-			AUTOMATED=$(Conf_Parameters check "AUTOMATED")
+			AUTOMATED=$(Conf_Parameters check AUTOMATED)
 			if [ "$AUTOMATED" = "true" ]; then return 0; else return 1; fi
 		;;
 	esac
@@ -871,9 +871,9 @@ TestSchedule(){
 			Auto_Cron create 2>/dev/null
 		;;
 		check)
-			SCHDAYS=$(Conf_Parameters check "SCHDAYS")
-			SCHHOURS=$(Conf_Parameters check "SCHHOURS")
-			SCHMINS=$(Conf_Parameters check "SCHMINS")
+			SCHDAYS=$(Conf_Parameters check SCHDAYS)
+			SCHHOURS=$(Conf_Parameters check SCHHOURS)
+			SCHMINS=$(Conf_Parameters check SCHMINS)
 			echo "$SCHDAYS|$SCHHOURS|$SCHMINS"
 		;;
 	esac
@@ -910,11 +910,11 @@ ScriptStorageLocation(){
 			ScriptStorageLocation load
 		;;
 		check)
-			STORAGELOCATION=$(Conf_Parameters check "STORAGELOCATION")
+			STORAGELOCATION=$(Conf_Parameters check STORAGELOCATION)
 			echo "$STORAGELOCATION"
 		;;
 		load)
-			STORAGELOCATION=$(Conf_Parameters check "STORAGELOCATION")
+			STORAGELOCATION=$(Conf_Parameters check STORAGELOCATION)
 			if [ "$STORAGELOCATION" = "usb" ]; then
 				SCRIPT_STORAGE_DIR="/opt/share/$SCRIPT_NAME.d"
 			elif [ "$STORAGELOCATION" = "jffs" ]; then
@@ -938,7 +938,7 @@ OutputTimeMode(){
 			Generate_CSVs
 		;;
 		check)
-			OUTPUTTIMEMODE=$(Conf_Parameters check "OUTPUTTIMEMODE")
+			OUTPUTTIMEMODE=$(Conf_Parameters check OUTPUTTIMEMODE)
 			echo "$OUTPUTTIMEMODE"
 		;;
 	esac
@@ -1624,7 +1624,7 @@ Email_Recipients(){
 		done
 	;;
 	check)
-		NOTIFICATIONS_EMAIL_LIST=$(Conf_Parameters check "NOTIFICATIONS_EMAIL_LIST")
+		NOTIFICATIONS_EMAIL_LIST=$(Conf_Parameters check NOTIFICATIONS_EMAIL_LIST)
 		echo "$NOTIFICATIONS_EMAIL_LIST"
 	;;
 	esac
@@ -1791,7 +1791,7 @@ Webhook_Targets(){
 		done
 	;;
 	check)
-		NOTIFICATIONS_WEBHOOK_LIST=$(Conf_Parameters check "NOTIFICATIONS_WEBHOOK_LIST")
+		NOTIFICATIONS_WEBHOOK_LIST=$(Conf_Parameters check NOTIFICATIONS_WEBHOOK_LIST)
 		echo "$NOTIFICATIONS_WEBHOOK_LIST"
 	;;
 	esac
@@ -1852,7 +1852,7 @@ Pushover_Devices(){
 		done
 	;;
 	check)
-		NOTIFICATIONS_PUSHOVER_LIST=$(Conf_Parameters check "NOTIFICATIONS_PUSHOVER_LIST")
+		NOTIFICATIONS_PUSHOVER_LIST=$(Conf_Parameters check NOTIFICATIONS_PUSHOVER_LIST)
 		echo "$NOTIFICATIONS_PUSHOVER_LIST"
 	;;
 	esac
@@ -1860,8 +1860,8 @@ Pushover_Devices(){
 
 SendPushover(){
 	PUSHOVERCONTENT="$1"
-	PUSHOVER_API=$(Conf_Parameters check "NOTIFICATIONS_PUSHOVER_API")
-	PUSHOVER_USERKEY=$(Conf_Parameters check "NOTIFICATIONS_PUSHOVER_USERKEY")
+	PUSHOVER_API=$(Conf_Parameters check NOTIFICATIONS_PUSHOVER_API)
+	PUSHOVER_USERKEY=$(Conf_Parameters check NOTIFICATIONS_PUSHOVER_USERKEY)
 	if [ -z "$PUSHOVER_API" ] || [ -z "$PUSHOVER_USERKEY" ]; then
 		Print_Output false "No Pushover API or UserKey specified" "$ERR"
 		return 1
@@ -1882,7 +1882,7 @@ SendPushover(){
 }
 
 SendHealthcheckPing(){
-	NOTIFICATIONS_HEALTHCHECK_UUID=$(Conf_Parameters check "NOTIFICATIONS_HEALTHCHECK_UUID")
+	NOTIFICATIONS_HEALTHCHECK_UUID=$(Conf_Parameters check NOTIFICATIONS_HEALTHCHECK_UUID)
 	TESTFAIL=""
 	if [ "$1" = "Fail" ]; then
 		TESTFAIL="/fail"
@@ -1904,15 +1904,15 @@ SendToInfluxDB(){
 	PING="$2"
 	JITTER="$3"
 	LINEQUAL="$4"
-	NOTIFICATIONS_INFLUXDB_HOST=$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_HOST")
-	NOTIFICATIONS_INFLUXDB_PORT=$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_PORT")
-	NOTIFICATIONS_INFLUXDB_DB=$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_DB")
-	NOTIFICATIONS_INFLUXDB_VERSION=$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_VERSION")
+	NOTIFICATIONS_INFLUXDB_HOST=$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_HOST)
+	NOTIFICATIONS_INFLUXDB_PORT=$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_PORT)
+	NOTIFICATIONS_INFLUXDB_DB=$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_DB)
+	NOTIFICATIONS_INFLUXDB_VERSION=$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_VERSION)
 	
 	if [ "$NOTIFICATIONS_INFLUXDB_VERSION" = "1.8" ]; then
-		INFLUX_AUTHHEADER="$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_USERNAME"):$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_PASSWORD")"
+		INFLUX_AUTHHEADER="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_USERNAME):$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_PASSWORD)"
 	elif [ "$NOTIFICATIONS_INFLUXDB_VERSION" = "2.0" ]; then
-		INFLUX_AUTHHEADER=$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_APITOKEN")
+		INFLUX_AUTHHEADER=$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_APITOKEN)
 	fi
 	
 	/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 --output /dev/null -XPOST "http://$NOTIFICATIONS_INFLUXDB_HOST:$NOTIFICATIONS_INFLUXDB_PORT/api/v2/write?bucket=$NOTIFICATIONS_INFLUXDB_DB&precision=s" \
@@ -2206,7 +2206,7 @@ TriggerNotifications(){
 	unset IFS
 	
 	if ToggleNotificationTypes check NOTIFICATIONS_HEALTHCHECK && [ "$TRIGGERTYPE" = "PingTest" ]; then
-		NOTIFICATIONS_HEALTHCHECK_UUID=$(Conf_Parameters check "NOTIFICATIONS_HEALTHCHECK_UUID")
+		NOTIFICATIONS_HEALTHCHECK_UUID=$(Conf_Parameters check NOTIFICATIONS_HEALTHCHECK_UUID)
 		TESTFAIL=""
 		if [ "$(echo "$LINEQUAL" | cut -f1 -d' ' | cut -f1 -d'.')" -eq 0 ]; then
 			SendHealthcheckPing "Fail"
@@ -2378,8 +2378,8 @@ Menu_PushoverNotifications(){
 		fi
 		printf "1.     Toggle Pushover notifications (subject to type configuration)\\n       Currently: ${BOLD}${NOTIFICATIONS_PUSHOVER}${CLEARFORMAT}\\n\\n"
 		printf "\\n${BOLD}${UNDERLINE}Pushover Configuration${CLEARFORMAT}\\n"
-		printf "c1.    Set API token\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_PUSHOVER_API")"
-		printf "c2.    Set User key\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_PUSHOVER_USERKEY")"
+		printf "c1.    Set API token\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check NOTIFICATIONS_PUSHOVER_API)"
+		printf "c2.    Set User key\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check NOTIFICATIONS_PUSHOVER_USERKEY)"
 		printf "c3.    Set list of Pushover devices for %s\\n       Current devices: ${SETTING}${NOTIFICATIONS_PUSHOVER_LIST}${CLEARFORMAT}\\n\\n" "$SCRIPT_NAME"
 		printf "cs.    Send a test pushover notification\\n\\n"
 		printf "e.     Go back\\n\\n"
@@ -2491,7 +2491,7 @@ Menu_HealthcheckNotifications(){
 		printf "1.    Toggle healthcheck notifications\\n      Currently: ${BOLD}${NOTIFICATIONS_HEALTHCHECK}${CLEARFORMAT}\\n\\n"
 		
 		printf "\\n${BOLD}${UNDERLINE}Healthcheck Configuration${CLEARFORMAT}\\n\\n"
-		printf "c1.    Set Healthcheck UUID\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_HEALTHCHECK_UUID")"
+		printf "c1.    Set Healthcheck UUID\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check NOTIFICATIONS_HEALTHCHECK_UUID)"
 		printf "Cron schedule for Healthchecks.io configuration: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(cru l | grep "$SCRIPT_NAME" | cut -f1-5 -d' ')"
 		printf "cs.    Send a test healthcheck notification\\n\\n"
 		printf "e.     Go back\\n\\n"
@@ -2535,13 +2535,13 @@ Menu_InfluxDB(){
 		printf "1.    Toggle InfluxDB exporting\\n      Currently: ${BOLD}${NOTIFICATIONS_INFLUXDB}${CLEARFORMAT}\\n\\n"
 		
 		printf "\\n${BOLD}${UNDERLINE}InfluxDB Configuration${CLEARFORMAT}\\n\\n"
-		printf "c1.    Set InfluxDB Host\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_HOST")"
-		printf "c2.    Set InfluxDB Port\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_PORT")"
-		printf "c3.    Set InfluxDB Database\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_DB")"
-		printf "c4.    Set InfluxDB Version\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_VERSION")"
-		printf "c5.    Set InfluxDB Username (v1.8+ only)\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_USERNAME")"
+		printf "c1.    Set InfluxDB Host\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_HOST)"
+		printf "c2.    Set InfluxDB Port\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_PORT)"
+		printf "c3.    Set InfluxDB Database\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_DB)"
+		printf "c4.    Set InfluxDB Version\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_VERSION)"
+		printf "c5.    Set InfluxDB Username (v1.8+ only)\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_USERNAME)"
 		printf "c6.    Set InfluxDB Password (v1.8+ only)\\n\\n"
-		printf "c7.    Set InfluxDB API Token (v2.x only)\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_APITOKEN")"
+		printf "c7.    Set InfluxDB API Token (v2.x only)\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_APITOKEN)"
 		printf "cs.    Send test data to InfluxDB\\n\\n"
 		printf "e.     Go back\\n\\n"
 		printf "${BOLD}##############################################################${CLEARFORMAT}\\n"
@@ -2567,7 +2567,7 @@ Menu_InfluxDB(){
 				Notification_String "InfluxDB Database"
 			;;
 			c4)
-				if [ "$(Conf_Parameters check "NOTIFICATIONS_INFLUXDB_VERSION")" = "1.8" ]; then
+				if [ "$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_VERSION)" = "1.8" ]; then
 					Conf_Parameters update "InfluxDB Version" "2.0"
 				else
 					Conf_Parameters update "InfluxDB Version" "1.8"
@@ -2768,19 +2768,19 @@ NotificationMethods(){
 		check)
 			case "$2" in
 				PingTest)
-					NOTIFICATION_SETTING=$(Conf_Parameters check "NOTIFICATIONS_PINGTEST")
+					NOTIFICATION_SETTING=$(Conf_Parameters check NOTIFICATIONS_PINGTEST)
 					echo "$NOTIFICATION_SETTING"
 				;;
 				PingThreshold)
-					NOTIFICATION_SETTING=$(Conf_Parameters check "NOTIFICATIONS_PINGTHRESHOLD")
+					NOTIFICATION_SETTING=$(Conf_Parameters check NOTIFICATIONS_PINGTHRESHOLD)
 					echo "$NOTIFICATION_SETTING"
 				;;
 				JitterThreshold)
-					NOTIFICATION_SETTING=$(Conf_Parameters check "NOTIFICATIONS_JITTERTHRESHOLD")
+					NOTIFICATION_SETTING=$(Conf_Parameters check NOTIFICATIONS_JITTERTHRESHOLD)
 					echo "$NOTIFICATION_SETTING"
 				;;
 				LineQualityThreshold)
-					NOTIFICATION_SETTING=$(Conf_Parameters check "NOTIFICATIONS_LINEQUALITYTHRESHOLD")
+					NOTIFICATION_SETTING=$(Conf_Parameters check NOTIFICATIONS_LINEQUALITYTHRESHOLD)
 					echo "$NOTIFICATION_SETTING"
 				;;
 			esac
