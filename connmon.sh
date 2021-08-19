@@ -74,7 +74,7 @@ Firmware_Version_Check(){
 ### Code for these functions inspired by https://github.com/Adamm00 - credit to @Adamm ###
 Check_Lock(){
 	if [ -f "/tmp/$SCRIPT_NAME.lock" ]; then
-		ageoflock=$(($(date +%s) - $(date +%s -r /tmp/$SCRIPT_NAME.lock)))
+		ageoflock=$(($(/bin/date +%s) - $(/bin/date +%s -r /tmp/$SCRIPT_NAME.lock)))
 		if [ "$ageoflock" -gt 600 ]; then
 			Print_Output true "Stale lock file found (>600 seconds old) - purging lock" "$ERR"
 			kill "$(sed -n '1p' /tmp/$SCRIPT_NAME.lock)" >/dev/null 2>&1
@@ -1082,8 +1082,8 @@ Run_PingTest(){
 	TZ=$(cat /etc/TZ)
 	export TZ
 	
-	timenow=$(date +"%s")
-	timenowfriendly=$(date +"%c")
+	timenow=$(/bin/date +"%s")
+	timenowfriendly=$(/bin/date +"%c")
 	
 	ping=0
 	jitter=0
@@ -1153,8 +1153,8 @@ Generate_CSVs(){
 	TZ=$(cat /etc/TZ)
 	export TZ
 	
-	timenow=$(date +"%s")
-	timenowfriendly=$(date +"%c")
+	timenow=$(/bin/date +"%s")
+	timenowfriendly=$(/bin/date +"%c")
 	
 	metriclist="Ping Jitter LineQuality"
 	
@@ -1683,7 +1683,7 @@ SendEmail(){
 			echo "From: \"connmon\" <$FROM_ADDRESS>"
 			echo "To: \"$TO_ADDRESS\" <$TO_ADDRESS>"
 			echo "Subject: $EMAILSUBJECT"
-			echo "Date: $(date -R)"
+			echo "Date: $(/bin/date -R)"
 			echo "MIME-Version: 1.0"
 			echo "Content-Type: multipart/mixed; boundary=\"MULTIPART-MIXED-BOUNDARY\""
 			echo ""
@@ -2298,10 +2298,10 @@ Menu_EmailNotifications(){
 			cs)
 				NOTIFICATIONS_EMAIL_LIST=$(Email_Recipients check)
 				if [ -z "$NOTIFICATIONS_EMAIL_LIST" ]; then
-					SendEmail "Test email - $(date +"%c")" "This is a test email!"
+					SendEmail "Test email - $(/bin/date +"%c")" "This is a test email!"
 				else
 					for EMAIL in $NOTIFICATIONS_EMAIL_LIST; do
-						SendEmail "Test email - $(date +"%c")" "This is a test email!" "$EMAIL"
+						SendEmail "Test email - $(/bin/date +"%c")" "This is a test email!" "$EMAIL"
 					done
 				fi
 				printf "\\n"
@@ -2352,7 +2352,7 @@ Menu_WebhookNotifications(){
 				fi
 				IFS=$','
 				for WEBHOOK in $NOTIFICATIONS_WEBHOOK_LIST; do
-					SendWebhook "$(date +"%c")\n\nThis is a test webhook message!" "$WEBHOOK"
+					SendWebhook "$(/bin/date +"%c")\n\nThis is a test webhook message!" "$WEBHOOK"
 				done
 				unset IFS
 				printf "\\n"
@@ -2408,7 +2408,7 @@ Menu_PushoverNotifications(){
 				Pushover_Devices update
 			;;
 			cs)
-				SendPushover "$(date +"%c")"$'\n'$'\n'"This is a test pushover message!"
+				SendPushover "$(/bin/date +"%c")"$'\n'$'\n'"This is a test pushover message!"
 				printf "\\n"
 				PressEnter
 			;;
@@ -2468,7 +2468,7 @@ Menu_CustomActions(){
 					for f in $FILES; do
 						if [ -f "$f" ]; then
 							Print_Output false "Executing user script: $f"
-							sh "$f" "$(date +%c)" "0 ms" "1 ms" "0%"
+							sh "$f" "$(/bin/date +%c)" "0 ms" "1 ms" "0%"
 						fi
 					done
 					PressEnter
@@ -2585,7 +2585,7 @@ Menu_InfluxDB(){
 				Notification_String "InfluxDB API Token"
 			;;
 			cs)
-				SendToInfluxDB "$(date +%s)" 30 15 90
+				SendToInfluxDB "$(/bin/date +%s)" 30 15 90
 				printf "\\n"
 				PressEnter
 			;;
