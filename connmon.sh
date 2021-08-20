@@ -3731,6 +3731,75 @@ case "$1" in
 		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}doupdate" ]; then
 			Update_Version force unattended
 			exit 0
+		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}customactionlist" ]; then
+			rm -f "$SCRIPT_STORAGE_DIR/.customactionlist"
+			sleep 3
+			CustomAction_List silent
+			exit 0
+		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}TestWebhooks" ]; then
+			rm -f "$SCRIPT_WEB_DIR/detect_test.js"
+			echo 'var teststatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			NOTIFICATIONS_WEBHOOK_LIST=$(Webhook_Targets check)
+			if [ -z "$NOTIFICATIONS_WEBHOOK_LIST" ]; then
+				echo 'var teststatus = "Fail";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			fi
+			IFS=$','
+			success="true"
+			for WEBHOOK in $NOTIFICATIONS_WEBHOOK_LIST; do
+				if ! SendWebhook "$(/bin/date +"%c")\n\nThis is a test webhook message!" "$WEBHOOK"; then
+					success="false"
+				fi
+			done
+			unset IFS
+			if [ "$success" = "true" ]; then
+				echo 'var teststatus = "Success";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			else
+				echo 'var teststatus = "Fail";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			fi
+			exit 0
+		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}TestPushover" ]; then
+			rm -f "$SCRIPT_WEB_DIR/detect_test.js"
+			echo 'var teststatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			if SendPushover "$(/bin/date +"%c")"$'\n'$'\n'"This is a test pushover message!"; then
+				echo 'var teststatus = "Success";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			else
+				echo 'var teststatus = "Fail";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			fi
+			exit 0
+		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}TestCustomActions" ]; then
+			rm -f "$SCRIPT_WEB_DIR/detect_test.js"
+			echo 'var teststatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			if [ -z "$(ls -A "$USER_SCRIPT_DIR")" ]; then
+				echo 'var teststatus = "Fail";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			else
+				printf "\\n"
+				FILES="$USER_SCRIPT_DIR/*.sh"
+				for f in $FILES; do
+					if [ -f "$f" ]; then
+						sh "$f" "$(/bin/date +%c)" "30 ms" "15 ms" "90%"
+					fi
+				done
+				echo 'var teststatus = "Success";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			fi
+			exit 0
+		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}TestHealthcheck" ]; then
+			rm -f "$SCRIPT_WEB_DIR/detect_test.js"
+			echo 'var teststatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			if SendHealthcheckPing "Pass"; then
+				echo 'var teststatus = "Success";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			else
+				echo 'var teststatus = "Fail";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			fi
+			exit 0
+		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}TestInfluxDB" ]; then
+			rm -f "$SCRIPT_WEB_DIR/detect_test.js"
+			echo 'var teststatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			if SendToInfluxDB "$(/bin/date +%s)" 30 15 90; then
+				echo 'var teststatus = "Success";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			else
+				echo 'var teststatus = "Fail";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			fi
+			exit 0
 		fi
 		exit 0
 	;;
