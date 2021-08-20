@@ -3753,6 +3753,26 @@ case "$1" in
 		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}doupdate" ]; then
 			Update_Version force unattended
 			exit 0
+		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}emailpassword" ]; then
+			if Email_ConfExists; then
+				rm -f "$SCRIPT_WEB_DIR/password.htm"
+				sleep 3
+				PWENCFILE="$EMAIL_DIR/emailpw.enc"
+				PASSWORD=""
+				if /usr/sbin/openssl aes-256-cbc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi >/dev/null 2>&1 ; then
+					# old OpenSSL 1.0.x
+					PASSWORD="$(/usr/sbin/openssl aes-256-cbc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi 2>/dev/null)"
+				elif /usr/sbin/openssl aes-256-cbc -d -md md5 -in "$PWENCFILE" -pass pass:ditbabot,isoi >/dev/null 2>&1 ; then
+					# new OpenSSL 1.1.x non-converted password
+					PASSWORD="$(/usr/sbin/openssl aes-256-cbc -d -md md5 -in "$PWENCFILE" -pass pass:ditbabot,isoi 2>/dev/null)"
+				elif /usr/sbin/openssl aes-256-cbc $emailPwEnc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi >/dev/null 2>&1 ; then
+					# new OpenSSL 1.1.x converted password with -pbkdf2 flag
+					PASSWORD="$(/usr/sbin/openssl aes-256-cbc $emailPwEnc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi 2>/dev/null)"
+				fi
+				echo "$PASSWORD" > "$SCRIPT_WEB_DIR/password.htm"
+				sleep 10
+				rm -f "$SCRIPT_WEB_DIR/password.htm"
+			fi
 		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}customactionlist" ]; then
 			rm -f "$SCRIPT_STORAGE_DIR/.customactionlist"
 			sleep 3
