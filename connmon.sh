@@ -391,6 +391,7 @@ Create_Symlinks(){
 	ln -s "$SCRIPT_STORAGE_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
 	ln -s "$SCRIPT_STORAGE_DIR/lastx.csv" "$SCRIPT_WEB_DIR/lastx.htm" 2>/dev/null
 	
+	ln -s "$EMAIL_CONF" "$SCRIPT_WEB_DIR/email_config.htm" 2>/dev/null
 	ln -s "$SCRIPT_CONF" "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
 	ln -s "$SCRIPT_DIR/CHANGELOG.md" "$SCRIPT_WEB_DIR/changelog.htm" 2>/dev/null
 	ln -s "$SCRIPT_STORAGE_DIR/.cron" "$SCRIPT_WEB_DIR/cron.js" 2>/dev/null
