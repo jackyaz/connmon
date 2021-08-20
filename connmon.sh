@@ -2189,13 +2189,13 @@ TriggerNotifications(){
 					if [ -f "$f" ]; then
 						Print_Output true "Executing user script: $f"
 						if [ "$TRIGGERTYPE" = "PingTest" ]; then
-							sh "$f" "$DATETIME" "$PING" "$JITTER" "$LINEQUAL"
+							sh "$f" "$TRIGGERTYPE" "$DATETIME" "$PING" "$JITTER" "$LINEQUAL"
 						elif [ "$TRIGGERTYPE" = "PingThreshold" ]; then
-							sh "$f" "$DATETIME" "$PING" "$THRESHOLD"
+							sh "$f" "$TRIGGERTYPE" "$DATETIME" "$PING" "$THRESHOLD"
 						elif [ "$TRIGGERTYPE" = "JitterThreshold" ]; then
-							sh "$f" "$DATETIME" "$JITTER" "$THRESHOLD"
+							sh "$f" "$TRIGGERTYPE" "$DATETIME" "$JITTER" "$THRESHOLD"
 						elif [ "$TRIGGERTYPE" = "LineQualityThreshold" ]; then
-							sh "$f" "$DATETIME" "$LINEQUAL" "$THRESHOLD"
+							sh "$f" "$TRIGGERTYPE" "$DATETIME" "$LINEQUAL" "$THRESHOLD"
 						fi
 					fi
 				done
@@ -2484,7 +2484,7 @@ Menu_CustomActions(){
 					for f in $FILES; do
 						if [ -f "$f" ]; then
 							Print_Output false "Executing user script: $f"
-							sh "$f" "$(/bin/date +%c)" "0 ms" "1 ms" "0%"
+							sh "$f" "$(/bin/date +%c)" "30 ms" "15 ms" "90%"
 						fi
 					done
 					PressEnter
