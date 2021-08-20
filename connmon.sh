@@ -1455,7 +1455,7 @@ Email_Header(){
 		printf "mail.com    smtp.mail.com          587  smtp\\n"
 		printf "Yahoo!      smtp.mail.yahoo.com    465  smtps\\n"
 		printf "outlook.com smtp-mail.outlook.com  587  smtp\\n"
-		printf "%s\\n\\n" "------------------------------------------------"
+		printf "%s" "------------------------------------------------"
 	} > "$SCRIPT_STORAGE_DIR/.emailinfo"
 }
 
