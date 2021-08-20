@@ -722,7 +722,7 @@ Auto_Cron(){
 				CRU_MINUTES="$(Conf_Parameters check SCHMINS)"
 				
 				cru a "$SCRIPT_NAME" "$CRU_MINUTES $CRU_HOURS * * $CRU_DAYNUMBERS /jffs/scripts/$SCRIPT_NAME generate"
-				echo "var cronschedule = \"$CRU_MINUTES $CRU_HOURS * * $CRU_DAYNUMBERS\";" > "$SCRIPT_STORAGE_DIR/.cron"
+				echo "\"$CRU_MINUTES $CRU_HOURS * * $CRU_DAYNUMBERS\"" > "$SCRIPT_STORAGE_DIR/.cron"
 			fi
 		;;
 		delete)
