@@ -172,6 +172,9 @@ Update_Version(){
 		
 		if [ "$isupdate" = "version" ]; then
 			Print_Output true "New version of $SCRIPT_NAME available - $serverver" "$PASS"
+			changelog=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/CHANGELOG.md" | sed -n "/$serverver"'/,/^$/p' | sed 's/## //')
+			printf "${BOLD}${UNDERLINE}Changelog\\n%s\\n\\n" "$changelog"
+			
 		elif [ "$isupdate" = "md5" ]; then
 			Print_Output true "MD5 hash of $SCRIPT_NAME does not match - hotfix available - $serverver" "$PASS"
 		fi
@@ -182,6 +185,7 @@ Update_Version(){
 			case "$confirm" in
 				y|Y)
 					printf "\\n"
+					Update_File CHANGELOG.md
 					Update_File shared-jy.tar.gz
 					Update_File connmonstats_www.asp
 					/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
@@ -208,6 +212,7 @@ Update_Version(){
 	if [ "$1" = "force" ]; then
 		serverver=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 		Print_Output true "Downloading latest version ($serverver) of $SCRIPT_NAME" "$PASS"
+		Update_File CHANGELOG.md
 		Update_File shared-jy.tar.gz
 		Update_File connmonstats_www.asp
 		/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
@@ -3084,6 +3089,7 @@ Menu_Install(){
 	ScriptStorageLocation load
 	Create_Symlinks
 	
+	Update_File CHANGELOG.md
 	Update_File connmonstats_www.asp
 	Update_File shared-jy.tar.gz
 	
