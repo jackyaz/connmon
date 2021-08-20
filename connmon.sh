@@ -377,6 +377,7 @@ Create_Symlinks(){
 	
 	ln -s "$SCRIPT_CONF" "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
 	ln -s "$SCRIPT_STORAGE_DIR/.cron" "$SCRIPT_WEB_DIR/cron.js" 2>/dev/null
+	ln -s "$SCRIPT_STORAGE_DIR/.customactioninfo" "$SCRIPT_WEB_DIR/customactioninfo.htm" 2>/dev/null
 	
 	ln -s "$CSV_OUTPUT_DIR" "$SCRIPT_WEB_DIR/csv" 2>/dev/null
 	
@@ -1308,6 +1309,12 @@ Process_Upgrade(){
 	if [ ! -f /opt/bin/dig ]; then
 		opkg update
 		opkg install bind-dig
+	fi
+	if [ ! -f "$SCRIPT_STORAGE_DIR/.cron" ]; then
+		echo "var cronschedule = \"$(cru l | grep "$SCRIPT_NAME" | cut -f1-5 -d' ')\";" > "$SCRIPT_STORAGE_DIR/.cron"
+	fi
+	if [ ! -f "$SCRIPT_STORAGE_DIR/.customactioninfo" ]; then
+		CustomAction_Info silent
 	fi
 }
 
@@ -2413,6 +2420,29 @@ Menu_PushoverNotifications(){
 	done
 }
 
+CustomAction_Info(){
+	if [ -z "$1" ]; then
+		printf "\\n${BOLD}${UNDERLINE}Scripts are passed arguments, which change depending on the type of trigger${CLEARFORMAT}\\n\\n"
+		printf "${BOLD}${UNDERLINE}Trigger                 Argument1            Argument2         Argument3   Argument4           Argument5${CLEARFORMAT}\\n"
+		printf "${BOLD}Tests${CLEARFORMAT}"'                   PingTest             FormattedDateTime "Ping ms"   "Jitter ms"         "Latency %%"'"\\n"
+		printf "${BOLD}Ping thresholds${CLEARFORMAT}"'         PingThreshold        FormattedDateTime "Ping ms"   "ThresholdValue ms"'"\\n"
+		printf "${BOLD}Jitter thresholds${CLEARFORMAT}"'       JitterThreshold      FormattedDateTime "Jitter ms" "ThresholdValue ms"'"\\n"
+		printf "${BOLD}Line Quality thresholds${CLEARFORMAT}"' LineQualityThreshold FormattedDateTime "Latency %%" "ThresholdValue %%"'"\\n\\n"
+		printf "e.     Go back\\n\\n"
+		printf "${BOLD}##############################################################${CLEARFORMAT}\\n"
+		printf "\\n"
+	fi
+	
+	{
+		printf "\\n${BOLD}${UNDERLINE}Scripts are passed arguments, which change depending on the type of trigger${CLEARFORMAT}\\n\\n"
+		printf "${BOLD}${UNDERLINE}Trigger                 Argument1            Argument2         Argument3   Argument4           Argument5${CLEARFORMAT}\\n"
+		printf "${BOLD}Tests${CLEARFORMAT}"'                   PingTest             FormattedDateTime "Ping ms"   "Jitter ms"         "Latency %%"'"\\n"
+		printf "${BOLD}Ping thresholds${CLEARFORMAT}"'         PingThreshold        FormattedDateTime "Ping ms"   "ThresholdValue ms"'"\\n"
+		printf "${BOLD}Jitter thresholds${CLEARFORMAT}"'       JitterThreshold      FormattedDateTime "Jitter ms" "ThresholdValue ms"'"\\n"
+		printf "${BOLD}Line Quality thresholds${CLEARFORMAT}"' LineQualityThreshold FormattedDateTime "Latency %%" "ThresholdValue %%"'"\\n\\n"
+	} > "$SCRIPT_STORAGE_DIR/.customactioninfo"
+}
+
 Menu_CustomActions(){
 	while true; do
 		ScriptHeader
@@ -2432,11 +2462,7 @@ Menu_CustomActions(){
 			done
 		fi
 		
-		printf "\\nScripts are passed arguments, which change depending on the type of trigger\\n"
-		printf '       For ping tests: PingTest FormattedDateTime "Ping ms" "Jitter ms" "Latency %%"'"\\n\\n"
-		printf "e.     Go back\\n\\n"
-		printf "${BOLD}##############################################################${CLEARFORMAT}\\n"
-		printf "\\n"
+		CustomAction_Info
 		
 		printf "Choose an option:  "
 		read -r custommenu
@@ -3584,10 +3610,6 @@ fi
 
 CSV_OUTPUT_DIR="$SCRIPT_STORAGE_DIR/csv"
 USER_SCRIPT_DIR="$SCRIPT_STORAGE_DIR/userscripts.d"
-
-if [ ! -f "$SCRIPT_STORAGE_DIR/.cron" ]; then
-	echo "var cronschedule = \"$(cru l | grep "$SCRIPT_NAME" | cut -f1-5 -d' ')\";" > "$SCRIPT_STORAGE_DIR/.cron"
-fi
 
 if [ -z "$1" ]; then
 	NTP_Ready
