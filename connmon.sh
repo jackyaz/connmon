@@ -2448,7 +2448,7 @@ Menu_CustomActions(){
 		ScriptHeader
 		NOTIFICATIONS_CUSTOM=""
 		if ToggleNotificationTypes check NOTIFICATIONS_CUSTOM; then NOTIFICATIONS_CUSTOM="${PASS}Enabled"; else NOTIFICATIONS_CUSTOM="${ERR}Disabled"; fi
-		printf "1.    Toggle custom actions (subject to type configuration)\\n      Currently: ${BOLD}${NOTIFICATIONS_CUSTOM}${CLEARFORMAT}\\n\\n"
+		printf "1.    Toggle custom actions and scripts (subject to type configuration)\\n      Currently: ${BOLD}${NOTIFICATIONS_CUSTOM}${CLEARFORMAT}\\n\\n"
 		printf "Scripts that will be run:\\n"
 		
 		if [ -z "$(ls -A "$USER_SCRIPT_DIR")" ]; then
