@@ -3770,7 +3770,7 @@ case "$1" in
 					PASSWORD="$(/usr/sbin/openssl aes-256-cbc $emailPwEnc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi 2>/dev/null)"
 				fi
 				echo "$PASSWORD" > "$SCRIPT_WEB_DIR/password.htm"
-				sleep 10
+				sleep 30
 				rm -f "$SCRIPT_WEB_DIR/password.htm"
 			fi
 		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}customactionlist" ]; then
