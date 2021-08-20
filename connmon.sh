@@ -263,6 +263,13 @@ Update_File(){
 				Print_Output true "New version of $1 downloaded" "$PASS"
 			fi
 		fi
+	elif [ "$1" = "CHANGELOG.md" ]; then
+		tmpfile="/tmp/$1"
+		Download_File "$SCRIPT_REPO/$1" "$tmpfile"
+		if ! diff -q "$tmpfile" "$SCRIPT_DIR/$1" >/dev/null 2>&1; then
+			Download_File "$SCRIPT_REPO/$1" "$SCRIPT_DIR/$1"
+		fi
+		rm -f "$tmpfile"
 	else
 		return 1
 	fi
