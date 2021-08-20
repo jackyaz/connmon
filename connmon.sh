@@ -319,6 +319,9 @@ Conf_FromSettings(){
 			while IFS='' read -r line || [ -n "$line" ]; do
 				SETTINGNAME="$(echo "$line" | cut -f1 -d'=' | awk '{ print toupper($1) }')"
 				SETTINGVALUE="$(echo "$line" | cut -f2 -d'=')"
+				if [ "$SETTINGNAME" = "NOTIFICATIONS_PUSHOVER_LIST" ] || [ "$SETTINGNAME" = "NOTIFICATIONS_WEBHOOK_LIST" ]; then
+					SETTINGVALUE=$(echo "$SETTINGVALUE" | sed 's~||||~,~g')
+				fi
 				sed -i "s~$SETTINGNAME=.*~$SETTINGNAME=$SETTINGVALUE~" "$SCRIPT_CONF"
 			done < "$TMPFILE"
 			grep 'connmon_version' "$SETTINGSFILE" > "$TMPFILE"
