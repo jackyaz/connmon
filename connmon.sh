@@ -1316,6 +1316,9 @@ Process_Upgrade(){
 	if [ ! -f "$SCRIPT_STORAGE_DIR/.customactioninfo" ]; then
 		CustomAction_Info silent
 	fi
+	if [ ! -f "$SCRIPT_STORAGE_DIR/.customactionlist" ]; then
+		CustomAction_List silent
+	fi
 }
 
 Shortcut_Script(){
@@ -2441,6 +2444,25 @@ CustomAction_Info(){
 		printf "${BOLD}Jitter thresholds${CLEARFORMAT}"'       JitterThreshold      FormattedDateTime "Jitter ms" "ThresholdValue ms"'"\\n"
 		printf "${BOLD}Line Quality thresholds${CLEARFORMAT}"' LineQualityThreshold FormattedDateTime "Latency %%" "ThresholdValue %%"'"\\n\\n"
 	} > "$SCRIPT_STORAGE_DIR/.customactioninfo"
+}
+
+CustomAction_List(){
+	if [ -z "$1" ]; then
+		FILES="$USER_SCRIPT_DIR/*.sh"
+		for f in $FILES; do
+			if [ -f "$f" ]; then
+				printf "${SETTING}%s${CLEARFORMAT}\\n" "$f"
+			fi
+		done
+	fi
+	
+	rm -f "$SCRIPT_STORAGE_DIR/.customactionlist"
+	FILES="$USER_SCRIPT_DIR/*.sh"
+	for f in $FILES; do
+		if [ -f "$f" ]; then
+			printf "${SETTING}%s${CLEARFORMAT}\\n" "$f" >> "$SCRIPT_STORAGE_DIR/.customactionlist"
+		fi
+	done
 }
 
 Menu_CustomActions(){
