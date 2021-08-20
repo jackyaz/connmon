@@ -173,7 +173,7 @@ Update_Version(){
 		if [ "$isupdate" = "version" ]; then
 			Print_Output true "New version of $SCRIPT_NAME available - $serverver" "$PASS"
 			changelog=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/CHANGELOG.md" | sed -n "/$serverver"'/,/^$/p' | sed 's/## //')
-			printf "${BOLD}${UNDERLINE}Changelog\\n%s\\n\\n" "$changelog"
+			printf "${BOLD}${UNDERLINE}Changelog\\n%s${CLEARFORMAT}\\n\\n" "$changelog"
 			
 		elif [ "$isupdate" = "md5" ]; then
 			Print_Output true "MD5 hash of $SCRIPT_NAME does not match - hotfix available - $serverver" "$PASS"
