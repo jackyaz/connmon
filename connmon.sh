@@ -2478,11 +2478,11 @@ CustomAction_List(){
 		done
 	fi
 	
-	rm -f "$SCRIPT_STORAGE_DIR/.customactionlist"
+	printf "Scripts that will be run:\\n" > "$SCRIPT_STORAGE_DIR/.customactionlist"
 	FILES="$USER_SCRIPT_DIR/*.sh"
 	for f in $FILES; do
 		if [ -f "$f" ]; then
-			printf "${SETTING}%s${CLEARFORMAT}\\n" "$f" >> "$SCRIPT_STORAGE_DIR/.customactionlist"
+			printf "%s\\n" "$f" >> "$SCRIPT_STORAGE_DIR/.customactionlist"
 		fi
 	done
 }
@@ -2498,12 +2498,7 @@ Menu_CustomActions(){
 		if [ -z "$(ls -A "$USER_SCRIPT_DIR")" ]; then
 			printf "${SETTING}No scripts found in ${USER_SCRIPT_DIR}${CLEARFORMAT}\\n"
 		else
-			FILES="$USER_SCRIPT_DIR/*.sh"
-			for f in $FILES; do
-				if [ -f "$f" ]; then
-					printf "${SETTING}%s${CLEARFORMAT}\\n" "$f"
-				fi
-			done
+			CustomAction_List
 		fi
 		
 		CustomAction_Info
