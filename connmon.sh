@@ -737,7 +737,7 @@ Auto_Cron(){
 				CRU_MINUTES="$(Conf_Parameters check SCHMINS)"
 				
 				cru a "$SCRIPT_NAME" "$CRU_MINUTES $CRU_HOURS * * $CRU_DAYNUMBERS /jffs/scripts/$SCRIPT_NAME generate"
-				echo "\"$CRU_MINUTES $CRU_HOURS * * $CRU_DAYNUMBERS\"" > "$SCRIPT_STORAGE_DIR/.cron"
+				echo "$CRU_MINUTES $CRU_HOURS * * $CRU_DAYNUMBERS" > "$SCRIPT_STORAGE_DIR/.cron"
 			fi
 		;;
 		delete)
@@ -2459,12 +2459,12 @@ CustomAction_Info(){
 	fi
 	
 	{
-		printf "\\n${BOLD}${UNDERLINE}Scripts are passed arguments, which change depending on the type of trigger${CLEARFORMAT}\\n\\n"
-		printf "${BOLD}${UNDERLINE}Trigger                 Argument1            Argument2         Argument3   Argument4           Argument5${CLEARFORMAT}\\n"
-		printf "${BOLD}Tests${CLEARFORMAT}"'                   PingTest             FormattedDateTime "Ping ms"   "Jitter ms"         "Latency %%"'"\\n"
-		printf "${BOLD}Ping thresholds${CLEARFORMAT}"'         PingThreshold        FormattedDateTime "Ping ms"   "ThresholdValue ms"'"\\n"
-		printf "${BOLD}Jitter thresholds${CLEARFORMAT}"'       JitterThreshold      FormattedDateTime "Jitter ms" "ThresholdValue ms"'"\\n"
-		printf "${BOLD}Line Quality thresholds${CLEARFORMAT}"' LineQualityThreshold FormattedDateTime "Latency %%" "ThresholdValue %%"'"\\n\\n"
+		printf "Scripts are passed arguments, which change depending on the type of trigger\\n\\n"
+		printf "Trigger                 Argument1            Argument2         Argument3   Argument4           Argument5\\n"
+		printf "Tests"'                   PingTest             FormattedDateTime "Ping ms"   "Jitter ms"         "Latency %%"'"\\n"
+		printf "Ping thresholds"'         PingThreshold        FormattedDateTime "Ping ms"   "ThresholdValue ms"'"\\n"
+		printf "Jitter thresholds"'       JitterThreshold      FormattedDateTime "Jitter ms" "ThresholdValue ms"'"\\n"
+		printf "Line Quality thresholds"' LineQualityThreshold FormattedDateTime "Latency %%" "ThresholdValue %%"'"\\n\\n"
 	} > "$SCRIPT_STORAGE_DIR/.customactioninfo"
 }
 
