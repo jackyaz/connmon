@@ -148,6 +148,8 @@ Update_Check(){
 		doupdate="version"
 		Set_Version_Custom_Settings server "$serverver"
 		echo 'var updatestatus = "'"$serverver"'";'  > "$SCRIPT_WEB_DIR/detect_update.js"
+		changelog=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/CHANGELOG.md" | sed -n "/$serverver"'/,/^$/p' | sed 's/## //')
+		printf "\"Changelog\\n%s\"" "$changelog" > "$SCRIPT_WEB_DIR/detect_changelog.htm"
 	else
 		localmd5="$(md5sum "/jffs/scripts/$SCRIPT_NAME" | awk '{print $1}')"
 		remotemd5="$(curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | md5sum | awk '{print $1}')"
@@ -173,8 +175,7 @@ Update_Version(){
 		if [ "$isupdate" = "version" ]; then
 			Print_Output true "New version of $SCRIPT_NAME available - $serverver" "$PASS"
 			changelog=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/CHANGELOG.md" | sed -n "/$serverver"'/,/^$/p' | sed 's/## //')
-			printf "${BOLD}${UNDERLINE}Changelog\\n%s${CLEARFORMAT}\\n\\n" "$changelog"
-			
+			printf "${BOLD}${UNDERLINE}Changelog\\n${CLEARFORMAT}%s\\n\\n" "$changelog"
 		elif [ "$isupdate" = "md5" ]; then
 			Print_Output true "MD5 hash of $SCRIPT_NAME does not match - hotfix available - $serverver" "$PASS"
 		fi
