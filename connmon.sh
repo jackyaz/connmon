@@ -397,6 +397,7 @@ Create_Symlinks(){
 	ln -s "$SCRIPT_STORAGE_DIR/.cron" "$SCRIPT_WEB_DIR/cron.js" 2>/dev/null
 	ln -s "$SCRIPT_STORAGE_DIR/.customactioninfo" "$SCRIPT_WEB_DIR/customactioninfo.htm" 2>/dev/null
 	ln -s "$SCRIPT_STORAGE_DIR/.customactionlist" "$SCRIPT_WEB_DIR/customactionlist.htm" 2>/dev/null
+	ln -s "$SCRIPT_STORAGE_DIR/.emailinfo" "$SCRIPT_WEB_DIR/emailinfo.htm" 2>/dev/null
 	
 	ln -s "$CSV_OUTPUT_DIR" "$SCRIPT_WEB_DIR/csv" 2>/dev/null
 	
@@ -917,6 +918,7 @@ ScriptStorageLocation(){
 			mv "/jffs/addons/$SCRIPT_NAME.d/.cron" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/.customactioninfo" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/jffs/addons/$SCRIPT_NAME.d/.customactionlist" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/jffs/addons/$SCRIPT_NAME.d/.emailinfo" "/opt/share/$SCRIPT_NAME.d/" 2>/dev/null
 			
 			SCRIPT_CONF="/opt/share/$SCRIPT_NAME.d/config"
 			ScriptStorageLocation load
@@ -935,6 +937,7 @@ ScriptStorageLocation(){
 			mv "/opt/share/$SCRIPT_NAME.d/.cron" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/.customactioninfo" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			mv "/opt/share/$SCRIPT_NAME.d/.customactionlist" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
+			mv "/opt/share/$SCRIPT_NAME.d/.emailinfo" "/jffs/addons/$SCRIPT_NAME.d/" 2>/dev/null
 			SCRIPT_CONF="/jffs/addons/$SCRIPT_NAME.d/config"
 			ScriptStorageLocation load
 		;;
@@ -1345,6 +1348,9 @@ Process_Upgrade(){
 	if [ ! -f "$SCRIPT_STORAGE_DIR/.customactionlist" ]; then
 		CustomAction_List silent
 	fi
+	if [ ! -f "$SCRIPT_STORAGE_DIR/.emailinfo" ]; then
+		Email_Header silent
+	fi
 }
 
 Shortcut_Script(){
@@ -1425,17 +1431,32 @@ Email_ConfExists(){
 }
 
 Email_Header(){
-	printf "If you have Two Factor Authentication (2FA) enabled you need to\\n"
-	printf "use an App password.\\n\\n"
-	printf "${BOLD}Common SMTP Server settings${CLEARFORMAT}\\n"
-	printf "%s\\n" "------------------------------------------------"
-	printf "Provider    Server                 Port Protocol\\n"
-	printf "%s\\n" "------------------------------------------------"
-	printf "Gmail       smtp.gmail.com         465  smtps\\n"
-	printf "mail.com    smtp.mail.com          587  smtp\\n"
-	printf "Yahoo!      smtp.mail.yahoo.com    465  smtps\\n"
-	printf "outlook.com smtp-mail.outlook.com  587  smtp\\n"
-	printf "%s\\n\\n" "------------------------------------------------"
+	if [ -z "$1" ]; then
+		printf "If you have Two Factor Authentication (2FA) enabled you need to\\n"
+		printf "use an App password.\\n\\n"
+		printf "${BOLD}Common SMTP Server settings${CLEARFORMAT}\\n"
+		printf "%s\\n" "------------------------------------------------"
+		printf "Provider    Server                 Port Protocol\\n"
+		printf "%s\\n" "------------------------------------------------"
+		printf "Gmail       smtp.gmail.com         465  smtps\\n"
+		printf "mail.com    smtp.mail.com          587  smtp\\n"
+		printf "Yahoo!      smtp.mail.yahoo.com    465  smtps\\n"
+		printf "outlook.com smtp-mail.outlook.com  587  smtp\\n"
+		printf "%s\\n\\n" "------------------------------------------------"
+	fi
+	
+	{
+		printf "If you have Two Factor Authentication (2FA) enabled you need to use an App password.\\n\\n"
+		printf "Common SMTP Server settings\\n"
+		printf "%s\\n" "------------------------------------------------"
+		printf "Provider    Server                 Port Protocol\\n"
+		printf "%s\\n" "------------------------------------------------"
+		printf "Gmail       smtp.gmail.com         465  smtps\\n"
+		printf "mail.com    smtp.mail.com          587  smtp\\n"
+		printf "Yahoo!      smtp.mail.yahoo.com    465  smtps\\n"
+		printf "outlook.com smtp-mail.outlook.com  587  smtp\\n"
+		printf "%s\\n\\n" "------------------------------------------------"
+	} > "$SCRIPT_STORAGE_DIR/.emailinfo"
 }
 
 Email_EmailAddress(){
