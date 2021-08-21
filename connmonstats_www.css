@@ -4,12 +4,11 @@ p {
 
 thead.collapsible-jquery {
   color: white;
-  padding: 0px;
+  padding: 0;
   width: 100%;
   border: none;
   text-align: left;
   outline: none;
-  /*cursor: pointer;*/
 }
 
 td.nodata {
@@ -28,8 +27,7 @@ td.nodata {
 }
 
 .StatsTable th {
-  background-color: #1F2D35 !important;
-  background: #2F3A3E !important;
+  background-color: #2f3a3e !important;
   border-bottom: none !important;
   border-top: none !important;
   color: white !important;
@@ -95,7 +93,7 @@ td.nodata {
 }
 
 .SettingsTable th {
-  background-color: #1F2D35 !important;
+  background-color: #2f3a3e !important;
   background: #2F3A3E !important;
   border-bottom: none !important;
   border-top: none !important;
@@ -103,7 +101,7 @@ td.nodata {
   color: white !important;
   padding: 4px !important;
   font-weight: bolder !important;
-  padding: 0px !important;
+  padding: 0 !important;
 }
 
 .SettingsTable td {
@@ -114,15 +112,14 @@ td.nodata {
 }
 
 .SettingsTable span.settingname {
-  background-color: #1F2D35 !important;
+  background-color: #2f3a3e !important;
   background: #2F3A3E !important;
 }
 
 .SettingsTable td.settingname {
   border-right: solid 1px black;
   border-left: solid 1px black;
-  background-color: #1F2D35 !important;
-  background: #2F3A3E !important;
+  background-color: #2f3a3e !important;
   width: 35% !important;
 }
 
@@ -144,13 +141,13 @@ td.nodata {
 }
 
 .SettingsTable .disabled {
-  background-color: #CCCCCC !important;
+  background-color: #cccccc !important;
   color: #888888 !important;
 }
 
 .removespacing {
-  padding-left: 0px;
-  margin-left: 0px !important;
+  padding-left: 0;
+  margin-left: 0 !important;
   margin-bottom: 5px !important;
   text-align: center;
 }
@@ -158,7 +155,7 @@ td.nodata {
 .schedulespan {
   display: inline-block !important;
   width: 70px !important;
-  color: #FFFFFF !important;
+  color: #ffffff !important;
   font-weight: bold !important;
 }
 
@@ -187,7 +184,7 @@ thead.sortTableHeader th {
   font-weight: bolder;
   padding: 2px;
   text-align: center;
-  color: #fff;
+  color: #ffffff;
   position: sticky;
   top: 0;
   font-size: 11px !important;
@@ -204,9 +201,9 @@ thead.sortTableHeader td:first-child {
 }
 
 tbody.sortTableContent td {
-  border-bottom: 1px solid #000 !important;
+  border-bottom: 1px solid #000000 !important;
   border-left: none !important;
-  border-right: 1px solid #000 !important;
+  border-right: 1px solid #000000 !important;
   border-top: none !important;
   padding: 2px;
   text-align: center;
@@ -216,11 +213,11 @@ tbody.sortTableContent td {
 }
 
 tbody.sortTableContent tr.sortRow:nth-child(odd) td {
-  background-color: #2F3A3E !important;
+  background-color: #2f3a3e !important;
 }
 
 tbody.sortTableContent tr.sortRow:nth-child(even) td {
-  background-color: #475A5F !important;
+  background-color: #475a5f !important;
 }
 
 th.sortable {
@@ -228,7 +225,7 @@ th.sortable {
 }
 
 td.savebutton {
-  border: 0px;
+  border: 0;
   background-color: rgb(77, 89, 93);
 }
 
