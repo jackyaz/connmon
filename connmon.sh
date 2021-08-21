@@ -2936,6 +2936,7 @@ MainMenu(){
 	printf "n.    Configure notifications and integrations for %s\\n\\n" "$SCRIPT_NAME"
 	printf "u.    Check for updates\\n"
 	printf "uf.   Update %s with latest version (force update)\\n\\n" "$SCRIPT_NAME"
+	printf "cl.   View changelog for %s (use q to exit)\\n\\n" "$SCRIPT_NAME"
 	printf "r.    Reset %s database / delete all data\\n\\n" "$SCRIPT_NAME"
 	printf "e.    Exit %s\\n\\n" "$SCRIPT_NAME"
 	printf "z.    Uninstall %s\\n" "$SCRIPT_NAME"
@@ -3045,6 +3046,10 @@ MainMenu(){
 					Clear_Lock
 				fi
 				PressEnter
+				break
+			;;
+			cl)
+				less "$SCRIPT_DIR/CHANGELOG.md"
 				break
 			;;
 			r)
