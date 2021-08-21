@@ -1293,7 +1293,7 @@ function get_statstitle_file() {
 			setTimeout(get_statstitle_file, 1000);
 		},
 		success: function () {
-			SetConnmonStatsTitle();
+			setConnmonStatsTitle();
 		}
 	});
 }

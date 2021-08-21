@@ -1182,7 +1182,7 @@ Run_PingTest(){
 	Generate_CSVs
 
 	echo "Stats last updated: $timenowfriendly" > "/tmp/connstatstitle.txt"
-	WriteStats_ToJS /tmp/connstatstitle.txt "$SCRIPT_STORAGE_DIR/connstatstext.js" SetConnmonStatsTitle statstitle
+	WriteStats_ToJS /tmp/connstatstitle.txt "$SCRIPT_STORAGE_DIR/connstatstext.js" setConnmonStatsTitle statstitle
 	Print_Output false "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %" "$PASS"
 
 	{
