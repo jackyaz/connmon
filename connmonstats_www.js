@@ -18,7 +18,7 @@ iziToast.settings({
 function getCookie(cookiename, returntype) {
 	if (cookie.get('conn_' + cookiename) !== null) {
 		if (returntype === 'string') {
-			return cookie.get('conn_' + cookiename);;
+			return cookie.get('conn_' + cookiename);
 		}
 		else if (returntype === 'number') {
 			return cookie.get('conn_' + cookiename)*1;
@@ -158,11 +158,11 @@ function format_Number_Setting(forminput) {
 	var inputname = forminput.name;
 	var inputvalue = forminput.value * 1;
 
-	if (forminput.value.length === 0 || inputvalue === NaN) {
+	if (forminput.value.length === 0 || isNaN(inputvalue)) {
 		return false;
 	}
 	else {
-		forminput.value = parseInt(forminput.value);
+		forminput.value = parseInt(forminput.value,10);
 		return true;
 	}
 }
@@ -614,7 +614,7 @@ function logarithmicFormatter(tickValue, index, ticks) {
 		}
 		return emptyTick;
 	}
-};
+}
 
 function getLimit(datasetname, axis, maxmin, isannotation) {
 	var limit = 0;
