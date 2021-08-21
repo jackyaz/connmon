@@ -317,7 +317,7 @@ Conf_FromSettings(){
 			grep "connmon_" "$SETTINGSFILE" | grep -v "version" > "$TMPFILE"
 			sed -i "s/connmon_//g;s/ /=/g" "$TMPFILE"
 			while IFS='' read -r line || [ -n "$line" ]; do
-				SETTINGNAME="$(echo "$line" | cut -f1 -d'=' | awk '{ print toupper($1) }')"
+				SETTINGNAME="$(echo "$line" | cut -f1 -d'=' | awk '{print toupper($1)}')"
 				SETTINGVALUE="$(echo "$line" | cut -f2 -d'=')"
 				if [ "$SETTINGNAME" = "NOTIFICATIONS_PUSHOVER_LIST" ] || [ "$SETTINGNAME" = "NOTIFICATIONS_WEBHOOK_LIST" ]; then
 					SETTINGVALUE=$(echo "$SETTINGVALUE" | sed 's~||||~,~g')
