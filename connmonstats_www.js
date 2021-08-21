@@ -74,7 +74,7 @@ var intervallist = [24, 7, 30];
 var bordercolourlist = ['#fc8500', '#42ecf5', '#fff'];
 var backgroundcolourlist = ['rgba(252,133,0,0.5)', 'rgba(66,236,245,0.5)', 'rgba(255,255,255,0.5)'];
 
-function SettingHint(hintid) {
+function settingHint(hintid) {
 	hintid = hintid * 1;
 	var tag_name = document.getElementsByTagName('a');
 	for (var i = 0; i < tag_name.length; i++) {
@@ -90,19 +90,19 @@ function keyHandler(e) {
 	switch (e.keyCode) {
 		case 82:
 			$j(document).off('keydown');
-			ResetZoom();
+			resetZoom();
 			break;
 		case 68:
 			$j(document).off('keydown');
-			ToggleDragZoom(document.form.btnDragZoom);
+			toggleDragZoom(document.form.btnDragZoom);
 			break;
 		case 70:
 			$j(document).off('keydown');
-			ToggleFill();
+			toggleFill();
 			break;
 		case 76:
 			$j(document).off('keydown');
-			ToggleLines();
+			toggleLines();
 			break;
 	}
 }
@@ -114,7 +114,7 @@ $j(document).keyup(function (e) {
 	});
 });
 
-function Validate_IP(forminput) {
+function validate_IP(forminput) {
 	var inputvalue = forminput.value;
 	var inputname = forminput.name;
 	if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(inputvalue)) {
@@ -127,7 +127,7 @@ function Validate_IP(forminput) {
 	}
 }
 
-function Validate_Domain(forminput) {
+function validate_Domain(forminput) {
 	var inputvalue = forminput.value;
 	var inputname = forminput.name;
 	if (/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/.test(inputvalue)) {
@@ -140,7 +140,7 @@ function Validate_Domain(forminput) {
 	}
 }
 
-function Validate_Number_Setting(forminput, upperlimit, lowerlimit) {
+function validate_Number_Setting(forminput, upperlimit, lowerlimit) {
 	var inputname = forminput.name;
 	var inputvalue = forminput.value * 1;
 
@@ -154,7 +154,7 @@ function Validate_Number_Setting(forminput, upperlimit, lowerlimit) {
 	}
 }
 
-function Format_Number_Setting(forminput) {
+function format_Number_Setting(forminput) {
 	var inputname = forminput.name;
 	var inputvalue = forminput.value * 1;
 
@@ -167,7 +167,7 @@ function Format_Number_Setting(forminput) {
 	}
 }
 
-function Validate_Schedule(forminput, hoursmins) {
+function validate_Schedule(forminput, hoursmins) {
 	var inputname = forminput.name;
 	var inputvalues = forminput.value.split(',');
 	var upperlimit = 0;
@@ -256,7 +256,7 @@ function Validate_Schedule(forminput, hoursmins) {
 	}
 }
 
-function Validate_ScheduleValue(forminput) {
+function validate_ScheduleValue(forminput) {
 	var inputname = forminput.name;
 	var inputvalue = forminput.value * 1;
 
@@ -282,19 +282,19 @@ function Validate_ScheduleValue(forminput) {
 	}
 }
 
-function Validate_All() {
+function validate_All() {
 	var validationfailed = false;
-	if (!Validate_IP(document.form.connmon_ipaddr)) { validationfailed = true; }
-	if (!Validate_Domain(document.form.connmon_domain)) { validationfailed = true; }
-	if (!Validate_Number_Setting(document.form.connmon_pingduration, 60, 10)) { validationfailed = true; }
-	if (!Validate_Number_Setting(document.form.connmon_lastxresults, 100, 10)) { validationfailed = true; }
-	if (!Validate_Number_Setting(document.form.connmon_daystokeep, 365, 30)) { validationfailed = true; }
+	if (!validate_IP(document.form.connmon_ipaddr)) { validationfailed = true; }
+	if (!validate_Domain(document.form.connmon_domain)) { validationfailed = true; }
+	if (!validate_Number_Setting(document.form.connmon_pingduration, 60, 10)) { validationfailed = true; }
+	if (!validate_Number_Setting(document.form.connmon_lastxresults, 100, 10)) { validationfailed = true; }
+	if (!validate_Number_Setting(document.form.connmon_daystokeep, 365, 30)) { validationfailed = true; }
 	if (document.form.schedulemode.value === 'EveryX') {
-		if (!Validate_ScheduleValue(document.form.everyxvalue)) validationfailed = true;
+		if (!validate_ScheduleValue(document.form.everyxvalue)) validationfailed = true;
 	}
 	else if (document.form.schedulemode.value === 'Custom') {
-		if (!Validate_Schedule(document.form.connmon_schhours, 'hours')) validationfailed = true;
-		if (!Validate_Schedule(document.form.connmon_schmins, 'mins')) validationfailed = true;
+		if (!validate_Schedule(document.form.connmon_schhours, 'hours')) validationfailed = true;
+		if (!validate_Schedule(document.form.connmon_schmins, 'mins')) validationfailed = true;
 	}
 
 	if (validationfailed) {
@@ -306,16 +306,16 @@ function Validate_All() {
 	}
 }
 
-function FixCron(hoursmins) {
+function fixCron(hoursmins) {
 	if (hoursmins === 'hours') {
 		var origvalue = document.form.connmon_schhours.value;
 		document.form.connmon_schhours.value = origvalue.split('-')[0] + '-23,0-' + origvalue.split('-')[1];
-		Validate_Schedule(document.form.connmon_schhours, 'hours');
+		validate_Schedule(document.form.connmon_schhours, 'hours');
 	}
 	else if (hoursmins === 'mins') {
 		var origvalue = document.form.connmon_schmins.value;
 		document.form.connmon_schmins.value = origvalue.split('-')[0] + '-59,0-' + origvalue.split('-')[1];
-		Validate_Schedule(document.form.connmon_schmins, 'mins');
+		validate_Schedule(document.form.connmon_schmins, 'mins');
 	}
 }
 
@@ -332,7 +332,7 @@ function changePingType(forminput) {
 	}
 }
 
-function Draw_Chart_NoData(txtchartname, texttodisplay) {
+function draw_Chart_NoData(txtchartname, texttodisplay) {
 	document.getElementById('divLineChart_' + txtchartname).width = '730';
 	document.getElementById('divLineChart_' + txtchartname).height = '500';
 	document.getElementById('divLineChart_' + txtchartname).style.width = '730px';
@@ -347,7 +347,7 @@ function Draw_Chart_NoData(txtchartname, texttodisplay) {
 	ctx.restore();
 }
 
-function Draw_Chart(txtchartname, txttitle, txtunity, bordercolourname, backgroundcolourname) {
+function draw_Chart(txtchartname, txttitle, txtunity, bordercolourname, backgroundcolourname) {
 	var chartperiod = getChartPeriod($j('#' + txtchartname + '_Period option:selected').val());
 	var chartinterval = getChartInterval($j('#' + txtchartname + '_Interval option:selected').val());
 	var txtunitx = timeunitlist[$j('#' + txtchartname + '_Period option:selected').val()];
@@ -358,8 +358,8 @@ function Draw_Chart(txtchartname, txttitle, txtunity, bordercolourname, backgrou
 	var charttype = 'line';
 	var dataobject = window[txtchartname + '_' + chartinterval + '_' + chartperiod];
 
-	if (typeof dataobject === 'undefined' || dataobject === null) { Draw_Chart_NoData(txtchartname, 'No data to display'); return; }
-	if (dataobject.length === 0) { Draw_Chart_NoData(txtchartname, 'No data to display'); return; }
+	if (typeof dataobject === 'undefined' || dataobject === null) { draw_Chart_NoData(txtchartname, 'No data to display'); return; }
+	if (dataobject.length === 0) { draw_Chart_NoData(txtchartname, 'No data to display'); return; }
 
 	var chartLabels = dataobject.map(function (d) { return d.Metric });
 	var chartData = dataobject.map(function (d) { return { x: d.Time, y: d.Value } });
@@ -446,7 +446,7 @@ function Draw_Chart(txtchartname, txttitle, txtunity, bordercolourname, backgrou
 						index: ['min', 'max'],
 						removeEmptyLines: true
 					},
-					userCallback: LogarithmicFormatter
+					userCallback: logarithmicFormatter
 				}
 			}]
 		},
@@ -576,7 +576,7 @@ function Draw_Chart(txtchartname, txttitle, txtunity, bordercolourname, backgrou
 	window['LineChart_' + txtchartname] = objchartname;
 }
 
-function LogarithmicFormatter(tickValue, index, ticks) {
+function logarithmicFormatter(tickValue, index, ticks) {
 	var unit = this.options.scaleLabel.labelString;
 	if (this.type !== 'logarithmic') {
 		if (!isNaN(tickValue)) {
@@ -657,7 +657,7 @@ function round(value, decimals) {
 	return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
 }
 
-function ToggleLines() {
+function toggleLines() {
 	if (ShowLines === '') {
 		ShowLines = 'line';
 		setCookie('ShowLines', 'line');
@@ -674,7 +674,7 @@ function ToggleLines() {
 	}
 }
 
-function ToggleFill() {
+function toggleFill() {
 	if (ShowFill === 'false') {
 		ShowFill = 'origin';
 		setCookie('ShowFill', 'origin');
@@ -689,18 +689,18 @@ function ToggleFill() {
 	}
 }
 
-function RedrawAllCharts() {
+function redrawAllCharts() {
 	for (var i = 0; i < metriclist.length; i++) {
-		Draw_Chart_NoData(metriclist[i], 'Data loading...');
+		draw_Chart_NoData(metriclist[i], 'Data loading...');
 		for (var i2 = 0; i2 < chartlist.length; i2++) {
 			for (var i3 = 0; i3 < dataintervallist.length; i3++) {
-				d3.csv('/ext/connmon/csv/' + metriclist[i] + '_' + dataintervallist[i3] + '_' + chartlist[i2] + '.htm').then(SetGlobalDataset.bind(null, metriclist[i] + '_' + dataintervallist[i3] + '_' + chartlist[i2]));
+				d3.csv('/ext/connmon/csv/' + metriclist[i] + '_' + dataintervallist[i3] + '_' + chartlist[i2] + '.htm').then(setGlobalDataset.bind(null, metriclist[i] + '_' + dataintervallist[i3] + '_' + chartlist[i2]));
 			}
 		}
 	}
 }
 
-function SetGlobalDataset(txtchartname, dataobject) {
+function setGlobalDataset(txtchartname, dataobject) {
 	window[txtchartname] = dataobject;
 	currentNoCharts++;
 	if (currentNoCharts === maxNoCharts) {
@@ -717,7 +717,7 @@ function SetGlobalDataset(txtchartname, dataobject) {
 			changePeriod(document.getElementById(metriclist[i] + '_Interval'));
 			$j('#' + metriclist[i] + '_Period').val(getCookie(metriclist[i] + '_Period', 'number'));
 			$j('#' + metriclist[i] + '_Scale').val(getCookie(metriclist[i] + '_Scale', 'number'));
-			Draw_Chart(metriclist[i], titlelist[i], measureunitlist[i], bordercolourlist[i], backgroundcolourlist[i]);
+			draw_Chart(metriclist[i], titlelist[i], measureunitlist[i], bordercolourlist[i], backgroundcolourlist[i]);
 		}
 		get_lastx_file();
 	}
@@ -831,12 +831,12 @@ $j.fn.serializeObjectEmail = function () {
 	return o;
 };
 
-function SetCurrentPage() {
+function setCurrentPage() {
 	document.form.next_page.value = window.location.pathname.substring(1);
 	document.form.current_page.value = window.location.pathname.substring(1);
 }
 
-function ParseCSVExport(data) {
+function parseCSVExport(data) {
 	var csvContent = 'Timestamp,Ping,Jitter,LineQuality,PingTarget,PingDuration\n';
 	for (var i = 0; i < data.length; i++) {
 		var dataString = data[i].Timestamp + ',' + data[i].Ping + ',' + data[i].Jitter + ',' + data[i].LineQuality + ',' + data[i].PingTarget + ',' + data[i].PingDuration;
@@ -845,13 +845,13 @@ function ParseCSVExport(data) {
 	document.getElementById('aExport').href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
 }
 
-function ErrorCSVExport() {
+function errorCSVExport() {
 	document.getElementById('aExport').href = 'javascript:alert(\'Error exporting CSV,please refresh the page and try again\')';
 }
 
 function initial() {
-	SetCurrentPage();
-	LoadCustomSettings();
+	setCurrentPage();
+	loadCustomSettings();
 	show_menu();
 	document.formScriptActions.action_script.value = 'start_addon_settings;start_connmoncustomactionlist;start_connmonemailpassword';
 	document.formScriptActions.submit();
@@ -865,25 +865,25 @@ function initial() {
 	get_changelog_file();
 	$j('#alternatelayout').prop('checked', AltLayout === 'false' ? false : true);
 	$j('#sortTableContainer').empty();
-	$j('#sortTableContainer').append(BuildLastXTableNoData());
-	d3.csv('/ext/connmon/csv/CompleteResults.htm').then(function (data) { ParseCSVExport(data); }).catch(function () { ErrorCSVExport(); });
+	$j('#sortTableContainer').append(buildLastXTableNoData());
+	d3.csv('/ext/connmon/csv/CompleteResults.htm').then(function (data) { parseCSVExport(data); }).catch(function () { errorCSVExport(); });
 	$j('#Time_Format').val(getCookie('Time_Format', 'number'));
-	RedrawAllCharts();
-	ScriptUpdateLayout();
+	redrawAllCharts();
+	scriptUpdateLayout();
 	var starttab = getCookie('StartTab', 'number');
 	if (starttab === 0) { starttab = 1; }
 	$j('#starttab').val(starttab);
-	JY_Navigate(starttab, '', 6);
-	JY_Navigate(1, 'Chart', 3);
-	JY_Navigate(1, 'NotificationType', 4);
-	JY_Navigate(1, 'NotificationMethod', 6);
+	jy_Navigate(starttab, '', 6);
+	jy_Navigate(1, 'Chart', 3);
+	jy_Navigate(1, 'NotificationType', 4);
+	jy_Navigate(1, 'NotificationMethod', 6);
 }
 
-function SetStartTab(dropdown) {
+function setStartTab(dropdown) {
 	setCookie('StartTab', $j(dropdown).val());
 }
 
-function JY_Navigate(tab, type, tabslength) {
+function jy_Navigate(tab, type, tabslength) {
 	for (var i = 1; i <= tabslength; i++) {
 		if (i === tab) {
 			$j('#' + type + 'Navigate' + i).show();
@@ -896,9 +896,9 @@ function JY_Navigate(tab, type, tabslength) {
 	}
 }
 
-function ScriptUpdateLayout() {
-	var localver = GetVersionNumber('local');
-	var serverver = GetVersionNumber('server');
+function scriptUpdateLayout() {
+	var localver = getVersionNumber('local');
+	var serverver = getVersionNumber('server');
 	$j('#connmon_version_local').text(localver);
 
 	if (localver !== serverver && serverver !== 'N/A') {
@@ -929,7 +929,7 @@ function getChartPeriod(period) {
 	return chartperiod;
 }
 
-function ResetZoom() {
+function resetZoom() {
 	for (var i = 0; i < metriclist.length; i++) {
 		var chartobj = window['LineChart_' + metriclist[i]];
 		if (typeof chartobj === 'undefined' || chartobj === null) { continue; }
@@ -937,7 +937,7 @@ function ResetZoom() {
 	}
 }
 
-function ToggleDragZoom(button) {
+function toggleDragZoom(button) {
 	var drag = true;
 	var pan = false;
 	var buttonvalue = '';
@@ -966,10 +966,10 @@ function ToggleDragZoom(button) {
 	}
 }
 
-function ToggleAlternateLayout(checkbox) {
+function toggleAlternateLayout(checkbox) {
 	AltLayout = checkbox.checked.toString();
 	setCookie('AltLayout', AltLayout);
-	SortTable(sortname + ' ' + sortdir.replace('desc', '↑').replace('asc', '↓').trim());
+	sortTable(sortname + ' ' + sortdir.replace('desc', '↑').replace('asc', '↓').trim());
 }
 
 function update_status() {
@@ -1011,7 +1011,7 @@ function update_status() {
 	});
 }
 
-function CheckUpdate() {
+function checkUpdate() {
 	showhide('btnChkUpdate', false);
 	document.formScriptActions.action_script.value = 'start_addon_settings;start_connmoncheckupdate'
 	document.formScriptActions.submit();
@@ -1020,17 +1020,17 @@ function CheckUpdate() {
 	iziToast.info({ message: 'Checking for updates...', timeout: false });
 }
 
-function DoUpdate() {
+function doUpdate() {
 	document.form.action_script.value = 'start_connmondoupdate';
 	document.form.action_wait.value = 10;
 	showLoading();
 	document.form.submit();
 }
 
-function SaveConfig(section) {
+function saveConfig(section) {
 	switch (section) {
 		case 'Navigate4':
-			if (Validate_All()) {
+			if (validate_All()) {
 				$j('[name*=connmon_]').prop('disabled', false);
 
 				var disabledfields = $j('#' + section).find('[disabled]');
@@ -1117,15 +1117,15 @@ function save_status(section) {
 					iziToast.destroy();
 					iziToast.success({ message: 'Save successful' });
 					showhide('btnSave' + section, true);
-					LoadCustomSettings();
-					if (section === 'Navigate4') { PostConnTest(); }
+					loadCustomSettings();
+					if (section === 'Navigate4') { postConnTest(); }
 				}
 			}
 		}
 	});
 }
 
-function GetVersionNumber(versiontype) {
+function getVersionNumber(versiontype) {
 	var versionprop;
 	if (versiontype === 'local') {
 		versionprop = custom_settings.connmon_version_local;
@@ -1218,7 +1218,7 @@ function get_conf_file() {
 				if (settingname.indexOf('pingserver') !== -1) {
 					var pingserver = settingvalue;
 					document.form.connmon_pingserver.value = pingserver;
-					if (Validate_IP(document.form.connmon_pingserver)) {
+					if (validate_IP(document.form.connmon_pingserver)) {
 						document.form.pingtype.value = 0;
 						document.form.connmon_ipaddr.value = pingserver;
 					}
@@ -1259,7 +1259,7 @@ function get_conf_file() {
 				}
 
 				if (settingname.indexOf('automated') !== -1) {
-					AutomaticTestEnableDisable($j('#connmon_auto_' + document.form.connmon_automated.value)[0]);
+					automaticTestEnableDisable($j('#connmon_auto_' + document.form.connmon_automated.value)[0]);
 				}
 
 				if (settingname.indexOf('pingduration') !== -1) {
@@ -1280,7 +1280,7 @@ function get_conf_file() {
 			else {
 				document.form.schedulemode.value = 'Custom';
 			}
-			ScheduleModeToggle($j('#schmode_' + $j('[name=schedulemode]:checked').val().toLowerCase())[0]);
+			scheduleModeToggle($j('#schmode_' + $j('[name=schedulemode]:checked').val().toLowerCase())[0]);
 		}
 	});
 }
@@ -1364,7 +1364,7 @@ function get_changelog_file() {
 	});
 }
 
-function TestNotification(testname) {
+function testNotification(testname) {
 	if (confirm('If you have made any changes, you will need to save them first. Do you want to continue?')) {
 		showhide('btn' + testname, false);
 		document.formScriptActions.action_script.value = 'start_addon_settings;start_connmon' + testname;
@@ -1409,12 +1409,12 @@ function get_lastx_file() {
 			setTimeout(get_lastx_file, 1000);
 		},
 		success: function (data) {
-			ParseLastXData(data);
+			parseLastXData(data);
 		}
 	});
 }
 
-function ParseLastXData(data) {
+function parseLastXData(data) {
 	var arraysortlines = data.split('\n');
 	arraysortlines = arraysortlines.filter(Boolean);
 	arraysortlistlines = [];
@@ -1434,10 +1434,10 @@ function ParseLastXData(data) {
 			//do nothing,continue
 		}
 	}
-	SortTable(sortname + ' ' + sortdir.replace('desc', '↑').replace('asc', '↓').trim());
+	sortTable(sortname + ' ' + sortdir.replace('desc', '↑').replace('asc', '↓').trim());
 }
 
-function SortTable(sorttext) {
+function sortTable(sorttext) {
 	sortname = sorttext.replace('↑', '').replace('↓', '').trim();
 	var sorttype = 'number';
 	var sortfield = sortname;
@@ -1494,7 +1494,7 @@ function SortTable(sorttext) {
 	}
 
 	$j('#sortTableContainer').empty();
-	$j('#sortTableContainer').append(BuildLastXTable());
+	$j('#sortTableContainer').append(buildLastXTable());
 
 	$j('.sortable').each(function (index, element) {
 		if (element.innerHTML.replace(/ \(.*\)/, '').replace(' ', '') === sortname) {
@@ -1508,7 +1508,7 @@ function SortTable(sorttext) {
 	});
 }
 
-function BuildLastXTableNoData() {
+function buildLastXTableNoData() {
 	var tablehtml = '<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="sortTable">';
 	tablehtml += '<tr>';
 	tablehtml += '<td colspan="6" class="nodata">';
@@ -1519,7 +1519,7 @@ function BuildLastXTableNoData() {
 	return tablehtml;
 }
 
-function BuildLastXTable() {
+function buildLastXTable() {
 	var tablehtml = '<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="sortTable">';
 
 	if (AltLayout === 'false') {
@@ -1531,12 +1531,12 @@ function BuildLastXTable() {
 		tablehtml += '<col style="width:110px;">';
 		tablehtml += '<thead class="sortTableHeader">';
 		tablehtml += '<tr>';
-		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
-		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
-		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
-		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
-		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
-		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
 		tablehtml += '</tr>';
 		tablehtml += '</thead>';
 		tablehtml += '<tbody class="sortTableContent">';
@@ -1560,12 +1560,12 @@ function BuildLastXTable() {
 		tablehtml += '<col style="width:95px;">';
 		tablehtml += '<thead class="sortTableHeader">';
 		tablehtml += '<tr>';
-		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
-		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
-		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
-		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
-		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
-		tablehtml += '<th class="sortable" onclick="SortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
 		tablehtml += '</tr>';
 		tablehtml += '</thead>';
 		tablehtml += '<tbody class="sortTableContent">';
@@ -1586,7 +1586,7 @@ function BuildLastXTable() {
 	return tablehtml;
 }
 
-function AutomaticTestEnableDisable(forminput) {
+function automaticTestEnableDisable(forminput) {
 	var inputname = forminput.name;
 	var inputvalue = forminput.value;
 	var prefix = inputname.substring(0, inputname.indexOf('_'));
@@ -1622,7 +1622,7 @@ function AutomaticTestEnableDisable(forminput) {
 	}
 }
 
-function ScheduleModeToggle(forminput) {
+function scheduleModeToggle(forminput) {
 	var inputname = forminput.name;
 	var inputvalue = forminput.value;
 
@@ -1644,7 +1644,7 @@ function ScheduleModeToggle(forminput) {
 	}
 }
 
-function EveryXToggle(forminput) {
+function everyXToggle(forminput) {
 	var inputname = forminput.name;
 	var inputvalue = forminput.value;
 
@@ -1657,7 +1657,7 @@ function EveryXToggle(forminput) {
 		showhide('spanxminutes', true);
 	}
 
-	Validate_ScheduleValue($j('[name=everyxvalue]')[0]);
+	validate_ScheduleValue($j('[name=everyxvalue]')[0]);
 }
 
 var pingcount = 2;
@@ -1685,7 +1685,7 @@ function update_conntest() {
 					pingcount = 2;
 					get_conntestresult_file();
 					document.getElementById('conntest_text').innerHTML = 'Refreshing charts...';
-					PostConnTest();
+					postConnTest();
 				}
 			}
 			else if (connmonstatus === 'LOCKED') {
@@ -1714,11 +1714,11 @@ function update_conntest() {
 	});
 }
 
-function PostConnTest() {
+function postConnTest() {
 	currentNoCharts = 0;
 	$j('#Time_Format').val(getCookie('Time_Format', 'number'));
 	get_statstitle_file();
-	setTimeout(RedrawAllCharts, 3000);
+	setTimeout(redrawAllCharts, 3000);
 }
 
 function runPingTest() {
@@ -1729,14 +1729,14 @@ function runPingTest() {
 	document.formScriptActions.submit();
 	showhide('imgConnTest', true);
 	showhide('conntest_text', false);
-	setTimeout(StartConnTestInterval, 5000);
+	setTimeout(startConnTestInterval, 5000);
 	iziToast.info({ message: 'Ping test started', timeout: false });
 }
 
 var myinterval;
 var intervalclear = false;
 var pingtestrunning = false;
-function StartConnTestInterval() {
+function startConnTestInterval() {
 	intervalclear = false;
 	pingtestrunning = true;
 	myinterval = setInterval(update_conntest, 1000);
@@ -1747,7 +1747,7 @@ function changeAllCharts(e) {
 	name = e.id.substring(0, e.id.indexOf('_'));
 	setCookie(e.id, value);
 	for (var i = 0; i < metriclist.length; i++) {
-		Draw_Chart(metriclist[i], titlelist[i], measureunitlist[i], bordercolourlist[i], backgroundcolourlist[i]);
+		draw_Chart(metriclist[i], titlelist[i], measureunitlist[i], bordercolourlist[i], backgroundcolourlist[i]);
 	}
 }
 
@@ -1757,13 +1757,13 @@ function changeChart(e) {
 	setCookie(e.id, value);
 
 	if (name === 'Ping') {
-		Draw_Chart('Ping', titlelist[0], measureunitlist[0], bordercolourlist[0], backgroundcolourlist[0]);
+		draw_Chart('Ping', titlelist[0], measureunitlist[0], bordercolourlist[0], backgroundcolourlist[0]);
 	}
 	else if (name === 'Jitter') {
-		Draw_Chart('Jitter', titlelist[1], measureunitlist[1], bordercolourlist[1], backgroundcolourlist[1]);
+		draw_Chart('Jitter', titlelist[1], measureunitlist[1], bordercolourlist[1], backgroundcolourlist[1]);
 	}
 	else if (name === 'LineQuality') {
-		Draw_Chart('LineQuality', titlelist[2], measureunitlist[2], bordercolourlist[2], backgroundcolourlist[2]);
+		draw_Chart('LineQuality', titlelist[2], measureunitlist[2], bordercolourlist[2], backgroundcolourlist[2]);
 	}
 }
 
