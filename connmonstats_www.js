@@ -98,6 +98,67 @@ function resetZoom() {
 	}
 }
 
+function toggleDragZoom(button) {
+	var drag = true;
+	var pan = false;
+	var buttonvalue = '';
+	if (button.value.indexOf('On') !== -1) {
+		drag = false;
+		pan = true;
+		DragZoom = false;
+		ChartPan = true;
+		buttonvalue = 'Drag Zoom Off';
+	}
+	else {
+		drag = true;
+		pan = false;
+		DragZoom = true;
+		ChartPan = false;
+		buttonvalue = 'Drag Zoom On';
+	}
+
+	for (var i = 0; i < metriclist.length; i++) {
+		var chartobj = window['LineChart_' + metriclist[i]];
+		if (typeof chartobj === 'undefined' || chartobj === null) { continue; }
+		chartobj.options.plugins.zoom.zoom.drag = drag;
+		chartobj.options.plugins.zoom.pan.enabled = pan;
+		button.value = buttonvalue;
+		chartobj.update();
+	}
+}
+
+function toggleLines() {
+	if (ShowLines === '') {
+		ShowLines = 'line';
+		setCookie('ShowLines', 'line');
+	}
+	else {
+		ShowLines = '';
+		setCookie('ShowLines', '');
+	}
+	for (var i = 0; i < metriclist.length; i++) {
+		for (var i3 = 0; i3 < 3; i3++) {
+			window['LineChart_' + metriclist[i]].options.annotation.annotations[i3].type = ShowLines;
+		}
+		window['LineChart_' + metriclist[i]].update();
+	}
+}
+
+function toggleFill() {
+	if (ShowFill === 'false') {
+		ShowFill = 'origin';
+		setCookie('ShowFill', 'origin');
+	}
+	else {
+		ShowFill = 'false';
+		setCookie('ShowFill', 'false');
+	}
+	for (var i = 0; i < metriclist.length; i++) {
+		window['LineChart_' + metriclist[i]].data.datasets[0].fill = ShowFill;
+		window['LineChart_' + metriclist[i]].update();
+	}
+}
+
 function keyHandler(e) {
 	switch (e.keyCode) {
 		case 82:
@@ -459,38 +520,6 @@ function round(value, decimals) {
 	return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
 }
 
-function toggleLines() {
-	if (ShowLines === '') {
-		ShowLines = 'line';
-		setCookie('ShowLines', 'line');
-	}
-	else {
-		ShowLines = '';
-		setCookie('ShowLines', '');
-	}
-	for (var i = 0; i < metriclist.length; i++) {
-		for (var i3 = 0; i3 < 3; i3++) {
-			window['LineChart_' + metriclist[i]].options.annotation.annotations[i3].type = ShowLines;
-		}
-		window['LineChart_' + metriclist[i]].update();
-	}
-}
-
-function toggleFill() {
-	if (ShowFill === 'false') {
-		ShowFill = 'origin';
-		setCookie('ShowFill', 'origin');
-	}
-	else {
-		ShowFill = 'false';
-		setCookie('ShowFill', 'false');
-	}
-	for (var i = 0; i < metriclist.length; i++) {
-		window['LineChart_' + metriclist[i]].data.datasets[0].fill = ShowFill;
-		window['LineChart_' + metriclist[i]].update();
-	}
-}
-
 function getChartScale(scale) {
 	var chartscale = '';
 	scale = scale * 1;
@@ -510,6 +539,16 @@ function getChartInterval(layout) {
 	else if (layout === 1) { charttype = 'hour'; }
 	else if (layout === 2) { charttype = 'day'; }
 	return charttype;
+}
+
+
+function getChartPeriod(period) {
+	var chartperiod = 'daily';
+	period = period * 1;
+	if (period === 0) { chartperiod = 'daily'; }
+	else if (period === 1) { chartperiod = 'weekly'; }
+	else if (period === 2) { chartperiod = 'monthly'; }
+	return chartperiod;
 }
 
 function drawChartNoData(txtchartname, texttodisplay) {
@@ -765,6 +804,19 @@ function redrawAllCharts() {
 			}
 		}
 	}
+}
+
+function getLastxFile() {
+	$j.ajax({
+		url: '/ext/connmon/lastx.htm',
+		dataType: 'text',
+		error: function (xhr) {
+			setTimeout(getLastxFile, 1000);
+		},
+		success: function (data) {
+			parseLastXData(data);
+		}
+	});
 }
 
 function setGlobalDataset(txtchartname, dataobject) {
@@ -1143,44 +1195,6 @@ function passChecked(obj, showobj) {
 	switchType(obj, showobj.checked, true);
 }
 
-function getChartPeriod(period) {
-	var chartperiod = 'daily';
-	period = period * 1;
-	if (period === 0) { chartperiod = 'daily'; }
-	else if (period === 1) { chartperiod = 'weekly'; }
-	else if (period === 2) { chartperiod = 'monthly'; }
-	return chartperiod;
-}
-
-function toggleDragZoom(button) {
-	var drag = true;
-	var pan = false;
-	var buttonvalue = '';
-	if (button.value.indexOf('On') !== -1) {
-		drag = false;
-		pan = true;
-		DragZoom = false;
-		ChartPan = true;
-		buttonvalue = 'Drag Zoom Off';
-	}
-	else {
-		drag = true;
-		pan = false;
-		DragZoom = true;
-		ChartPan = false;
-		buttonvalue = 'Drag Zoom On';
-	}
-
-	for (var i = 0; i < metriclist.length; i++) {
-		var chartobj = window['LineChart_' + metriclist[i]];
-		if (typeof chartobj === 'undefined' || chartobj === null) { continue; }
-		chartobj.options.plugins.zoom.zoom.drag = drag;
-		chartobj.options.plugins.zoom.pan.enabled = pan;
-		button.value = buttonvalue;
-		chartobj.update();
-	}
-}
-
 function toggleAlternateLayout(checkbox) {
 	AltLayout = checkbox.checked.toString();
 	setCookie('AltLayout', AltLayout);
@@ -1406,19 +1420,6 @@ function testStatus(testname) {
 					iziToast.error({ message: 'Test failed - please check configuration' });
 				}
 			}
-		}
-	});
-}
-
-function getLastxFile() {
-	$j.ajax({
-		url: '/ext/connmon/lastx.htm',
-		dataType: 'text',
-		error: function (xhr) {
-			setTimeout(getLastxFile, 1000);
-		},
-		success: function (data) {
-			parseLastXData(data);
 		}
 	});
 }
