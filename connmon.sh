@@ -335,12 +335,17 @@ Conf_FromSettings(){
 			Create_Symlinks
 			
 			if AutomaticMode check; then
-				Auto_Cron delete 2>/dev/null
-				Auto_Cron create 2>/dev/null
+				if diff "$SCRIPT_CONF" "$SCRIPT_CONF.bak" | grep -q "^SCH"; then
+					Auto_Cron delete 2>/dev/null
+					Auto_Cron create 2>/dev/null
+				fi
 			else
 				Auto_Cron delete 2>/dev/null
 			fi
-			Generate_CSVs
+			
+			if diff "$SCRIPT_CONF" "$SCRIPT_CONF.bak" | grep -q "OUTPUTTIMEMODE=\|DAYSTOKEEP=\|LASTXRESULTS="; then
+				Generate_CSVs
+			fi
 			
 			Print_Output true "Merge of updated settings from WebUI completed successfully" "$PASS"
 		else
