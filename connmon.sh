@@ -3759,7 +3759,10 @@ case "$1" in
 			Clear_Lock
 			exit 0
 		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}config" ]; then
+			echo 'var updatestatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_save.js"
+			sleep 3
 			Conf_FromSettings
+			echo 'var updatestatus = "Done";' > "$SCRIPT_WEB_DIR/detect_save.js"
 			exit 0
 		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}checkupdate" ]; then
 			Update_Check
