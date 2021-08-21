@@ -86,6 +86,14 @@ function settingHint(hintid) {
 	return overlib(hinttext, 0, 0);
 }
 
+function resetZoom() {
+	for (var i = 0; i < metriclist.length; i++) {
+		var chartobj = window['LineChart_' + metriclist[i]];
+		if (typeof chartobj === 'undefined' || chartobj === null) { continue; }
+		chartobj.resetZoom();
+	}
+}
+
 function keyHandler(e) {
 	switch (e.keyCode) {
 		case 82:
@@ -282,7 +290,7 @@ function validate_ScheduleValue(forminput) {
 	}
 }
 
-function validate_All() {
+function validateAll() {
 	var validationfailed = false;
 	if (!validate_IP(document.form.connmon_ipaddr)) { validationfailed = true; }
 	if (!validate_Domain(document.form.connmon_domain)) { validationfailed = true; }
@@ -330,6 +338,39 @@ function changePingType(forminput) {
 		document.getElementById('rowip').style.display = 'none';
 		document.getElementById('rowdomain').style.display = '';
 	}
+}
+
+function getTimeFormat(value, format) {
+	var timeformat;
+	value = value * 1;
+	if (format === 'axis') {
+		if (value === 0) {
+			timeformat = {
+				millisecond: 'HH:mm:ss.SSS',
+				second: 'HH:mm:ss',
+				minute: 'HH:mm',
+				hour: 'HH:mm'
+			}
+		}
+		else if (value === 1) {
+			timeformat = {
+				millisecond: 'h:mm:ss.SSS A',
+				second: 'h:mm:ss A',
+				minute: 'h:mm A',
+				hour: 'h A'
+			}
+		}
+	}
+	else if (format === 'tooltip') {
+		if (value === 0) {
+			timeformat = 'YYYY-MM-DD HH:mm:ss';
+		}
+		else if (value === 1) {
+			timeformat = 'YYYY-MM-DD h:mm:ss A';
+		}
+	}
+
+	return timeformat;
 }
 
 function draw_Chart_NoData(txtchartname, texttodisplay) {
@@ -744,38 +785,6 @@ function getChartInterval(layout) {
 	return charttype;
 }
 
-function getTimeFormat(value, format) {
-	var timeformat;
-	value = value * 1;
-	if (format === 'axis') {
-		if (value === 0) {
-			timeformat = {
-				millisecond: 'HH:mm:ss.SSS',
-				second: 'HH:mm:ss',
-				minute: 'HH:mm',
-				hour: 'HH:mm'
-			}
-		}
-		else if (value === 1) {
-			timeformat = {
-				millisecond: 'h:mm:ss.SSS A',
-				second: 'h:mm:ss A',
-				minute: 'h:mm A',
-				hour: 'h A'
-			}
-		}
-	}
-	else if (format === 'tooltip') {
-		if (value === 0) {
-			timeformat = 'YYYY-MM-DD HH:mm:ss';
-		}
-		else if (value === 1) {
-			timeformat = 'YYYY-MM-DD h:mm:ss A';
-		}
-	}
-
-	return timeformat;
-}
 
 $j.fn.serializeObject = function () {
 	var o = custom_settings;
@@ -902,7 +911,7 @@ function scriptUpdateLayout() {
 	$j('#connmon_version_local').text(localver);
 
 	if (localver !== serverver && serverver !== 'N/A') {
-		if (serverver.indexOf("hotfix") === -1) {
+		if (serverver.indexOf('hotfix') === -1) {
 			$j('#connmon_version_server').html('<a style="color:#FFCC00;text-decoration:underline;" href="javascript:void(0);">Updated version available: ' + updatestatus + '</a>');
 			$j('#connmon_version_server').on('mouseover', function () { return overlib(changelog, 0, 0); });
 			$j('#connmon_version_server')[0].onmouseout = nd;
@@ -927,14 +936,6 @@ function getChartPeriod(period) {
 	else if (period === 1) chartperiod = 'weekly';
 	else if (period === 2) chartperiod = 'monthly';
 	return chartperiod;
-}
-
-function resetZoom() {
-	for (var i = 0; i < metriclist.length; i++) {
-		var chartobj = window['LineChart_' + metriclist[i]];
-		if (typeof chartobj === 'undefined' || chartobj === null) { continue; }
-		chartobj.resetZoom();
-	}
 }
 
 function toggleDragZoom(button) {
@@ -988,7 +989,7 @@ function update_status() {
 				document.getElementById('imgChkUpdate').style.display = 'none';
 				showhide('connmon_version_server', true);
 				if (updatestatus !== 'None') {
-					if (updatestatus.indexOf("hotfix") === -1) {
+					if (updatestatus.indexOf('hotfix') === -1) {
 						$j('#connmon_version_server').html('<a style="color:#FFCC00;text-decoration:underline;" href="javascript:void(0);">Updated version available: ' + updatestatus + '</a>');
 						$j('#connmon_version_server').on('mouseover', function () { return overlib(changelog, 0, 0); });
 						$j('#connmon_version_server')[0].onmouseout = nd;
@@ -1030,7 +1031,7 @@ function doUpdate() {
 function saveConfig(section) {
 	switch (section) {
 		case 'Navigate4':
-			if (validate_All()) {
+			if (validateAll()) {
 				$j('[name*=connmon_]').prop('disabled', false);
 
 				var disabledfields = $j('#' + section).find('[disabled]');
@@ -1060,7 +1061,7 @@ function saveConfig(section) {
 						document.form.connmon_schmins.value = '*/' + everyxvalue;
 					}
 				}
-				document.getElementById('amng_custom').value = JSON.stringify($j('#' + section).find("input,select,textarea").serializeObject());
+				document.getElementById('amng_custom').value = JSON.stringify($j('#' + section).find('input,select,textarea').serializeObject());
 				document.formScriptActions.action_script.value = 'start_addon_settings;start_connmonconfig';
 				document.formScriptActions.submit();
 				disabledfields.prop('disabled', true);
@@ -1076,7 +1077,7 @@ function saveConfig(section) {
 		case 'NotificationMethodNavigate1':
 			var disabledfields = $j('#' + section).find('[disabled]');
 			disabledfields.prop('disabled', false);
-			document.getElementById('amng_custom').value = JSON.stringify($j('#' + section).find("input,select,textarea").serializeObjectEmail());
+			document.getElementById('amng_custom').value = JSON.stringify($j('#' + section).find('input,select,textarea').serializeObjectEmail());
 			document.formScriptActions.action_script.value = 'start_addon_settings;start_connmonemailconfig';
 			document.formScriptActions.submit();
 			disabledfields.prop('disabled', true);
@@ -1088,7 +1089,7 @@ function saveConfig(section) {
 		default:
 			var disabledfields = $j('#' + section).find('[disabled]');
 			disabledfields.prop('disabled', false);
-			document.getElementById('amng_custom').value = JSON.stringify($j('#' + section).find("input,select,textarea").serializeObject());
+			document.getElementById('amng_custom').value = JSON.stringify($j('#' + section).find('input,select,textarea').serializeObject());
 			document.formScriptActions.action_script.value = 'start_addon_settings;start_connmonconfig';
 			document.formScriptActions.submit();
 			disabledfields.prop('disabled', true);
@@ -1319,7 +1320,7 @@ function get_email_info() {
 			setTimeout(get_email_info, 1000);
 		},
 		success: function (data) {
-			document.getElementById('emailinfo').innerHTML = data;
+			$j('#emailinfo').html(data);
 		}
 	});
 }
@@ -1332,7 +1333,7 @@ function get_customaction_info() {
 			setTimeout(get_customaction_info, 1000);
 		},
 		success: function (data) {
-			document.getElementById('customaction_details').innerHTML += '\n' + data;
+			$j('#customaction_details').append('\n' + data);
 		}
 	});
 }
@@ -1345,7 +1346,7 @@ function get_customaction_list() {
 			setTimeout(get_customaction_list, 1000);
 		},
 		success: function (data) {
-			document.getElementById('customaction_details').innerHTML = data;
+			$j('#customaction_details').html(data);
 			get_customaction_info();
 		}
 	});
@@ -1359,7 +1360,7 @@ function get_changelog_file() {
 			setTimeout(get_changelog_file, 5000);
 		},
 		success: function (data) {
-			document.getElementById('divchangelog').innerHTML = data;
+			$j('#divchangelog').html(data);
 		}
 	});
 }
@@ -1499,10 +1500,10 @@ function sortTable(sorttext) {
 	$j('.sortable').each(function (index, element) {
 		if (element.innerHTML.replace(/ \(.*\)/, '').replace(' ', '') === sortname) {
 			if (sortdir === 'asc') {
-				element.innerHTML = element.innerHTML + ' ↑';
+				$j(element).html(element.innerHTML + ' ↑');
 			}
 			else {
-				element.innerHTML = element.innerHTML + ' ↓';
+				$j(element).html(element.innerHTML + ' ↓');
 			}
 		}
 	});
@@ -1673,10 +1674,10 @@ function update_conntest() {
 			if (connmonstatus === 'InProgress') {
 				showhide('imgConnTest', true);
 				showhide('conntest_text', true);
-				document.getElementById('conntest_text').innerHTML = 'Ping test in progress - ' + pingcount + 's elapsed';
+				$j('#conntest_text').html('Ping test in progress - ' + pingcount + 's elapsed');
 			}
 			else if (connmonstatus === 'GenerateCSV') {
-				document.getElementById('conntest_text').innerHTML = 'Retrieving data for charts...';
+				$j('#conntest_text').html('Retrieving data for charts...');
 			}
 			else if (connmonstatus === 'Done') {
 				clearInterval(myinterval);
@@ -1684,7 +1685,7 @@ function update_conntest() {
 					intervalclear = true;
 					pingcount = 2;
 					get_conntestresult_file();
-					document.getElementById('conntest_text').innerHTML = 'Refreshing charts...';
+					$j('#conntest_text').html('Refreshing charts...');
 					postConnTest();
 				}
 			}
@@ -1692,7 +1693,7 @@ function update_conntest() {
 				pingcount = 2;
 				clearInterval(myinterval);
 				showhide('imgConnTest', false);
-				document.getElementById('conntest_text').innerHTML = 'Scheduled ping test already running!';
+				$j('#conntest_text').html('Scheduled ping test already running!');
 				showhide('conntest_text', true);
 				showhide('btnRunPingtest', true);
 				document.getElementById('conntest_output').parentElement.parentElement.style.display = 'none';
@@ -1703,7 +1704,7 @@ function update_conntest() {
 				pingcount = 2;
 				clearInterval(myinterval);
 				showhide('imgConnTest', false);
-				document.getElementById('conntest_text').innerHTML = 'Specified ping server is not valid';
+				$j('#conntest_text').html('Specified ping server is not valid');
 				showhide('conntest_text', true);
 				showhide('btnRunPingtest', true);
 				document.getElementById('conntest_output').parentElement.parentElement.style.display = 'none';
