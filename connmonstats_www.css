@@ -12,49 +12,12 @@ thead.collapsible-jquery {
 }
 
 td.nodata {
-  font-size: 48px !important;
-  font-weight: bolder !important;
-  height: 65px !important;
-  font-family: Arial !important;
-  border: none !important;
-  text-align: center !important;
-}
-
-.StatsTable {
-  table-layout: fixed !important;
-  width: 747px !important;
-  text-align: center !important;
-}
-
-.StatsTable th {
-  background-color: #2f3a3e !important;
-  border-bottom: none !important;
-  border-top: none !important;
-  color: white !important;
-  padding: 4px !important;
-  font-size: 11px !important;
-}
-
-.StatsTable td {
-  padding: 2px !important;
-  word-wrap: break-word !important;
-  overflow-wrap: break-word !important;
-  font-size: 12px !important;
-}
-
-.StatsTable a {
-  font-weight: bolder !important;
-  text-decoration: underline !important;
-}
-
-.StatsTable th:first-child,
-.StatsTable td:first-child {
-  border-left: none !important;
-}
-
-.StatsTable th:last-child,
-.StatsTable td:last-child {
-  border-right: none !important;
+  font-size: 48px;
+  font-weight: bolder;
+  height: 65px;
+  font-family: Arial;
+  border: none;
+  text-align: center;
 }
 
 .SettingsTable {
@@ -62,7 +25,7 @@ td.nodata {
 }
 
 .SettingsTable input {
-  margin-left: 3px !important;
+  margin-left: 3px;
   margin-top: 3px;
 }
 
@@ -84,78 +47,78 @@ td.nodata {
 }
 
 .SettingsTable select {
-  margin-left: 3px !important;
+  margin-left: 3px;
 }
 
 .SettingsTable label {
-  margin-right: 10px !important;
+  margin-right: 10px;
   vertical-align: top;
 }
 
 .SettingsTable th {
-  background-color: #2f3a3e !important;
-  background: #2F3A3E !important;
-  border-bottom: none !important;
-  border-top: none !important;
-  font-size: 12px !important;
-  color: white !important;
-  padding: 4px !important;
-  font-weight: bolder !important;
+  background-color: #2f3a3e;
+  background: #2F3A3E;
+  border-bottom: none;
+  border-top: none;
+  font-size: 12px;
+  color: white;
+  padding: 4px;
+  font-weight: bolder;
 }
 
 .SettingsTable td {
-  word-wrap: break-word !important;
-  overflow-wrap: break-word !important;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   border-right: none;
   border-left: none;
 }
 
 .SettingsTable span.settingname {
-  background-color: #2f3a3e !important;
-  background: #2F3A3E !important;
+  background-color: #2f3a3e;
+  background: #2F3A3E;
 }
 
 .SettingsTable td.settingname {
   border-right: solid 1px black;
   border-left: solid 1px black;
-  background-color: #2f3a3e !important;
-  width: 35% !important;
+  background-color: #2f3a3e;
+  width: 35%;
 }
 
 .SettingsTable td.settingvalue {
-  text-align: left !important;
+  text-align: left;
   border-right: solid 1px black;
 }
 
 .SettingsTable th:first-child {
-  border-left: none !important;
+  border-left: none;
 }
 
 .SettingsTable th:last-child {
-  border-right: none !important;
+  border-right: none;
 }
 
 .SettingsTable .invalid {
-  background-color: darkred !important;
+  background-color: darkred;
 }
 
 .SettingsTable .disabled {
-  background-color: #ccc !important;
-  color: #888888 !important;
+  background-color: #ccc;
+  color: #888888;
 }
 
 .removespacing {
   padding-left: 0;
-  margin-left: 0 !important;
-  margin-bottom: 5px !important;
+  margin-left: 0;
+  margin-bottom: 5px;
   text-align: center;
 }
 
-.schedulespan {
-  display: inline-block !important;
-  width: 70px !important;
-  color: #fff !important;
-  font-weight: bold !important;
+.FormTable td .schedulespan {
+  display: inline-block;
+  width: 70px;
+  color: #fff;
+  font-weight: bold;
 }
 
 div.schedulesettings {
@@ -170,53 +133,53 @@ div.sortTableContainer {
 }
 
 .sortTable {
-  table-layout: fixed !important;
+  table-layout: fixed;
   border: none;
 }
 
 thead.sortTableHeader th {
   background-image: linear-gradient(rgb(146, 160, 165) 0%, rgb(102, 117, 124) 100%);
-  border-top: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  border-bottom: 1px solid #000 !important;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid #000;
   font-weight: bolder;
   padding: 2px;
   text-align: center;
   color: #fff;
   position: sticky;
   top: 0;
-  font-size: 11px !important;
+  font-size: 11px;
 }
 
 thead.sortTableHeader th:first-child,
 thead.sortTableHeader th:last-child {
-  border-right: none !important;
+  border-right: none;
 }
 
 thead.sortTableHeader th:first-child,
 thead.sortTableHeader td:first-child {
-  border-left: none !important;
+  border-left: none;
 }
 
 tbody.sortTableContent td {
-  border-bottom: 1px solid #000 !important;
-  border-left: none !important;
-  border-right: 1px solid #000 !important;
-  border-top: none !important;
+  border-bottom: 1px solid #000;
+  border-left: none;
+  border-right: 1px solid #000;
+  border-top: none;
   padding: 2px;
   text-align: center;
-  overflow: hidden !important;
-  white-space: nowrap !important;
-  font-size: 12px !important;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 12px;
 }
 
 tbody.sortTableContent tr.sortRow:nth-child(odd) td {
-  background-color: #2f3a3e !important;
+  background-color: #2f3a3e;
 }
 
 tbody.sortTableContent tr.sortRow:nth-child(even) td {
-  background-color: #475a5f !important;
+  background-color: #475a5f;
 }
 
 th.sortable {
@@ -229,7 +192,7 @@ td.savebutton {
 }
 
 .testbutton {
-  text-align: center !important;
+  text-align: center;
   min-width: 75px;
   width: 75px;
   margin-bottom: 3px;
@@ -238,7 +201,7 @@ td.savebutton {
 }
 
 .navbutton {
-  text-align: center !important;
+  text-align: center;
   min-width: 122px;
   width: 122px;
   vertical-align: middle;
@@ -246,7 +209,7 @@ td.savebutton {
 }
 
 .chartnavbutton {
-  text-align: center !important;
+  text-align: center;
   min-width: 122px;
   width: 122px;
   vertical-align: middle;
@@ -254,7 +217,7 @@ td.savebutton {
 }
 
 .notificationtypenavbutton {
-  text-align: center !important;
+  text-align: center;
   min-width: 122px;
   width: 122px;
   vertical-align: middle;
@@ -263,8 +226,8 @@ td.savebutton {
 }
 
 .notificationmethodnavbutton {
-  text-align: center !important;
-  min-width: 120px !important;
+  text-align: center;
+  min-width: 120px;
   width: 120px;
   vertical-align: middle;
   height: 55px;
