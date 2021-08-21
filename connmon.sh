@@ -354,6 +354,25 @@ Conf_FromSettings(){
 	fi
 }
 
+EmailConf_FromSettings(){
+	SETTINGSFILE="/jffs/addons/custom_settings.txt"
+	TMPFILE="/tmp/email_settings.txt"
+	if [ -f "$SETTINGSFILE" ]; then
+		Print_Output true "Updated email settings from WebUI found, merging into $EMAIL_CONF" "$PASS"
+		cp -a "$EMAIL_CONF" "$EMAIL_CONF.bak"
+		grep "email_" "$SETTINGSFILE" > "$TMPFILE"
+		sed -i "s/email_//g;s/ /=/g" "$TMPFILE"
+		while IFS='' read -r line || [ -n "$line" ]; do
+			SETTINGNAME="$(echo "$line" | cut -f1 -d'=' | awk '{print toupper($1)}')"
+			SETTINGVALUE="$(echo "$line" | cut -f2 -d'=')"
+			sed -i "s~$SETTINGNAME=.*~$SETTINGNAME=\"$SETTINGVALUE\"~" "$EMAIL_CONF"
+		done < "$TMPFILE"
+		sed -i "\\~email_~d" "$SETTINGSFILE"
+		rm -f "$TMPFILE"
+		Print_Output true "Merge of updated email settings from WebUI completed successfully" "$PASS"
+	fi
+}
+
 Create_Dirs(){
 	if [ ! -d "$SCRIPT_DIR" ]; then
 		mkdir -p "$SCRIPT_DIR"
@@ -3767,6 +3786,12 @@ case "$1" in
 			echo 'var savestatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_save.js"
 			sleep 3
 			Conf_FromSettings
+			echo 'var savestatus = "Success";' > "$SCRIPT_WEB_DIR/detect_save.js"
+			exit 0
+		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}emailconfig" ]; then
+			echo 'var savestatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_save.js"
+			sleep 3
+			EmailConf_FromSettings
 			echo 'var savestatus = "Success";' > "$SCRIPT_WEB_DIR/detect_save.js"
 			exit 0
 		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}checkupdate" ]; then
