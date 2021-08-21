@@ -150,16 +150,6 @@ thead.sortTableHeader th {
   font-size: 11px;
 }
 
-thead.sortTableHeader th:first-child,
-thead.sortTableHeader th:last-child {
-  border-right: none;
-}
-
-thead.sortTableHeader th:first-child,
-thead.sortTableHeader td:first-child {
-  border-left: none;
-}
-
 tbody.sortTableContent td {
   border-bottom: 1px solid #000;
   border-left: none;
@@ -170,6 +160,16 @@ tbody.sortTableContent td {
   overflow: hidden;
   white-space: nowrap;
   font-size: 12px;
+}
+
+thead.sortTableHeader th:first-child,
+thead.sortTableHeader th:last-child {
+  border-right: none;
+}
+
+thead.sortTableHeader th:first-child,
+thead.sortTableHeader td:first-child {
+  border-left: none;
 }
 
 tbody.sortTableContent tr.sortRow:nth-child(odd) td {
