@@ -807,18 +807,18 @@ function changePeriod(e) {
 	}
 }
 
-		function getLastXFile() {
-			$j.ajax({
-				url: '/ext/connmon/lastx.htm',
-				dataType: 'text',
-				error: function (xhr) {
-					setTimeout(getLastXFile, 1000);
-				},
-				success: function (data) {
-					parseLastXData(data);
-				}
-			});
+function getLastXFile() {
+	$j.ajax({
+		url: '/ext/connmon/lastx.htm',
+		dataType: 'text',
+		error: function (xhr) {
+			setTimeout(getLastXFile, 1000);
+		},
+		success: function (data) {
+			parseLastXData(data);
 		}
+	});
+}
 
 function setGlobalDataset(txtchartname, dataobject) {
 	window[txtchartname] = dataobject;
@@ -855,76 +855,76 @@ function redrawAllCharts() {
 }
 
 
-		function sortTable(sorttext) {
-			sortname = sorttext.replace('↑', '').replace('↓', '').trim();
-			var sorttype = 'number';
-			var sortfield = sortname;
-			switch (sortname) {
-				case 'Time':
-					sorttype = 'date';
-					break;
-				case 'Target':
-					sorttype = 'string';
-					break;
-			}
+function sortTable(sorttext) {
+	sortname = sorttext.replace('↑', '').replace('↓', '').trim();
+	var sorttype = 'number';
+	var sortfield = sortname;
+	switch (sortname) {
+		case 'Time':
+			sorttype = 'date';
+			break;
+		case 'Target':
+			sorttype = 'string';
+			break;
+	}
 
-			if (sorttype === 'string') {
-				if (sorttext.indexOf('↓') === -1 && sorttext.indexOf('↑') === -1) {
-					eval('arraysortlistlines = arraysortlistlines.sort((a,b) => (a.' + sortfield + ' > b.' + sortfield + ') ? 1 : ((b.' + sortfield + ' > a.' + sortfield + ') ? -1 : 0));');
-					sortdir = 'asc';
-				}
-				else if (sorttext.indexOf('↓') !== -1) {
-					eval('arraysortlistlines = arraysortlistlines.sort((a,b) => (a.' + sortfield + ' > b.' + sortfield + ') ? 1 : ((b.' + sortfield + ' > a.' + sortfield + ') ? -1 : 0));');
-					sortdir = 'asc';
-				}
-				else {
-					eval('arraysortlistlines = arraysortlistlines.sort((a,b) => (a.' + sortfield + ' < b.' + sortfield + ') ? 1 : ((b.' + sortfield + ' < a.' + sortfield + ') ? -1 : 0));');
-					sortdir = 'desc';
-				}
-			}
-			else if (sorttype === 'number') {
-				if (sorttext.indexOf('↓') === -1 && sorttext.indexOf('↑') === -1) {
-					eval('arraysortlistlines = arraysortlistlines.sort((a,b) => parseFloat(a.' + sortfield + '.replace("m","000")) - parseFloat(b.' + sortfield + '.replace("m","000")));');
-					sortdir = 'asc';
-				}
-				else if (sorttext.indexOf('↓') !== -1) {
-					eval('arraysortlistlines = arraysortlistlines.sort((a,b) => parseFloat(a.' + sortfield + '.replace("m","000")) - parseFloat(b.' + sortfield + '.replace("m","000"))); ');
-					sortdir = 'asc';
-				}
-				else {
-					eval('arraysortlistlines = arraysortlistlines.sort((a,b) => parseFloat(b.' + sortfield + '.replace("m","000")) - parseFloat(a.' + sortfield + '.replace("m","000")));');
-					sortdir = 'desc';
-				}
-			}
-			else if (sorttype === 'date') {
-				if (sorttext.indexOf('↓') === -1 && sorttext.indexOf('↑') === -1) {
-					eval('arraysortlistlines = arraysortlistlines.sort((a,b) => new Date(a.' + sortfield + ') - new Date(b.' + sortfield + '));');
-					sortdir = 'asc';
-				}
-				else if (sorttext.indexOf('↓') !== -1) {
-					eval('arraysortlistlines = arraysortlistlines.sort((a,b) => new Date(a.' + sortfield + ') - new Date(b.' + sortfield + '));');
-					sortdir = 'asc';
-				}
-				else {
-					eval('arraysortlistlines = arraysortlistlines.sort((a,b) => new Date(b.' + sortfield + ') - new Date(a.' + sortfield + '));');
-					sortdir = 'desc';
-				}
-			}
-
-			$j('#sortTableContainer').empty();
-			$j('#sortTableContainer').append(buildLastXTable());
-
-			$j('.sortable').each(function (index, element) {
-				if (element.innerHTML.replace(/ \(.*\)/, '').replace(' ', '') === sortname) {
-					if (sortdir === 'asc') {
-						$j(element).html(element.innerHTML + ' ↑');
-					}
-					else {
-						$j(element).html(element.innerHTML + ' ↓');
-					}
-				}
-			});
+	if (sorttype === 'string') {
+		if (sorttext.indexOf('↓') === -1 && sorttext.indexOf('↑') === -1) {
+			eval('arraysortlistlines = arraysortlistlines.sort((a,b) => (a.' + sortfield + ' > b.' + sortfield + ') ? 1 : ((b.' + sortfield + ' > a.' + sortfield + ') ? -1 : 0));');
+			sortdir = 'asc';
 		}
+		else if (sorttext.indexOf('↓') !== -1) {
+			eval('arraysortlistlines = arraysortlistlines.sort((a,b) => (a.' + sortfield + ' > b.' + sortfield + ') ? 1 : ((b.' + sortfield + ' > a.' + sortfield + ') ? -1 : 0));');
+			sortdir = 'asc';
+		}
+		else {
+			eval('arraysortlistlines = arraysortlistlines.sort((a,b) => (a.' + sortfield + ' < b.' + sortfield + ') ? 1 : ((b.' + sortfield + ' < a.' + sortfield + ') ? -1 : 0));');
+			sortdir = 'desc';
+		}
+	}
+	else if (sorttype === 'number') {
+		if (sorttext.indexOf('↓') === -1 && sorttext.indexOf('↑') === -1) {
+			eval('arraysortlistlines = arraysortlistlines.sort((a,b) => parseFloat(a.' + sortfield + '.replace("m","000")) - parseFloat(b.' + sortfield + '.replace("m","000")));');
+			sortdir = 'asc';
+		}
+		else if (sorttext.indexOf('↓') !== -1) {
+			eval('arraysortlistlines = arraysortlistlines.sort((a,b) => parseFloat(a.' + sortfield + '.replace("m","000")) - parseFloat(b.' + sortfield + '.replace("m","000"))); ');
+			sortdir = 'asc';
+		}
+		else {
+			eval('arraysortlistlines = arraysortlistlines.sort((a,b) => parseFloat(b.' + sortfield + '.replace("m","000")) - parseFloat(a.' + sortfield + '.replace("m","000")));');
+			sortdir = 'desc';
+		}
+	}
+	else if (sorttype === 'date') {
+		if (sorttext.indexOf('↓') === -1 && sorttext.indexOf('↑') === -1) {
+			eval('arraysortlistlines = arraysortlistlines.sort((a,b) => new Date(a.' + sortfield + ') - new Date(b.' + sortfield + '));');
+			sortdir = 'asc';
+		}
+		else if (sorttext.indexOf('↓') !== -1) {
+			eval('arraysortlistlines = arraysortlistlines.sort((a,b) => new Date(a.' + sortfield + ') - new Date(b.' + sortfield + '));');
+			sortdir = 'asc';
+		}
+		else {
+			eval('arraysortlistlines = arraysortlistlines.sort((a,b) => new Date(b.' + sortfield + ') - new Date(a.' + sortfield + '));');
+			sortdir = 'desc';
+		}
+	}
+
+	$j('#sortTableContainer').empty();
+	$j('#sortTableContainer').append(buildLastXTable());
+
+	$j('.sortable').each(function (index, element) {
+		if (element.innerHTML.replace(/ \(.*\)/, '').replace(' ', '') === sortname) {
+			if (sortdir === 'asc') {
+				$j(element).html(element.innerHTML + ' ↑');
+			}
+			else {
+				$j(element).html(element.innerHTML + ' ↓');
+			}
+		}
+	});
+}
 
 function parseLastXData(data) {
 	var arraysortlines = data.split('\n');
@@ -1378,25 +1378,42 @@ function buildLastXTable() {
 	return tablehtml;
 }
 
-		function scriptUpdateLayout() {
-			var localver = getVersionNumber('local');
-			var serverver = getVersionNumber('server');
-			$j('#connmon_version_local').text(localver);
+function getVersionNumber(versiontype) {
+	var versionprop;
+	if (versiontype === 'local') {
+		versionprop = customSettings.connmon_version_local;
+	}
+	else if (versiontype === 'server') {
+		versionprop = customSettings.connmon_version_server;
+	}
 
-			if (localver !== serverver && serverver !== 'N/A') {
-				if (serverver.indexOf('hotfix') === -1) {
-					$j('#connmon_version_server').html('<a style="color:#FFCC00;text-decoration:underline;" href="javascript:void(0);">Updated version available: ' + updatestatus + '</a>');
-					$j('#connmon_version_server').on('mouseover', function () { return overlib(changelog, 0, 0); });
-					$j('#connmon_version_server')[0].onmouseout = nd;
-				}
-				else {
-					$j('#connmon_version_server').text('Updated version available: ' + updatestatus);
-				}
-				showhide('btnChkUpdate', false);
-				showhide('connmon_version_server', true);
-				showhide('btnDoUpdate', true);
-			}
+	if (typeof versionprop === 'undefined' || versionprop === null) {
+		return 'N/A';
+	}
+	else {
+		return versionprop;
+	}
+}
+
+function scriptUpdateLayout() {
+	var localver = getVersionNumber('local');
+	var serverver = getVersionNumber('server');
+	$j('#connmon_version_local').text(localver);
+
+	if (localver !== serverver && serverver !== 'N/A') {
+		if (serverver.indexOf('hotfix') === -1) {
+			$j('#connmon_version_server').html('<a style="color:#FFCC00;text-decoration:underline;" href="javascript:void(0);">Updated version available: ' + updatestatus + '</a>');
+			$j('#connmon_version_server').on('mouseover', function () { return overlib(changelog, 0, 0); });
+			$j('#connmon_version_server')[0].onmouseout = nd;
 		}
+		else {
+			$j('#connmon_version_server').text('Updated version available: ' + updatestatus);
+		}
+		showhide('btnChkUpdate', false);
+		showhide('connmon_version_server', true);
+		showhide('btnDoUpdate', true);
+	}
+}
 
 function initial() {
 	setCurrentPage();
@@ -1430,24 +1447,6 @@ function initial() {
 
 function setStartTab(dropdown) {
 	setCookie('StartTab', $j(dropdown).val());
-}
-
-
-function getVersionNumber(versiontype) {
-	var versionprop;
-	if (versiontype === 'local') {
-		versionprop = customSettings.connmon_version_local;
-	}
-	else if (versiontype === 'server') {
-		versionprop = customSettings.connmon_version_server;
-	}
-
-	if (typeof versionprop === 'undefined' || versionprop === null) {
-		return 'N/A';
-	}
-	else {
-		return versionprop;
-	}
 }
 
 function passChecked(obj, showobj) {
@@ -1523,30 +1522,30 @@ function postConnTest() {
 }
 
 
-		function saveStatus(section) {
-			$j.ajax({
-				url: '/ext/connmon/detect_save.js',
-				dataType: 'script',
-				error: function (xhr) {
-					setTimeout(saveStatus, 1000, section);
-				},
-				success: function () {
-					if (savestatus === 'InProgress') {
-						setTimeout(saveStatus, 1000, section);
-					}
-					else {
-						showhide('imgSave' + section, false);
-						if (savestatus === 'Success') {
-							iziToast.destroy();
-							iziToast.success({ message: 'Save successful' });
-							showhide('btnSave' + section, true);
-							loadCustomSettings();
-							if (section === 'Navigate4') { postConnTest(); }
-						}
-					}
+function saveStatus(section) {
+	$j.ajax({
+		url: '/ext/connmon/detect_save.js',
+		dataType: 'script',
+		error: function (xhr) {
+			setTimeout(saveStatus, 1000, section);
+		},
+		success: function () {
+			if (savestatus === 'InProgress') {
+				setTimeout(saveStatus, 1000, section);
+			}
+			else {
+				showhide('imgSave' + section, false);
+				if (savestatus === 'Success') {
+					iziToast.destroy();
+					iziToast.success({ message: 'Save successful' });
+					showhide('btnSave' + section, true);
+					loadCustomSettings();
+					if (section === 'Navigate4') { postConnTest(); }
 				}
-			});
+			}
 		}
+	});
+}
 
 function saveConfig(section) {
 	switch (section) {
@@ -1744,12 +1743,12 @@ function updateConntest() {
 	});
 }
 
-		function startConnTestInterval() {
-			intervalclear = false;
-			pingtestrunning = true;
-			myinterval = setInterval(updateConntest, 1000);
-		}
-		
+function startConnTestInterval() {
+	intervalclear = false;
+	pingtestrunning = true;
+	myinterval = setInterval(updateConntest, 1000);
+}
+
 function runPingTest() {
 	showhide('btnRunPingtest', false);
 	$j('#conntest_output').html('');
