@@ -21,7 +21,7 @@ function getCookie(cookiename, returntype) {
 			return cookie.get('conn_' + cookiename);
 		}
 		else if (returntype === 'number') {
-			return cookie.get('conn_' + cookiename)*1;
+			return cookie.get('conn_' + cookiename) * 1;
 		}
 	}
 	else {
@@ -81,8 +81,8 @@ function settingHint(hintid) {
 		tag_name[i].onmouseout = nd;
 	}
 	var hinttext = 'My text goes here';
-	if (hintid === 1) hinttext = 'Hour(s) of day to run ping test<br />* for all<br />Valid numbers between 0 and 23<br />comma (,) separate for multiple<br />dash (-) separate for a range';
-	if (hintid === 2) hinttext = 'Minute(s) of day to run ping test<br />(* for all<br />Valid numbers between 0 and 59<br />comma (,) separate for multiple<br />dash (-) separate for a range';
+	if (hintid === 1) { hinttext = 'Hour(s) of day to run ping test<br />* for all<br />Valid numbers between 0 and 23<br />comma (,) separate for multiple<br />dash (-) separate for a range'; }
+	if (hintid === 2) { hinttext = 'Minute(s) of day to run ping test<br />(* for all<br />Valid numbers between 0 and 59<br />comma (,) separate for multiple<br />dash (-) separate for a range'; }
 	return overlib(hinttext, 0, 0);
 }
 
@@ -170,7 +170,7 @@ function format_Number_Setting(forminput) {
 		return false;
 	}
 	else {
-		forminput.value = parseInt(forminput.value,10);
+		forminput.value = parseInt(forminput.value, 10);
 		return true;
 	}
 }
@@ -231,10 +231,10 @@ function validate_Schedule(forminput, hoursmins) {
 						else if ((inputvalues2[i2 + 1] * 1) < (inputvalues2[i2] * 1)) {
 							validationfailed = 'true';
 							if (hoursmins === 'hours') {
-								showhide('btnfixhours', true)
+								showhide('btnfixhours', true);
 							}
 							else if (hoursmins === 'mins') {
-								showhide('btnfixmins', true)
+								showhide('btnfixmins', true);
 							}
 						}
 					}
@@ -298,11 +298,11 @@ function validateAll() {
 	if (!validate_Number_Setting(document.form.connmon_lastxresults, 100, 10)) { validationfailed = true; }
 	if (!validate_Number_Setting(document.form.connmon_daystokeep, 365, 30)) { validationfailed = true; }
 	if (document.form.schedulemode.value === 'EveryX') {
-		if (!validate_ScheduleValue(document.form.everyxvalue)) validationfailed = true;
+		if (!validate_ScheduleValue(document.form.everyxvalue)) { validationfailed = true; }
 	}
 	else if (document.form.schedulemode.value === 'Custom') {
-		if (!validate_Schedule(document.form.connmon_schhours, 'hours')) validationfailed = true;
-		if (!validate_Schedule(document.form.connmon_schmins, 'mins')) validationfailed = true;
+		if (!validate_Schedule(document.form.connmon_schhours, 'hours')) { validationfailed = true; }
+		if (!validate_Schedule(document.form.connmon_schmins, 'mins')) { validationfailed = true; }
 	}
 
 	if (validationfailed) {
@@ -350,7 +350,7 @@ function getTimeFormat(value, format) {
 				second: 'HH:mm:ss',
 				minute: 'HH:mm',
 				hour: 'HH:mm'
-			}
+			};
 		}
 		else if (value === 1) {
 			timeformat = {
@@ -402,8 +402,8 @@ function draw_Chart(txtchartname, txttitle, txtunity, bordercolourname, backgrou
 	if (typeof dataobject === 'undefined' || dataobject === null) { draw_Chart_NoData(txtchartname, 'No data to display'); return; }
 	if (dataobject.length === 0) { draw_Chart_NoData(txtchartname, 'No data to display'); return; }
 
-	var chartLabels = dataobject.map(function (d) { return d.Metric });
-	var chartData = dataobject.map(function (d) { return { x: d.Time, y: d.Value } });
+	var chartLabels = dataobject.map(function (d) { return d.Metric; });
+	var chartData = dataobject.map(function (d) { return { x: d.Time, y: d.Value }; });
 	var objchartname = window['LineChart_' + txtchartname];
 
 	var timeaxisformat = getTimeFormat($j('#Time_Format option:selected').val(), 'axis');
@@ -431,7 +431,7 @@ function draw_Chart(txtchartname, txttitle, txtunity, bordercolourname, backgrou
 	else if (txtunitx === 'day') {
 		factor = 60 * 60 * 24 * 1000;
 	}
-	if (objchartname !== undefined) objchartname.destroy();
+	if (objchartname !== undefined) { objchartname.destroy(); }
 	var ctx = document.getElementById('divLineChart_' + txtchartname).getContext('2d');
 	var lineOptions = {
 		segmentShowStroke: false,
@@ -661,10 +661,10 @@ function getLimit(datasetname, axis, maxmin, isannotation) {
 	var limit = 0;
 	var values;
 	if (axis === 'x') {
-		values = datasetname.map(function (o) { return o.x });
+		values = datasetname.map(function (o) { return o.x; });
 	}
 	else {
-		values = datasetname.map(function (o) { return o.y });
+		values = datasetname.map(function (o) { return o.y; });
 	}
 
 	if (maxmin === 'max') {
@@ -779,9 +779,9 @@ function getChartScale(scale) {
 function getChartInterval(layout) {
 	var charttype = 'raw';
 	layout = layout * 1;
-	if (layout === 0) charttype = 'raw';
-	else if (layout === 1) charttype = 'hour';
-	else if (layout === 2) charttype = 'day';
+	if (layout === 0) { charttype = 'raw'; }
+	else if (layout === 1) { charttype = 'hour'; }
+	else if (layout === 2) { charttype = 'day'; }
 	return charttype;
 }
 
@@ -932,9 +932,9 @@ function pass_checked(obj, showobj) {
 function getChartPeriod(period) {
 	var chartperiod = 'daily';
 	period = period * 1;
-	if (period === 0) chartperiod = 'daily';
-	else if (period === 1) chartperiod = 'weekly';
-	else if (period === 2) chartperiod = 'monthly';
+	if (period === 0) { chartperiod = 'daily'; }
+	else if (period === 1) { chartperiod = 'weekly'; }
+	else if (period === 2) { chartperiod = 'monthly'; }
 	return chartperiod;
 }
 
@@ -1014,7 +1014,7 @@ function update_status() {
 
 function checkUpdate() {
 	showhide('btnChkUpdate', false);
-	document.formScriptActions.action_script.value = 'start_addon_settings;start_connmoncheckupdate'
+	document.formScriptActions.action_script.value = 'start_addon_settings;start_connmoncheckupdate';
 	document.formScriptActions.submit();
 	document.getElementById('imgChkUpdate').style.display = '';
 	setTimeout(update_status, 2000);
@@ -1037,10 +1037,10 @@ function saveConfig(section) {
 				var disabledfields = $j('#' + section).find('[disabled]');
 				disabledfields.prop('disabled', false);
 
-				if (document.form.pingtype.value*1 === 0) {
+				if (document.form.pingtype.value * 1 === 0) {
 					document.form.connmon_pingserver.value = document.form.connmon_ipaddr.value;
 				}
-				else if (document.form.pingtype.value*1 === 1) {
+				else if (document.form.pingtype.value * 1 === 1) {
 					document.form.connmon_pingserver.value = document.form.connmon_domain.value;
 				}
 
@@ -1183,7 +1183,7 @@ function get_email_conf_file() {
 				}
 			}
 		}
-	})
+	});
 }
 
 function get_email_pw_file() {
@@ -1268,7 +1268,7 @@ function get_conf_file() {
 				}
 			}
 
-			if ($j('[name=connmon_schhours]').val().indexOf('/') !== -1 && $j('[name=connmon_schmins]').val()*1 === 0) {
+			if ($j('[name=connmon_schhours]').val().indexOf('/') !== -1 && $j('[name=connmon_schmins]').val() * 1 === 0) {
 				document.form.schedulemode.value = 'EveryX';
 				document.form.everyxselect.value = 'hours';
 				document.form.everyxvalue.value = $j('[name=connmon_schhours]').val().split('/')[1];
