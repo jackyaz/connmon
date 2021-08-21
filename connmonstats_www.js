@@ -795,28 +795,16 @@ function drawChart(txtchartname, txttitle, txtunity, bordercolourname, backgroun
 	window['LineChart_' + txtchartname] = objchartname;
 }
 
-function redrawAllCharts() {
-	for (var i = 0; i < metriclist.length; i++) {
-		drawChartNoData(metriclist[i], 'Data loading...');
-		for (var i2 = 0; i2 < chartlist.length; i2++) {
-			for (var i3 = 0; i3 < dataintervallist.length; i3++) {
-				d3.csv('/ext/connmon/csv/' + metriclist[i] + '_' + dataintervallist[i3] + '_' + chartlist[i2] + '.htm').then(setGlobalDataset.bind(null, metriclist[i] + '_' + dataintervallist[i3] + '_' + chartlist[i2]));
-			}
-		}
-	}
-}
 
-function getLastxFile() {
-	$j.ajax({
-		url: '/ext/connmon/lastx.htm',
-		dataType: 'text',
-		error: function (xhr) {
-			setTimeout(getLastxFile, 1000);
-		},
-		success: function (data) {
-			parseLastXData(data);
-		}
-	});
+function changePeriod(e) {
+	value = e.value * 1;
+	name = e.id.substring(0, e.id.indexOf('_'));
+	if (value === 2) {
+		$j('select[id="' + name + '_Period"] option:contains(24)').text('Today');
+	}
+	else {
+		$j('select[id="' + name + '_Period"] option:contains("Today")').text('Last 24 hours');
+	}
 }
 
 function setGlobalDataset(txtchartname, dataobject) {
@@ -842,6 +830,52 @@ function setGlobalDataset(txtchartname, dataobject) {
 	}
 }
 
+function redrawAllCharts() {
+	for (var i = 0; i < metriclist.length; i++) {
+		drawChartNoData(metriclist[i], 'Data loading...');
+		for (var i2 = 0; i2 < chartlist.length; i2++) {
+			for (var i3 = 0; i3 < dataintervallist.length; i3++) {
+				d3.csv('/ext/connmon/csv/' + metriclist[i] + '_' + dataintervallist[i3] + '_' + chartlist[i2] + '.htm').then(setGlobalDataset.bind(null, metriclist[i] + '_' + dataintervallist[i3] + '_' + chartlist[i2]));
+			}
+		}
+	}
+}
+
+function parseLastXData(data) {
+	var arraysortlines = data.split('\n');
+	arraysortlines = arraysortlines.filter(Boolean);
+	arraysortlistlines = [];
+	for (var i = 0; i < arraysortlines.length; i++) {
+		try {
+			var resultfields = arraysortlines[i].split(',');
+			var parsedsortline = new Object();
+			parsedsortline.Time = moment.unix(resultfields[0].trim()).format('YYYY-MM-DD HH:mm:ss');
+			parsedsortline.Ping = resultfields[1].trim();
+			parsedsortline.Jitter = resultfields[2].trim();
+			parsedsortline.LineQuality = resultfields[3].replace('null', '').trim();
+			parsedsortline.Target = resultfields[4].replace('null', '').trim();
+			parsedsortline.Duration = resultfields[5].replace('null', '').trim();
+			arraysortlistlines.push(parsedsortline);
+		}
+		catch {
+			//do nothing,continue
+		}
+	}
+	sortTable(sortname + ' ' + sortdir.replace('desc', '↑').replace('asc', '↓').trim());
+}
+
+function getLastxFile() {
+	$j.ajax({
+		url: '/ext/connmon/lastx.htm',
+		dataType: 'text',
+		error: function (xhr) {
+			setTimeout(getLastxFile, 1000);
+		},
+		success: function (data) {
+			parseLastXData(data);
+		}
+	});
+}
 
 $j.fn.serializeObject = function () {
 	var o = customSettings;
@@ -930,6 +964,63 @@ function jyNavigate(tab, type, tabslength) {
 	}
 }
 
+function automaticTestEnableDisable(forminput) {
+	var inputname = forminput.name;
+	var inputvalue = forminput.value;
+	var prefix = inputname.substring(0, inputname.indexOf('_'));
+
+	var fieldnames = ['schhours', 'schmins'];
+	var fieldnames2 = ['schedulemode', 'everyxselect', 'everyxvalue'];
+
+	if (inputvalue === 'false') {
+		for (var i = 0; i < fieldnames.length; i++) {
+			$j('input[name=' + prefix + '_' + fieldnames[i] + ']').addClass('disabled');
+			$j('input[name=' + prefix + '_' + fieldnames[i] + ']').prop('disabled', true);
+		}
+		for (var i = 0; i < daysofweek.length; i++) {
+			$j('#' + prefix + '_' + daysofweek[i].toLowerCase()).prop('disabled', true);
+		}
+		for (var i = 0; i < fieldnames2.length; i++) {
+			$j('[name=' + fieldnames2[i] + ']').addClass('disabled');
+			$j('[name=' + fieldnames2[i] + ']').prop('disabled', true);
+		}
+	}
+	else if (inputvalue === 'true') {
+		for (var i = 0; i < fieldnames.length; i++) {
+			$j('input[name=' + prefix + '_' + fieldnames[i] + ']').removeClass('disabled');
+			$j('input[name=' + prefix + '_' + fieldnames[i] + ']').prop('disabled', false);
+		}
+		for (var i = 0; i < daysofweek.length; i++) {
+			$j('#' + prefix + '_' + daysofweek[i].toLowerCase()).prop('disabled', false);
+		}
+		for (var i = 0; i < fieldnames2.length; i++) {
+			$j('[name=' + fieldnames2[i] + ']').removeClass('disabled');
+			$j('[name=' + fieldnames2[i] + ']').prop('disabled', false);
+		}
+	}
+}
+
+function scheduleModeToggle(forminput) {
+	var inputname = forminput.name;
+	var inputvalue = forminput.value;
+
+	if (inputvalue === 'EveryX') {
+		showhide('schfrequency', true);
+		showhide('schcustom', false);
+		if ($j('#everyxselect').val() === 'hours') {
+			showhide('spanxhours', true);
+			showhide('spanxminutes', false);
+		}
+		else if ($j('#everyxselect').val() === 'minutes') {
+			showhide('spanxhours', false);
+			showhide('spanxminutes', true);
+		}
+	}
+	else if (inputvalue === 'Custom') {
+		showhide('schfrequency', false);
+		showhide('schcustom', true);
+	}
+}
 
 function getEmailConfFile() {
 	$j.ajax({
@@ -1135,6 +1226,84 @@ function getChangelogFile() {
 			$j('#divchangelog').html(data);
 		}
 	});
+}
+
+function buildLastXTableNoData() {
+	var tablehtml = '<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="sortTable">';
+	tablehtml += '<tr>';
+	tablehtml += '<td colspan="6" class="nodata">';
+	tablehtml += 'Data loading...';
+	tablehtml += '</td>';
+	tablehtml += '</tr>';
+	tablehtml += '</table>';
+	return tablehtml;
+}
+
+function buildLastXTable() {
+	var tablehtml = '<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="sortTable">';
+
+	if (AltLayout === 'false') {
+		tablehtml += '<col style="width:130px;">';
+		tablehtml += '<col style="width:200px;">';
+		tablehtml += '<col style="width:95px;">';
+		tablehtml += '<col style="width:90px;">';
+		tablehtml += '<col style="width:90px;">';
+		tablehtml += '<col style="width:110px;">';
+		tablehtml += '<thead class="sortTableHeader">';
+		tablehtml += '<tr>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
+		tablehtml += '</tr>';
+		tablehtml += '</thead>';
+		tablehtml += '<tbody class="sortTableContent">';
+		for (var i = 0; i < arraysortlistlines.length; i++) {
+			tablehtml += '<tr class="sortRow">';
+			tablehtml += '<td>' + arraysortlistlines[i].Time + '</td>';
+			tablehtml += '<td>' + arraysortlistlines[i].Target + '</td>';
+			tablehtml += '<td>' + arraysortlistlines[i].Duration + '</td>';
+			tablehtml += '<td>' + arraysortlistlines[i].Ping + '</td>';
+			tablehtml += '<td>' + arraysortlistlines[i].Jitter + '</td>';
+			tablehtml += '<td>' + arraysortlistlines[i].LineQuality + '</td>';
+			tablehtml += '</tr>';
+		}
+	}
+	else {
+		tablehtml += '<col style="width:130px;">';
+		tablehtml += '<col style="width:90px;">';
+		tablehtml += '<col style="width:90px;">';
+		tablehtml += '<col style="width:110px;">';
+		tablehtml += '<col style="width:200px;">';
+		tablehtml += '<col style="width:95px;">';
+		tablehtml += '<thead class="sortTableHeader">';
+		tablehtml += '<tr>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
+		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
+		tablehtml += '</tr>';
+		tablehtml += '</thead>';
+		tablehtml += '<tbody class="sortTableContent">';
+		for (var i = 0; i < arraysortlistlines.length; i++) {
+			tablehtml += '<tr class="sortRow">';
+			tablehtml += '<td>' + arraysortlistlines[i].Time + '</td>';
+			tablehtml += '<td>' + arraysortlistlines[i].Ping + '</td>';
+			tablehtml += '<td>' + arraysortlistlines[i].Jitter + '</td>';
+			tablehtml += '<td>' + arraysortlistlines[i].LineQuality + '</td>';
+			tablehtml += '<td>' + arraysortlistlines[i].Target + '</td>';
+			tablehtml += '<td>' + arraysortlistlines[i].Duration + '</td>';
+			tablehtml += '</tr>';
+		}
+	}
+
+	tablehtml += '</tbody>';
+	tablehtml += '</table>';
+	return tablehtml;
 }
 
 function initial() {
@@ -1432,29 +1601,6 @@ function testStatus(testname) {
 	});
 }
 
-function parseLastXData(data) {
-	var arraysortlines = data.split('\n');
-	arraysortlines = arraysortlines.filter(Boolean);
-	arraysortlistlines = [];
-	for (var i = 0; i < arraysortlines.length; i++) {
-		try {
-			var resultfields = arraysortlines[i].split(',');
-			var parsedsortline = new Object();
-			parsedsortline.Time = moment.unix(resultfields[0].trim()).format('YYYY-MM-DD HH:mm:ss');
-			parsedsortline.Ping = resultfields[1].trim();
-			parsedsortline.Jitter = resultfields[2].trim();
-			parsedsortline.LineQuality = resultfields[3].replace('null', '').trim();
-			parsedsortline.Target = resultfields[4].replace('null', '').trim();
-			parsedsortline.Duration = resultfields[5].replace('null', '').trim();
-			arraysortlistlines.push(parsedsortline);
-		}
-		catch {
-			//do nothing,continue
-		}
-	}
-	sortTable(sortname + ' ' + sortdir.replace('desc', '↑').replace('asc', '↓').trim());
-}
-
 function sortTable(sorttext) {
 	sortname = sorttext.replace('↑', '').replace('↓', '').trim();
 	var sorttype = 'number';
@@ -1524,142 +1670,6 @@ function sortTable(sorttext) {
 			}
 		}
 	});
-}
-
-function buildLastXTableNoData() {
-	var tablehtml = '<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="sortTable">';
-	tablehtml += '<tr>';
-	tablehtml += '<td colspan="6" class="nodata">';
-	tablehtml += 'Data loading...';
-	tablehtml += '</td>';
-	tablehtml += '</tr>';
-	tablehtml += '</table>';
-	return tablehtml;
-}
-
-function buildLastXTable() {
-	var tablehtml = '<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="sortTable">';
-
-	if (AltLayout === 'false') {
-		tablehtml += '<col style="width:130px;">';
-		tablehtml += '<col style="width:200px;">';
-		tablehtml += '<col style="width:95px;">';
-		tablehtml += '<col style="width:90px;">';
-		tablehtml += '<col style="width:90px;">';
-		tablehtml += '<col style="width:110px;">';
-		tablehtml += '<thead class="sortTableHeader">';
-		tablehtml += '<tr>';
-		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
-		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
-		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
-		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
-		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
-		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
-		tablehtml += '</tr>';
-		tablehtml += '</thead>';
-		tablehtml += '<tbody class="sortTableContent">';
-		for (var i = 0; i < arraysortlistlines.length; i++) {
-			tablehtml += '<tr class="sortRow">';
-			tablehtml += '<td>' + arraysortlistlines[i].Time + '</td>';
-			tablehtml += '<td>' + arraysortlistlines[i].Target + '</td>';
-			tablehtml += '<td>' + arraysortlistlines[i].Duration + '</td>';
-			tablehtml += '<td>' + arraysortlistlines[i].Ping + '</td>';
-			tablehtml += '<td>' + arraysortlistlines[i].Jitter + '</td>';
-			tablehtml += '<td>' + arraysortlistlines[i].LineQuality + '</td>';
-			tablehtml += '</tr>';
-		}
-	}
-	else {
-		tablehtml += '<col style="width:130px;">';
-		tablehtml += '<col style="width:90px;">';
-		tablehtml += '<col style="width:90px;">';
-		tablehtml += '<col style="width:110px;">';
-		tablehtml += '<col style="width:200px;">';
-		tablehtml += '<col style="width:95px;">';
-		tablehtml += '<thead class="sortTableHeader">';
-		tablehtml += '<tr>';
-		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Time</th>';
-		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Ping (ms)</th>';
-		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Jitter (ms)</th>';
-		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\').replace(\' \',\'\'))">Line Quality (%)</th>';
-		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Target</th>';
-		tablehtml += '<th class="sortable" onclick="sortTable(this.innerHTML.replace(/ \\(.*\\)/,\'\'))">Duration (s)</th>';
-		tablehtml += '</tr>';
-		tablehtml += '</thead>';
-		tablehtml += '<tbody class="sortTableContent">';
-		for (var i = 0; i < arraysortlistlines.length; i++) {
-			tablehtml += '<tr class="sortRow">';
-			tablehtml += '<td>' + arraysortlistlines[i].Time + '</td>';
-			tablehtml += '<td>' + arraysortlistlines[i].Ping + '</td>';
-			tablehtml += '<td>' + arraysortlistlines[i].Jitter + '</td>';
-			tablehtml += '<td>' + arraysortlistlines[i].LineQuality + '</td>';
-			tablehtml += '<td>' + arraysortlistlines[i].Target + '</td>';
-			tablehtml += '<td>' + arraysortlistlines[i].Duration + '</td>';
-			tablehtml += '</tr>';
-		}
-	}
-
-	tablehtml += '</tbody>';
-	tablehtml += '</table>';
-	return tablehtml;
-}
-
-function automaticTestEnableDisable(forminput) {
-	var inputname = forminput.name;
-	var inputvalue = forminput.value;
-	var prefix = inputname.substring(0, inputname.indexOf('_'));
-
-	var fieldnames = ['schhours', 'schmins'];
-	var fieldnames2 = ['schedulemode', 'everyxselect', 'everyxvalue'];
-
-	if (inputvalue === 'false') {
-		for (var i = 0; i < fieldnames.length; i++) {
-			$j('input[name=' + prefix + '_' + fieldnames[i] + ']').addClass('disabled');
-			$j('input[name=' + prefix + '_' + fieldnames[i] + ']').prop('disabled', true);
-		}
-		for (var i = 0; i < daysofweek.length; i++) {
-			$j('#' + prefix + '_' + daysofweek[i].toLowerCase()).prop('disabled', true);
-		}
-		for (var i = 0; i < fieldnames2.length; i++) {
-			$j('[name=' + fieldnames2[i] + ']').addClass('disabled');
-			$j('[name=' + fieldnames2[i] + ']').prop('disabled', true);
-		}
-	}
-	else if (inputvalue === 'true') {
-		for (var i = 0; i < fieldnames.length; i++) {
-			$j('input[name=' + prefix + '_' + fieldnames[i] + ']').removeClass('disabled');
-			$j('input[name=' + prefix + '_' + fieldnames[i] + ']').prop('disabled', false);
-		}
-		for (var i = 0; i < daysofweek.length; i++) {
-			$j('#' + prefix + '_' + daysofweek[i].toLowerCase()).prop('disabled', false);
-		}
-		for (var i = 0; i < fieldnames2.length; i++) {
-			$j('[name=' + fieldnames2[i] + ']').removeClass('disabled');
-			$j('[name=' + fieldnames2[i] + ']').prop('disabled', false);
-		}
-	}
-}
-
-function scheduleModeToggle(forminput) {
-	var inputname = forminput.name;
-	var inputvalue = forminput.value;
-
-	if (inputvalue === 'EveryX') {
-		showhide('schfrequency', true);
-		showhide('schcustom', false);
-		if ($j('#everyxselect').val() === 'hours') {
-			showhide('spanxhours', true);
-			showhide('spanxminutes', false);
-		}
-		else if ($j('#everyxselect').val() === 'minutes') {
-			showhide('spanxhours', false);
-			showhide('spanxminutes', true);
-		}
-	}
-	else if (inputvalue === 'Custom') {
-		showhide('schfrequency', false);
-		showhide('schcustom', true);
-	}
 }
 
 function everyXToggle(forminput) {
@@ -1772,16 +1782,5 @@ function changeChart(e) {
 	}
 	else if (name === 'LineQuality') {
 		drawChart('LineQuality', titlelist[2], measureunitlist[2], bordercolourlist[2], backgroundcolourlist[2]);
-	}
-}
-
-function changePeriod(e) {
-	value = e.value * 1;
-	name = e.id.substring(0, e.id.indexOf('_'));
-	if (value === 2) {
-		$j('select[id="' + name + '_Period"] option:contains(24)').text('Today');
-	}
-	else {
-		$j('select[id="' + name + '_Period"] option:contains("Today")').text('Last 24 hours');
 	}
 }
