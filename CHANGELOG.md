@@ -1,34 +1,42 @@
 # Changelog
+
 ## v3.0.0
 20 August 2021
+
 *   NEW: Notifications and integrations
 *   NEW: Changelog displayed when updating
 *   NEW: New-look WebUI page
 
 ## v2.11.7
 4 August 2021
+
 *   CHANGED: service-event hook is more selective when it calls connmon
 
 ## v2.11.6
 23 June 2021
+
 *   FIXED: WebUI charts using Day grouping wouldn't display data between midnight and 1am
 *   FIXED: Database reset would incorrectly report disk space availability
 
 ## v2.11.5
 20 June 2021
+
 *   NEW: Automatic database analysis after adding new results and pruning old records
 
 ## v2.11.4
 30 May 2021
+
 *   IMPROVED: Line quality calculation - credit @waluwaz
 *   FIXED: min/max for zoom/pan of charts
 
 ## v2.11.3
 28 April 2021
+
 *   NEW: WebUI toggle (cookie) for changing column order of Last X table
 
 ## v2.11.2
 25 April 2021
+
 *   NEW: Setting to choose whether to include ping tests in QoS or not
 *   IMPROVED: Show IP used for test when using a domain to ping
 *   IMPROVED: Show placeholder text in WebUI while data is loading
@@ -39,6 +47,7 @@
 
 ## v2.11.0
 22 April 2021
+
 *   NEW: Configure how long data is kept in the database
 *   NEW: Configure how many recent results are displayed in the WebUI
 *   NEW: Ping target/destination and ping duration are now logged alongside ping test results
@@ -47,6 +56,7 @@
 
 ## v2.10.0
 17 April 2021
+
 *   NEW: Choice of data aggregation for charts in WebUI: raw, hourly and daily
 *   IMPROVED: Use of keyboard keys d,r,l,f for chart functions (drag zoom, reset zoom, toggle lines, toggle fill)
 *   IMPROVED: Use of indexes in database for small performance increases
@@ -56,12 +66,14 @@
 
 ## v2.9.1
 24 March 2021
+
 *   FIXED: Saving schedule from WebUI
 *   FIXED: Collapsing headers in WebUI after running a ping test
 *   CHANGED: Cookie expiry for collapsed section increase from 31 days to 10 years
 
 ## v2.9.0
 23 March 2021
+
 *   NEW: Option to turn automatic ping tests on/off
 *   NEW: CLI menu shows URL for WebUI page
 *   NEW: CLI commands for "about" and "help"
@@ -72,6 +84,7 @@
 
 ## v2.8.5
 6 March 2021
+
 *   NEW: Add option to reset database (CLI menu only)
 *   CHANGED: Allow ping frequency maximum to be every 30 minutes (up from 10)
 *   CHANGED: Exclude pings from QoS instead of marking as default
@@ -79,14 +92,17 @@
 
 ## v2.8.4
 13 February 2021
+
 *   IMPROVED: WebUI tab mounting on reboot
 
 ## v2.8.3
 20 January 2021
+
 *   FIXED: Logarithmic scale wasn't being formatted correctly
 
 ## v2.8.2
 18 January 2021
+
 *   NEW: Option to display charts with a logarithmic scale on y-axis
 *   CHANGED: Charts now use values at 2 decimal places instead of 3
 *   IMPROVED: Export now produces a csv rather than a zip
@@ -94,10 +110,12 @@
 
 ## v2.8.1
 14 January 2021
+
 *   CHANGED: connmon now launches on boot from post-mount not services-start
 
 ## v2.8.0
 22 November 2020
+
 *   NEW: Add WebUI table for last 10 ping tests
 *   NEW: Show result of manual ping test in WebUI
 *   NEW: Configure which hours connmon should run
@@ -107,10 +125,12 @@
 
 ## v2.7.1
 7 November 2020
+
 *   IMPROVED: Run ping test in WebUI with progress shown (via Ajax)
 
 ## v2.7.0
 24 October 2020
+
 *   NEW: All connmon options can be configured in the WebUI
 *   NEW: Ping test duration and frequency is now user configurable
 *   CHANGED: WebUI "check for updates" no longer needs a page refresh (thanks to @dave14305 !)
