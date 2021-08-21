@@ -3795,6 +3795,32 @@ case "$1" in
 			sleep 3
 			CustomAction_List silent
 			exit 0
+		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}TestEmail" ]; then
+			rm -f "$SCRIPT_WEB_DIR/detect_test.js"
+			echo 'var teststatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_test.js"
+			NOTIFICATIONS_EMAIL_LIST=$(Email_Recipients check)
+			if [ -z "$NOTIFICATIONS_EMAIL_LIST" ]; then
+				if SendEmail "Test email - $(/bin/date +"%c")" "This is a test email!"; then
+					echo 'var teststatus = "Success";' > "$SCRIPT_WEB_DIR/detect_test.js"
+				else
+					echo 'var teststatus = "Fail";' > "$SCRIPT_WEB_DIR/detect_test.js"
+				fi
+			else
+				IFS=$','
+				success="true"
+				for EMAIL in $NOTIFICATIONS_EMAIL_LIST; do
+					if ! SendEmail "Test email - $(/bin/date +"%c")" "This is a test email!" "$EMAIL"; then
+						success="false"
+					fi
+				done
+				if [ "$success" = "true" ]; then
+					echo 'var teststatus = "Success";' > "$SCRIPT_WEB_DIR/detect_test.js"
+				else
+					echo 'var teststatus = "Fail";' > "$SCRIPT_WEB_DIR/detect_test.js"
+				fi
+			fi
+			unset IFS
+			exit 0
 		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}TestWebhooks" ]; then
 			rm -f "$SCRIPT_WEB_DIR/detect_test.js"
 			echo 'var teststatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_test.js"
