@@ -57,7 +57,6 @@ td.nodata {
 
 .SettingsTable th {
   background-color: #2f3a3e;
-  background: #2F3A3E;
   border-bottom: none;
   border-top: none;
   font-size: 12px;
@@ -75,7 +74,6 @@ td.nodata {
 
 .SettingsTable span.settingname {
   background-color: #2f3a3e;
-  background: #2F3A3E;
 }
 
 .SettingsTable td.settingname {
@@ -104,7 +102,7 @@ td.nodata {
 
 .SettingsTable .disabled {
   background-color: #ccc;
-  color: #888888;
+  color: #888;
 }
 
 .removespacing {
