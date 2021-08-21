@@ -358,7 +358,7 @@ function getTimeFormat(value, format) {
 				second: 'h:mm:ss A',
 				minute: 'h:mm A',
 				hour: 'h A'
-			}
+			};
 		}
 	}
 	else if (format === 'tooltip') {
@@ -372,6 +372,120 @@ function getTimeFormat(value, format) {
 
 	return timeformat;
 }
+
+
+		function logarithmicFormatter(tickValue, index, ticks) {
+			var unit = this.options.scaleLabel.labelString;
+			if (this.type !== 'logarithmic') {
+				if (!isNaN(tickValue)) {
+					return round(tickValue, 2).toFixed(2) + ' ' + unit;
+				}
+				else {
+					return tickValue + ' ' + unit;
+				}
+			}
+			else {
+				var labelOpts = this.options.ticks.labels || {};
+				var labelIndex = labelOpts.index || ['min', 'max'];
+				var labelSignificand = labelOpts.significand || [1, 2, 5];
+				var significand = tickValue / (Math.pow(10, Math.floor(Chart.helpers.log10(tickValue))));
+				var emptyTick = labelOpts.removeEmptyLines === true ? undefined : '';
+				var namedIndex = '';
+				if (index === 0) {
+					namedIndex = 'min';
+				}
+				else if (index === ticks.length - 1) {
+					namedIndex = 'max';
+				}
+				if (labelOpts === 'all' || labelSignificand.indexOf(significand) !== -1 || labelIndex.indexOf(index) !== -1 || labelIndex.indexOf(namedIndex) !== -1) {
+					if (tickValue === 0) {
+						return '0' + ' ' + unit;
+					}
+					else {
+						if (!isNaN(tickValue)) {
+							return round(tickValue, 2).toFixed(2) + ' ' + unit;
+						}
+						else {
+							return tickValue + ' ' + unit;
+						}
+					}
+				}
+				return emptyTick;
+			}
+		}
+
+		function getLimit(datasetname, axis, maxmin, isannotation) {
+			var limit = 0;
+			var values;
+			if (axis === 'x') {
+				values = datasetname.map(function (o) { return o.x; });
+			}
+			else {
+				values = datasetname.map(function (o) { return o.y; });
+			}
+
+			if (maxmin === 'max') {
+				limit = Math.max.apply(Math, values);
+			}
+			else {
+				limit = Math.min.apply(Math, values);
+			}
+			if (maxmin === 'max' && limit === 0 && isannotation === false) {
+				limit = 1;
+			}
+			return limit;
+		}
+
+		function getYAxisMax(chartname) {
+			if (chartname === 'LineQuality') {
+				return 100;
+			}
+		}
+
+		function getAverage(datasetname) {
+			var total = 0;
+			for (var i = 0; i < datasetname.length; i++) {
+				total += (datasetname[i].y * 1);
+			}
+			var avg = total / datasetname.length;
+			return avg;
+		}
+
+		function round(value, decimals) {
+			return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
+		}
+
+		function toggleLines() {
+			if (ShowLines === '') {
+				ShowLines = 'line';
+				setCookie('ShowLines', 'line');
+			}
+			else {
+				ShowLines = '';
+				setCookie('ShowLines', '');
+			}
+			for (var i = 0; i < metriclist.length; i++) {
+				for (var i3 = 0; i3 < 3; i3++) {
+					window['LineChart_' + metriclist[i]].options.annotation.annotations[i3].type = ShowLines;
+				}
+				window['LineChart_' + metriclist[i]].update();
+			}
+		}
+
+		function toggleFill() {
+			if (ShowFill === 'false') {
+				ShowFill = 'origin';
+				setCookie('ShowFill', 'origin');
+			}
+			else {
+				ShowFill = 'false';
+				setCookie('ShowFill', 'false');
+			}
+			for (var i = 0; i < metriclist.length; i++) {
+				window['LineChart_' + metriclist[i]].data.datasets[0].fill = ShowFill;
+				window['LineChart_' + metriclist[i]].update();
+			}
+		}
 
 function drawChartNoData(txtchartname, texttodisplay) {
 	document.getElementById('divLineChart_' + txtchartname).width = '730';
@@ -617,119 +731,6 @@ function drawChart(txtchartname, txttitle, txtunity, bordercolourname, backgroun
 	window['LineChart_' + txtchartname] = objchartname;
 }
 
-function logarithmicFormatter(tickValue, index, ticks) {
-	var unit = this.options.scaleLabel.labelString;
-	if (this.type !== 'logarithmic') {
-		if (!isNaN(tickValue)) {
-			return round(tickValue, 2).toFixed(2) + ' ' + unit;
-		}
-		else {
-			return tickValue + ' ' + unit;
-		}
-	}
-	else {
-		var labelOpts = this.options.ticks.labels || {};
-		var labelIndex = labelOpts.index || ['min', 'max'];
-		var labelSignificand = labelOpts.significand || [1, 2, 5];
-		var significand = tickValue / (Math.pow(10, Math.floor(Chart.helpers.log10(tickValue))));
-		var emptyTick = labelOpts.removeEmptyLines === true ? undefined : '';
-		var namedIndex = '';
-		if (index === 0) {
-			namedIndex = 'min';
-		}
-		else if (index === ticks.length - 1) {
-			namedIndex = 'max';
-		}
-		if (labelOpts === 'all' || labelSignificand.indexOf(significand) !== -1 || labelIndex.indexOf(index) !== -1 || labelIndex.indexOf(namedIndex) !== -1) {
-			if (tickValue === 0) {
-				return '0' + ' ' + unit;
-			}
-			else {
-				if (!isNaN(tickValue)) {
-					return round(tickValue, 2).toFixed(2) + ' ' + unit;
-				}
-				else {
-					return tickValue + ' ' + unit;
-				}
-			}
-		}
-		return emptyTick;
-	}
-}
-
-function getLimit(datasetname, axis, maxmin, isannotation) {
-	var limit = 0;
-	var values;
-	if (axis === 'x') {
-		values = datasetname.map(function (o) { return o.x; });
-	}
-	else {
-		values = datasetname.map(function (o) { return o.y; });
-	}
-
-	if (maxmin === 'max') {
-		limit = Math.max.apply(Math, values);
-	}
-	else {
-		limit = Math.min.apply(Math, values);
-	}
-	if (maxmin === 'max' && limit === 0 && isannotation === false) {
-		limit = 1;
-	}
-	return limit;
-}
-
-function getYAxisMax(chartname) {
-	if (chartname === 'LineQuality') {
-		return 100;
-	}
-}
-
-function getAverage(datasetname) {
-	var total = 0;
-	for (var i = 0; i < datasetname.length; i++) {
-		total += (datasetname[i].y * 1);
-	}
-	var avg = total / datasetname.length;
-	return avg;
-}
-
-function round(value, decimals) {
-	return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
-}
-
-function toggleLines() {
-	if (ShowLines === '') {
-		ShowLines = 'line';
-		setCookie('ShowLines', 'line');
-	}
-	else {
-		ShowLines = '';
-		setCookie('ShowLines', '');
-	}
-	for (var i = 0; i < metriclist.length; i++) {
-		for (var i3 = 0; i3 < 3; i3++) {
-			window['LineChart_' + metriclist[i]].options.annotation.annotations[i3].type = ShowLines;
-		}
-		window['LineChart_' + metriclist[i]].update();
-	}
-}
-
-function toggleFill() {
-	if (ShowFill === 'false') {
-		ShowFill = 'origin';
-		setCookie('ShowFill', 'origin');
-	}
-	else {
-		ShowFill = 'false';
-		setCookie('ShowFill', 'false');
-	}
-	for (var i = 0; i < metriclist.length; i++) {
-		window['LineChart_' + metriclist[i]].data.datasets[0].fill = ShowFill;
-		window['LineChart_' + metriclist[i]].update();
-	}
-}
-
 function redrawAllCharts() {
 	for (var i = 0; i < metriclist.length; i++) {
 		drawChartNoData(metriclist[i], 'Data loading...');
@@ -858,6 +859,21 @@ function errorCSVExport() {
 	document.getElementById('aExport').href = 'javascript:alert(\'Error exporting CSV,please refresh the page and try again\')';
 }
 
+
+
+function jyNavigate(tab, type, tabslength) {
+	for (var i = 1; i <= tabslength; i++) {
+		if (i === tab) {
+			$j('#' + type + 'Navigate' + i).show();
+			$j('#btn' + type + 'Navigate' + i).css({ 'background': '#085F96', 'background': '-webkit-linear-gradient(#09639C 0%,#003047 100%)', 'background': '-o-linear-gradient(#09639C 0%,#003047 100%)', 'background': 'linear-gradient(#09639C 0%,#003047 100%)' });
+		}
+		else {
+			$j('#' + type + 'Navigate' + i).hide();
+			$j('#btn' + type + 'Navigate' + i).css('background', '');
+		}
+	}
+}
+
 function initial() {
 	setCurrentPage();
 	loadCustomSettings();
@@ -892,19 +908,6 @@ function setStartTab(dropdown) {
 	setCookie('StartTab', $j(dropdown).val());
 }
 
-function jyNavigate(tab, type, tabslength) {
-	for (var i = 1; i <= tabslength; i++) {
-		if (i === tab) {
-			$j('#' + type + 'Navigate' + i).show();
-			$j('#btn' + type + 'Navigate' + i).css({ 'background': '#085F96', 'background': '-webkit-linear-gradient(#09639C 0%,#003047 100%)', 'background': '-o-linear-gradient(#09639C 0%,#003047 100%)', 'background': 'linear-gradient(#09639C 0%,#003047 100%)' });
-		}
-		else {
-			$j('#' + type + 'Navigate' + i).hide();
-			$j('#btn' + type + 'Navigate' + i).css('background', '');
-		}
-	}
-}
-
 function scriptUpdateLayout() {
 	var localver = getVersionNumber('local');
 	var serverver = getVersionNumber('server');
@@ -925,7 +928,7 @@ function scriptUpdateLayout() {
 	}
 }
 
-function pass_checked(obj, showobj) {
+function passChecked(obj, showobj) {
 	switchType(obj, showobj.checked, true);
 }
 
@@ -973,16 +976,16 @@ function toggleAlternateLayout(checkbox) {
 	sortTable(sortname + ' ' + sortdir.replace('desc', '↑').replace('asc', '↓').trim());
 }
 
-function updateStatus() {
+function statusUpdate() {
 	$j.ajax({
 		url: '/ext/connmon/detect_update.js',
 		dataType: 'script',
 		error: function (xhr) {
-			setTimeout(updateStatus, 1000);
+			setTimeout(statusUpdate, 1000);
 		},
 		success: function () {
 			if (updatestatus === 'InProgress') {
-				setTimeout(updateStatus, 1000);
+				setTimeout(statusUpdate, 1000);
 			}
 			else {
 				iziToast.destroy();
@@ -1017,7 +1020,7 @@ function checkUpdate() {
 	document.formScriptActions.action_script.value = 'start_addon_settings;start_connmoncheckupdate';
 	document.formScriptActions.submit();
 	document.getElementById('imgChkUpdate').style.display = '';
-	setTimeout(updateStatus, 2000);
+	setTimeout(statusUpdate, 2000);
 	iziToast.info({ message: 'Checking for updates...', timeout: false });
 }
 
@@ -1164,7 +1167,7 @@ function getEmailConfFile() {
 		url: '/ext/connmon/email_config.htm',
 		dataType: 'text',
 		error: function (xhr) {
-			setTimeout(getConfFile, 1000);
+			setTimeout(getEmailConfFile, 1000);
 		},
 		success: function (data) {
 			var emailconfigdata = data.split('\n');
