@@ -59,6 +59,10 @@ if (ShowFill === '') {
 var DragZoom = true;
 var ChartPan = false;
 
+var myinterval;
+var intervalclear = false;
+var pingtestrunning = false;
+
 Chart.defaults.global.defaultFontColor = '#CCC';
 Chart.Tooltip.positioners.cursor = function (chartElements, coordinates) {
 	return coordinates;
@@ -374,9 +378,34 @@ function getTimeFormat(value, format) {
 }
 
 
-		function logarithmicFormatter(tickValue, index, ticks) {
-			var unit = this.options.scaleLabel.labelString;
-			if (this.type !== 'logarithmic') {
+function logarithmicFormatter(tickValue, index, ticks) {
+	var unit = this.options.scaleLabel.labelString;
+	if (this.type !== 'logarithmic') {
+		if (!isNaN(tickValue)) {
+			return round(tickValue, 2).toFixed(2) + ' ' + unit;
+		}
+		else {
+			return tickValue + ' ' + unit;
+		}
+	}
+	else {
+		var labelOpts = this.options.ticks.labels || {};
+		var labelIndex = labelOpts.index || ['min', 'max'];
+		var labelSignificand = labelOpts.significand || [1, 2, 5];
+		var significand = tickValue / (Math.pow(10, Math.floor(Chart.helpers.log10(tickValue))));
+		var emptyTick = labelOpts.removeEmptyLines === true ? undefined : '';
+		var namedIndex = '';
+		if (index === 0) {
+			namedIndex = 'min';
+		}
+		else if (index === ticks.length - 1) {
+			namedIndex = 'max';
+		}
+		if (labelOpts === 'all' || labelSignificand.indexOf(significand) !== -1 || labelIndex.indexOf(index) !== -1 || labelIndex.indexOf(namedIndex) !== -1) {
+			if (tickValue === 0) {
+				return '0' + ' ' + unit;
+			}
+			else {
 				if (!isNaN(tickValue)) {
 					return round(tickValue, 2).toFixed(2) + ' ' + unit;
 				}
@@ -384,108 +413,104 @@ function getTimeFormat(value, format) {
 					return tickValue + ' ' + unit;
 				}
 			}
-			else {
-				var labelOpts = this.options.ticks.labels || {};
-				var labelIndex = labelOpts.index || ['min', 'max'];
-				var labelSignificand = labelOpts.significand || [1, 2, 5];
-				var significand = tickValue / (Math.pow(10, Math.floor(Chart.helpers.log10(tickValue))));
-				var emptyTick = labelOpts.removeEmptyLines === true ? undefined : '';
-				var namedIndex = '';
-				if (index === 0) {
-					namedIndex = 'min';
-				}
-				else if (index === ticks.length - 1) {
-					namedIndex = 'max';
-				}
-				if (labelOpts === 'all' || labelSignificand.indexOf(significand) !== -1 || labelIndex.indexOf(index) !== -1 || labelIndex.indexOf(namedIndex) !== -1) {
-					if (tickValue === 0) {
-						return '0' + ' ' + unit;
-					}
-					else {
-						if (!isNaN(tickValue)) {
-							return round(tickValue, 2).toFixed(2) + ' ' + unit;
-						}
-						else {
-							return tickValue + ' ' + unit;
-						}
-					}
-				}
-				return emptyTick;
-			}
 		}
+		return emptyTick;
+	}
+}
 
-		function getLimit(datasetname, axis, maxmin, isannotation) {
-			var limit = 0;
-			var values;
-			if (axis === 'x') {
-				values = datasetname.map(function (o) { return o.x; });
-			}
-			else {
-				values = datasetname.map(function (o) { return o.y; });
-			}
+function getLimit(datasetname, axis, maxmin, isannotation) {
+	var limit = 0;
+	var values;
+	if (axis === 'x') {
+		values = datasetname.map(function (o) { return o.x; });
+	}
+	else {
+		values = datasetname.map(function (o) { return o.y; });
+	}
 
-			if (maxmin === 'max') {
-				limit = Math.max.apply(Math, values);
-			}
-			else {
-				limit = Math.min.apply(Math, values);
-			}
-			if (maxmin === 'max' && limit === 0 && isannotation === false) {
-				limit = 1;
-			}
-			return limit;
+	if (maxmin === 'max') {
+		limit = Math.max.apply(Math, values);
+	}
+	else {
+		limit = Math.min.apply(Math, values);
+	}
+	if (maxmin === 'max' && limit === 0 && isannotation === false) {
+		limit = 1;
+	}
+	return limit;
+}
+
+function getYAxisMax(chartname) {
+	if (chartname === 'LineQuality') {
+		return 100;
+	}
+}
+
+function getAverage(datasetname) {
+	var total = 0;
+	for (var i = 0; i < datasetname.length; i++) {
+		total += (datasetname[i].y * 1);
+	}
+	var avg = total / datasetname.length;
+	return avg;
+}
+
+function round(value, decimals) {
+	return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
+}
+
+function toggleLines() {
+	if (ShowLines === '') {
+		ShowLines = 'line';
+		setCookie('ShowLines', 'line');
+	}
+	else {
+		ShowLines = '';
+		setCookie('ShowLines', '');
+	}
+	for (var i = 0; i < metriclist.length; i++) {
+		for (var i3 = 0; i3 < 3; i3++) {
+			window['LineChart_' + metriclist[i]].options.annotation.annotations[i3].type = ShowLines;
 		}
+		window['LineChart_' + metriclist[i]].update();
+	}
+}
 
-		function getYAxisMax(chartname) {
-			if (chartname === 'LineQuality') {
-				return 100;
-			}
-		}
+function toggleFill() {
+	if (ShowFill === 'false') {
+		ShowFill = 'origin';
+		setCookie('ShowFill', 'origin');
+	}
+	else {
+		ShowFill = 'false';
+		setCookie('ShowFill', 'false');
+	}
+	for (var i = 0; i < metriclist.length; i++) {
+		window['LineChart_' + metriclist[i]].data.datasets[0].fill = ShowFill;
+		window['LineChart_' + metriclist[i]].update();
+	}
+}
 
-		function getAverage(datasetname) {
-			var total = 0;
-			for (var i = 0; i < datasetname.length; i++) {
-				total += (datasetname[i].y * 1);
-			}
-			var avg = total / datasetname.length;
-			return avg;
-		}
+function getChartScale(scale) {
+	var chartscale = '';
+	scale = scale * 1;
+	if (scale === 0) {
+		chartscale = 'linear';
+	}
+	else if (scale === 1) {
+		chartscale = 'logarithmic';
+	}
+	return chartscale;
+}
 
-		function round(value, decimals) {
-			return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
-		}
-
-		function toggleLines() {
-			if (ShowLines === '') {
-				ShowLines = 'line';
-				setCookie('ShowLines', 'line');
-			}
-			else {
-				ShowLines = '';
-				setCookie('ShowLines', '');
-			}
-			for (var i = 0; i < metriclist.length; i++) {
-				for (var i3 = 0; i3 < 3; i3++) {
-					window['LineChart_' + metriclist[i]].options.annotation.annotations[i3].type = ShowLines;
-				}
-				window['LineChart_' + metriclist[i]].update();
-			}
-		}
-
-		function toggleFill() {
-			if (ShowFill === 'false') {
-				ShowFill = 'origin';
-				setCookie('ShowFill', 'origin');
-			}
-			else {
-				ShowFill = 'false';
-				setCookie('ShowFill', 'false');
-			}
-			for (var i = 0; i < metriclist.length; i++) {
-				window['LineChart_' + metriclist[i]].data.datasets[0].fill = ShowFill;
-				window['LineChart_' + metriclist[i]].update();
-			}
-		}
+function getChartInterval(layout) {
+	var charttype = 'raw';
+	layout = layout * 1;
+	if (layout === 0) { charttype = 'raw'; }
+	else if (layout === 1) { charttype = 'hour'; }
+	else if (layout === 2) { charttype = 'day'; }
+	return charttype;
+}
 
 function drawChartNoData(txtchartname, texttodisplay) {
 	document.getElementById('divLineChart_' + txtchartname).width = '730';
@@ -765,27 +790,6 @@ function setGlobalDataset(txtchartname, dataobject) {
 	}
 }
 
-function getChartScale(scale) {
-	var chartscale = '';
-	scale = scale * 1;
-	if (scale === 0) {
-		chartscale = 'linear';
-	}
-	else if (scale === 1) {
-		chartscale = 'logarithmic';
-	}
-	return chartscale;
-}
-
-function getChartInterval(layout) {
-	var charttype = 'raw';
-	layout = layout * 1;
-	if (layout === 0) { charttype = 'raw'; }
-	else if (layout === 1) { charttype = 'hour'; }
-	else if (layout === 2) { charttype = 'day'; }
-	return charttype;
-}
-
 
 $j.fn.serializeObject = function () {
 	var o = customSettings;
@@ -872,6 +876,213 @@ function jyNavigate(tab, type, tabslength) {
 			$j('#btn' + type + 'Navigate' + i).css('background', '');
 		}
 	}
+}
+
+
+function getEmailConfFile() {
+	$j.ajax({
+		url: '/ext/connmon/email_config.htm',
+		dataType: 'text',
+		error: function (xhr) {
+			setTimeout(getEmailConfFile, 1000);
+		},
+		success: function (data) {
+			var emailconfigdata = data.split('\n');
+			emailconfigdata = emailconfigdata.filter(Boolean);
+			emailconfigdata = emailconfigdata.filter(function (item) {
+				return item.indexOf('#') === -1;
+			});
+			for (var i = 0; i < emailconfigdata.length; i++) {
+				let settingname = emailconfigdata[i].split('=')[0].toLowerCase();
+				let settingvalue = emailconfigdata[i].split('=')[1].replace(/(\r\n|\n|\r)/gm, '').replace(/"/g, '');
+				if (settingname.indexOf('emailpwenc') !== -1) {
+					continue;
+				}
+				else {
+					eval('document.form.email_' + settingname).value = settingvalue;
+				}
+			}
+		}
+	});
+}
+
+function getEmailpwFile() {
+	$j.ajax({
+		url: '/ext/connmon/password.htm',
+		dataType: 'text',
+		error: function (xhr) {
+			setTimeout(getEmailpwFile, 1000);
+		},
+		success: function (data) {
+			document.form.email_password.value = data;
+			document.formScriptActions.action_script.value = 'start_addon_settings;start_connmondeleteemailpassword';
+			document.formScriptActions.submit();
+		}
+	});
+}
+
+function getConfFile() {
+	$j.ajax({
+		url: '/ext/connmon/config.htm',
+		dataType: 'text',
+		error: function (xhr) {
+			setTimeout(getConfFile, 1000);
+		},
+		success: function (data) {
+			var configdata = data.split('\n');
+			configdata = configdata.filter(Boolean);
+
+			for (var i = 0; i < configdata.length; i++) {
+				let settingname = configdata[i].split('=')[0].toLowerCase();
+				let settingvalue = configdata[i].split('=')[1].replace(/(\r\n|\n|\r)/gm, '');
+
+				if (settingname.indexOf('pingserver') !== -1) {
+					var pingserver = settingvalue;
+					document.form.connmon_pingserver.value = pingserver;
+					if (validateIP(document.form.connmon_pingserver)) {
+						document.form.pingtype.value = 0;
+						document.form.connmon_ipaddr.value = pingserver;
+					}
+					else {
+						document.form.pingtype.value = 1;
+						document.form.connmon_domain.value = pingserver;
+					}
+					document.form.pingtype.onchange();
+				}
+				else if (settingname.indexOf('schdays') !== -1) {
+					if (settingvalue === '*') {
+						for (var i2 = 0; i2 < daysofweek.length; i2++) {
+							$j('#connmon_' + daysofweek[i2].toLowerCase()).prop('checked', true);
+						}
+					}
+					else {
+						var schdayarray = settingvalue.split(',');
+						for (var i2 = 0; i2 < schdayarray.length; i2++) {
+							$j('#connmon_' + schdayarray[i2].toLowerCase()).prop('checked', true);
+						}
+					}
+				}
+				else if (configdata[i].indexOf('EMAIL_LIST') !== -1) {
+					continue;
+				}
+				else if (configdata[i].indexOf('NOTIFICATIONS') !== -1 && configdata[i].indexOf('INFLUXDB') === -1 && configdata[i].indexOf('HEALTHCHECK') === -1 && configdata[i].indexOf('CUSTOM') === -1 && configdata[i].indexOf('PUSHOVER') === -1 &&
+					configdata[i].indexOf('WEBHOOK') === -1 && configdata[i].indexOf('EMAIL') === -1) {
+					continue;
+				}
+				else if (settingname.indexOf('notifications_pushover_list') !== -1) {
+					eval('document.form.connmon_' + settingname).value = settingvalue.replace(/,/g, '\n');
+				}
+				else if (settingname.indexOf('notifications_webhook_list') !== -1) {
+					eval('document.form.connmon_' + settingname).value = settingvalue.replace(/,/g, '\n');
+				}
+				else {
+					eval('document.form.connmon_' + settingname).value = settingvalue;
+				}
+
+				if (settingname.indexOf('automated') !== -1) {
+					automaticTestEnableDisable($j('#connmon_auto_' + document.form.connmon_automated.value)[0]);
+				}
+
+				if (settingname.indexOf('pingduration') !== -1) {
+					pingtestdur = document.form.connmon_pingduration.value;
+				}
+			}
+
+			if ($j('[name=connmon_schhours]').val().indexOf('/') !== -1 && $j('[name=connmon_schmins]').val() * 1 === 0) {
+				document.form.schedulemode.value = 'EveryX';
+				document.form.everyxselect.value = 'hours';
+				document.form.everyxvalue.value = $j('[name=connmon_schhours]').val().split('/')[1];
+			}
+			else if ($j('[name=connmon_schmins]').val().indexOf('/') !== -1 && $j('[name=connmon_schhours]').val() === '*') {
+				document.form.schedulemode.value = 'EveryX';
+				document.form.everyxselect.value = 'minutes';
+				document.form.everyxvalue.value = $j('[name=connmon_schmins]').val().split('/')[1];
+			}
+			else {
+				document.form.schedulemode.value = 'Custom';
+			}
+			scheduleModeToggle($j('#schmode_' + $j('[name=schedulemode]:checked').val().toLowerCase())[0]);
+		}
+	});
+}
+
+function getStatstitleFile() {
+	$j.ajax({
+		url: '/ext/connmon/connstatstext.js',
+		dataType: 'script',
+		error: function (xhr) {
+			setTimeout(getStatstitleFile, 1000);
+		},
+		success: function () {
+			setConnmonStatsTitle();
+		}
+	});
+}
+
+function getCronFile() {
+	$j.ajax({
+		url: '/ext/connmon/cron.js',
+		dataType: 'text',
+		error: function (xhr) {
+			setTimeout(getCronFile, 1000);
+		},
+		success: function (data) {
+			document.form.healthcheckio_cron.value = data;
+		}
+	});
+}
+
+function getEmailInfo() {
+	$j.ajax({
+		url: '/ext/connmon/emailinfo.htm',
+		dataType: 'text',
+		error: function (xhr) {
+			setTimeout(getEmailInfo, 1000);
+		},
+		success: function (data) {
+			$j('#emailinfo').html(data);
+		}
+	});
+}
+
+function getCustomactionInfo() {
+	$j.ajax({
+		url: '/ext/connmon/customactioninfo.htm',
+		dataType: 'text',
+		error: function (xhr) {
+			setTimeout(getCustomactionInfo, 1000);
+		},
+		success: function (data) {
+			$j('#customaction_details').append('\n' + data);
+		}
+	});
+}
+
+function getCustomactionList() {
+	$j.ajax({
+		url: '/ext/connmon/customactionlist.htm',
+		dataType: 'text',
+		error: function (xhr) {
+			setTimeout(getCustomactionList, 1000);
+		},
+		success: function (data) {
+			$j('#customaction_details').html(data);
+			getCustomactionInfo();
+		}
+	});
+}
+
+function getChangelogFile() {
+	$j.ajax({
+		url: '/ext/connmon/changelog.htm',
+		dataType: 'text',
+		error: function (xhr) {
+			setTimeout(getChangelogFile, 5000);
+		},
+		success: function (data) {
+			$j('#divchangelog').html(data);
+		}
+	});
 }
 
 function initial() {
@@ -1158,212 +1369,6 @@ function getConntestresultFile() {
 			data = lines.join('\n');
 			$j('#conntest_output').html(data);
 			document.getElementById('conntest_output').parentElement.parentElement.style.display = '';
-		}
-	});
-}
-
-function getEmailConfFile() {
-	$j.ajax({
-		url: '/ext/connmon/email_config.htm',
-		dataType: 'text',
-		error: function (xhr) {
-			setTimeout(getEmailConfFile, 1000);
-		},
-		success: function (data) {
-			var emailconfigdata = data.split('\n');
-			emailconfigdata = emailconfigdata.filter(Boolean);
-			emailconfigdata = emailconfigdata.filter(function (item) {
-				return item.indexOf('#') === -1;
-			});
-			for (var i = 0; i < emailconfigdata.length; i++) {
-				let settingname = emailconfigdata[i].split('=')[0].toLowerCase();
-				let settingvalue = emailconfigdata[i].split('=')[1].replace(/(\r\n|\n|\r)/gm, '').replace(/"/g, '');
-				if (settingname.indexOf('emailpwenc') !== -1) {
-					continue;
-				}
-				else {
-					eval('document.form.email_' + settingname).value = settingvalue;
-				}
-			}
-		}
-	});
-}
-
-function getEmailpwFile() {
-	$j.ajax({
-		url: '/ext/connmon/password.htm',
-		dataType: 'text',
-		error: function (xhr) {
-			setTimeout(getEmailpwFile, 1000);
-		},
-		success: function (data) {
-			document.form.email_password.value = data;
-			document.formScriptActions.action_script.value = 'start_addon_settings;start_connmondeleteemailpassword';
-			document.formScriptActions.submit();
-		}
-	});
-}
-
-function getConfFile() {
-	$j.ajax({
-		url: '/ext/connmon/config.htm',
-		dataType: 'text',
-		error: function (xhr) {
-			setTimeout(getConfFile, 1000);
-		},
-		success: function (data) {
-			var configdata = data.split('\n');
-			configdata = configdata.filter(Boolean);
-
-			for (var i = 0; i < configdata.length; i++) {
-				let settingname = configdata[i].split('=')[0].toLowerCase();
-				let settingvalue = configdata[i].split('=')[1].replace(/(\r\n|\n|\r)/gm, '');
-
-				if (settingname.indexOf('pingserver') !== -1) {
-					var pingserver = settingvalue;
-					document.form.connmon_pingserver.value = pingserver;
-					if (validateIP(document.form.connmon_pingserver)) {
-						document.form.pingtype.value = 0;
-						document.form.connmon_ipaddr.value = pingserver;
-					}
-					else {
-						document.form.pingtype.value = 1;
-						document.form.connmon_domain.value = pingserver;
-					}
-					document.form.pingtype.onchange();
-				}
-				else if (settingname.indexOf('schdays') !== -1) {
-					if (settingvalue === '*') {
-						for (var i2 = 0; i2 < daysofweek.length; i2++) {
-							$j('#connmon_' + daysofweek[i2].toLowerCase()).prop('checked', true);
-						}
-					}
-					else {
-						var schdayarray = settingvalue.split(',');
-						for (var i2 = 0; i2 < schdayarray.length; i2++) {
-							$j('#connmon_' + schdayarray[i2].toLowerCase()).prop('checked', true);
-						}
-					}
-				}
-				else if (configdata[i].indexOf('EMAIL_LIST') !== -1) {
-					continue;
-				}
-				else if (configdata[i].indexOf('NOTIFICATIONS') !== -1 && configdata[i].indexOf('INFLUXDB') === -1 && configdata[i].indexOf('HEALTHCHECK') === -1 && configdata[i].indexOf('CUSTOM') === -1 && configdata[i].indexOf('PUSHOVER') === -1 &&
-					configdata[i].indexOf('WEBHOOK') === -1 && configdata[i].indexOf('EMAIL') === -1) {
-					continue;
-				}
-				else if (settingname.indexOf('notifications_pushover_list') !== -1) {
-					eval('document.form.connmon_' + settingname).value = settingvalue.replace(/,/g, '\n');
-				}
-				else if (settingname.indexOf('notifications_webhook_list') !== -1) {
-					eval('document.form.connmon_' + settingname).value = settingvalue.replace(/,/g, '\n');
-				}
-				else {
-					eval('document.form.connmon_' + settingname).value = settingvalue;
-				}
-
-				if (settingname.indexOf('automated') !== -1) {
-					automaticTestEnableDisable($j('#connmon_auto_' + document.form.connmon_automated.value)[0]);
-				}
-
-				if (settingname.indexOf('pingduration') !== -1) {
-					pingtestdur = document.form.connmon_pingduration.value;
-				}
-			}
-
-			if ($j('[name=connmon_schhours]').val().indexOf('/') !== -1 && $j('[name=connmon_schmins]').val() * 1 === 0) {
-				document.form.schedulemode.value = 'EveryX';
-				document.form.everyxselect.value = 'hours';
-				document.form.everyxvalue.value = $j('[name=connmon_schhours]').val().split('/')[1];
-			}
-			else if ($j('[name=connmon_schmins]').val().indexOf('/') !== -1 && $j('[name=connmon_schhours]').val() === '*') {
-				document.form.schedulemode.value = 'EveryX';
-				document.form.everyxselect.value = 'minutes';
-				document.form.everyxvalue.value = $j('[name=connmon_schmins]').val().split('/')[1];
-			}
-			else {
-				document.form.schedulemode.value = 'Custom';
-			}
-			scheduleModeToggle($j('#schmode_' + $j('[name=schedulemode]:checked').val().toLowerCase())[0]);
-		}
-	});
-}
-
-function getStatstitleFile() {
-	$j.ajax({
-		url: '/ext/connmon/connstatstext.js',
-		dataType: 'script',
-		error: function (xhr) {
-			setTimeout(getStatstitleFile, 1000);
-		},
-		success: function () {
-			setConnmonStatsTitle();
-		}
-	});
-}
-
-function getCronFile() {
-	$j.ajax({
-		url: '/ext/connmon/cron.js',
-		dataType: 'text',
-		error: function (xhr) {
-			setTimeout(getCronFile, 1000);
-		},
-		success: function (data) {
-			document.form.healthcheckio_cron.value = data;
-		}
-	});
-}
-
-function getEmailInfo() {
-	$j.ajax({
-		url: '/ext/connmon/emailinfo.htm',
-		dataType: 'text',
-		error: function (xhr) {
-			setTimeout(getEmailInfo, 1000);
-		},
-		success: function (data) {
-			$j('#emailinfo').html(data);
-		}
-	});
-}
-
-function getCustomactionInfo() {
-	$j.ajax({
-		url: '/ext/connmon/customactioninfo.htm',
-		dataType: 'text',
-		error: function (xhr) {
-			setTimeout(getCustomactionInfo, 1000);
-		},
-		success: function (data) {
-			$j('#customaction_details').append('\n' + data);
-		}
-	});
-}
-
-function getCustomactionList() {
-	$j.ajax({
-		url: '/ext/connmon/customactionlist.htm',
-		dataType: 'text',
-		error: function (xhr) {
-			setTimeout(getCustomactionList, 1000);
-		},
-		success: function (data) {
-			$j('#customaction_details').html(data);
-			getCustomactionInfo();
-		}
-	});
-}
-
-function getChangelogFile() {
-	$j.ajax({
-		url: '/ext/connmon/changelog.htm',
-		dataType: 'text',
-		error: function (xhr) {
-			setTimeout(getChangelogFile, 5000);
-		},
-		success: function (data) {
-			$j('#divchangelog').html(data);
 		}
 	});
 }
@@ -1737,9 +1742,6 @@ function runPingTest() {
 	iziToast.info({ message: 'Ping test started', timeout: false });
 }
 
-var myinterval;
-var intervalclear = false;
-var pingtestrunning = false;
 function startConnTestInterval() {
 	intervalclear = false;
 	pingtestrunning = true;
