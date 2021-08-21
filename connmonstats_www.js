@@ -1171,6 +1171,24 @@ function setStartTab(dropdown) {
 	setCookie('StartTab', $j(dropdown).val());
 }
 
+
+function getVersionNumber(versiontype) {
+	var versionprop;
+	if (versiontype === 'local') {
+		versionprop = customSettings.connmon_version_local;
+	}
+	else if (versiontype === 'server') {
+		versionprop = customSettings.connmon_version_server;
+	}
+
+	if (typeof versionprop === 'undefined' || versionprop === null) {
+		return 'N/A';
+	}
+	else {
+		return versionprop;
+	}
+}
+
 function scriptUpdateLayout() {
 	var localver = getVersionNumber('local');
 	var serverver = getVersionNumber('server');
@@ -1254,6 +1272,13 @@ function doUpdate() {
 	document.form.action_wait.value = 10;
 	showLoading();
 	document.form.submit();
+}
+
+function postConnTest() {
+	currentNoCharts = 0;
+	$j('#Time_Format').val(getCookie('Time_Format', 'number'));
+	getStatstitleFile();
+	setTimeout(redrawAllCharts, 3000);
 }
 
 function saveConfig(section) {
@@ -1352,23 +1377,6 @@ function saveStatus(section) {
 			}
 		}
 	});
-}
-
-function getVersionNumber(versiontype) {
-	var versionprop;
-	if (versiontype === 'local') {
-		versionprop = customSettings.connmon_version_local;
-	}
-	else if (versiontype === 'server') {
-		versionprop = customSettings.connmon_version_server;
-	}
-
-	if (typeof versionprop === 'undefined' || versionprop === null) {
-		return 'N/A';
-	}
-	else {
-		return versionprop;
-	}
 }
 
 function getConntestresultFile() {
@@ -1722,13 +1730,6 @@ function updateConntest() {
 			}
 		}
 	});
-}
-
-function postConnTest() {
-	currentNoCharts = 0;
-	$j('#Time_Format').val(getCookie('Time_Format', 'number'));
-	getStatstitleFile();
-	setTimeout(redrawAllCharts, 3000);
 }
 
 function runPingTest() {
