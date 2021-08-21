@@ -162,6 +162,14 @@ tbody.sortTableContent td {
   font-size: 12px;
 }
 
+tbody.sortTableContent tr.sortRow:nth-child(odd) td {
+  background-color: #2f3a3e;
+}
+
+tbody.sortTableContent tr.sortRow:nth-child(even) td {
+  background-color: #475a5f;
+}
+
 thead.sortTableHeader th:first-child,
 thead.sortTableHeader th:last-child {
   border-right: none;
@@ -170,14 +178,6 @@ thead.sortTableHeader th:last-child {
 thead.sortTableHeader th:first-child,
 thead.sortTableHeader td:first-child {
   border-left: none;
-}
-
-tbody.sortTableContent tr.sortRow:nth-child(odd) td {
-  background-color: #2f3a3e;
-}
-
-tbody.sortTableContent tr.sortRow:nth-child(even) td {
-  background-color: #475a5f;
 }
 
 th.sortable {
