@@ -9,7 +9,7 @@ thead.collapsible-jquery {
   border: none;
   text-align: left;
   outline: none;
-  cursor: pointer;
+  /*cursor: pointer;*/
 }
 
 td.nodata {
@@ -28,10 +28,10 @@ td.nodata {
 }
 
 .StatsTable th {
-  background-color:#1F2D35 !important;
-  background:#2F3A3E !important;
-  border-bottom:none !important;
-  border-top:none !important;
+  background-color: #1F2D35 !important;
+  background: #2F3A3E !important;
+  border-bottom: none !important;
+  border-top: none !important;
   color: white !important;
   padding: 4px !important;
   font-size: 11px !important;
@@ -54,7 +54,7 @@ td.nodata {
   border-left: none !important;
 }
 
-.StatsTable th:last-child ,
+.StatsTable th:last-child,
 .StatsTable td:last-child {
   border-right: none !important;
 }
@@ -64,24 +64,17 @@ td.nodata {
 }
 
 .SettingsTable input {
-  text-align: left;
   margin-left: 3px !important;
+  margin-top: 3px;
 }
 
 .SettingsTable input.savebutton {
   text-align: center;
-  margin-top: 5px;
-  margin-bottom: 5px;
+  margin-top: 3px;
+  margin-bottom: 3px;
   border-right: solid 1px black;
   border-left: solid 1px black;
   border-bottom: solid 1px black;
-}
-
-.SettingsTable td.savebutton {
-  border-right: solid 1px black;
-  border-left: solid 1px black;
-  border-bottom: solid 1px black;
-  background-color:rgb(77,89,93);
 }
 
 .SettingsTable .cronbutton {
@@ -98,7 +91,7 @@ td.nodata {
 
 .SettingsTable label {
   margin-right: 10px !important;
-  vertical-align: top !important;
+  vertical-align: top;
 }
 
 .SettingsTable th {
@@ -138,7 +131,7 @@ td.nodata {
   border-right: solid 1px black;
 }
 
-.SettingsTable th:first-child{
+.SettingsTable th:first-child {
   border-left: none !important;
 }
 
@@ -156,16 +149,16 @@ td.nodata {
 }
 
 .removespacing {
-  padding-left: 0px !important;
+  padding-left: 0px;
   margin-left: 0px !important;
   margin-bottom: 5px !important;
-  text-align: center !important;
+  text-align: center;
 }
 
 .schedulespan {
-  display:inline-block !important;
-  width:70px !important;
-  color:#FFFFFF !important;
+  display: inline-block !important;
+  width: 70px !important;
+  color: #FFFFFF !important;
   font-weight: bold !important;
 }
 
@@ -174,7 +167,7 @@ div.schedulesettings {
 }
 
 div.sortTableContainer {
-  height: 300px;
+  height: 795px;
   overflow-y: scroll;
   width: 745px;
   border: 1px solid #000;
@@ -205,20 +198,12 @@ thead.sortTableHeader th:last-child {
   border-right: none !important;
 }
 
-thead.sortTableHeader th:last-child {
-  /*padding-left: 4px !important;*/
-}
-
 thead.sortTableHeader th:first-child,
 thead.sortTableHeader td:first-child {
   border-left: none !important;
 }
 
-tbody.sortTableContent td:last-child, tbody.sortTableContent tr.sortNormalRow td:last-child, tbody.sortTableContent tr.sortAlternateRow td:last-child {
-  /*padding-left: 4px !important;*/
-}
-
-tbody.sortTableContent td{
+tbody.sortTableContent td {
   border-bottom: 1px solid #000 !important;
   border-left: none !important;
   border-right: 1px solid #000 !important;
@@ -240,4 +225,54 @@ tbody.sortTableContent tr.sortRow:nth-child(even) td {
 
 th.sortable {
   cursor: pointer;
+}
+
+td.savebutton {
+  border: 0px;
+  background-color: rgb(77, 89, 93);
+}
+
+.testbutton {
+  text-align: center !important;
+  min-width: 75px;
+  width: 75px;
+  margin-bottom: 3px;
+  vertical-align: middle;
+  height: 24px;
+}
+
+.navbutton {
+  text-align: center !important;
+  min-width: 122px;
+  width: 122px;
+  vertical-align: middle;
+  height: 55px;
+}
+
+.chartnavbutton {
+  text-align: center !important;
+  min-width: 122px;
+  width: 122px;
+  vertical-align: middle;
+  margin: 5px;
+}
+
+.notificationtypenavbutton {
+  text-align: center !important;
+  min-width: 122px;
+  width: 122px;
+  vertical-align: middle;
+  height: 55px;
+  margin: 5px;
+}
+
+.notificationmethodnavbutton {
+  text-align: center !important;
+  min-width: 120px !important;
+  width: 120px;
+  vertical-align: middle;
+  height: 55px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding: 3px;
 }
