@@ -101,7 +101,6 @@ td.nodata {
   color: white !important;
   padding: 4px !important;
   font-weight: bolder !important;
-  padding: 0 !important;
 }
 
 .SettingsTable td {
@@ -141,7 +140,7 @@ td.nodata {
 }
 
 .SettingsTable .disabled {
-  background-color: #cccccc !important;
+  background-color: #ccc !important;
   color: #888888 !important;
 }
 
@@ -155,7 +154,7 @@ td.nodata {
 .schedulespan {
   display: inline-block !important;
   width: 70px !important;
-  color: #ffffff !important;
+  color: #fff !important;
   font-weight: bold !important;
 }
 
@@ -184,7 +183,7 @@ thead.sortTableHeader th {
   font-weight: bolder;
   padding: 2px;
   text-align: center;
-  color: #ffffff;
+  color: #fff;
   position: sticky;
   top: 0;
   font-size: 11px !important;
@@ -201,9 +200,9 @@ thead.sortTableHeader td:first-child {
 }
 
 tbody.sortTableContent td {
-  border-bottom: 1px solid #000000 !important;
+  border-bottom: 1px solid #000 !important;
   border-left: none !important;
-  border-right: 1px solid #000000 !important;
+  border-right: 1px solid #000 !important;
   border-top: none !important;
   padding: 2px;
   text-align: center;
