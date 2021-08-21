@@ -15,7 +15,7 @@ td.nodata {
   font-size: 48px;
   font-weight: bolder;
   height: 65px;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   border: none;
   text-align: center;
 }
