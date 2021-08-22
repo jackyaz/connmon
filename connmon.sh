@@ -364,8 +364,12 @@ EmailConf_FromSettings(){
 		sed -i "s/email_//g;s/ /=/g" "$TMPFILE"
 		while IFS='' read -r line || [ -n "$line" ]; do
 			SETTINGNAME="$(echo "$line" | cut -f1 -d'=' | awk '{print toupper($1)}')"
-			SETTINGVALUE="$(echo "$line" | cut -f2 -d'=')"
-			sed -i "s~$SETTINGNAME=.*~$SETTINGNAME=\"$SETTINGVALUE\"~" "$EMAIL_CONF"
+			SETTINGVALUE="$(echo "$line" | cut -f2- -d'=' | sed 's/=/ /g')"
+			if [ "$SETTINGNAME" = "PASSWORD" ]; then
+				Email_Encrypt_Password "$SETTINGVALUE"
+			else
+				sed -i "s~$SETTINGNAME=.*~$SETTINGNAME=\"$SETTINGVALUE\"~" "$EMAIL_CONF"
+			fi
 		done < "$TMPFILE"
 		sed -i "\\~email_~d" "$SETTINGSFILE"
 		rm -f "$TMPFILE"
