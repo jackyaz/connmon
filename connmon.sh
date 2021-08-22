@@ -1653,12 +1653,7 @@ Email_Password(){
 			read -r CONFIRM_INPUT
 			case "$CONFIRM_INPUT" in
 				y|Y)
-					emailPwEnc=$(grep "emailPwEnc=" "$EMAIL_CONF" | cut -f2 -d"=" | sed 's/""//')
-					if [ -f /usr/sbin/openssl11 ]; then
-						printf "$PASSWORD" | /usr/sbin/openssl11 aes-256-cbc $emailPwEnc -out "$EMAIL_DIR/emailpw.enc" -pass pass:ditbabot,isoi
-					else
-						printf "$PASSWORD" | /usr/sbin/openssl aes-256-cbc $emailPwEnc -out "$EMAIL_DIR/emailpw.enc" -pass pass:ditbabot,isoi
-					fi
+					Email_Encrypt_Password "$PASSWORD"
 					PASSWORD=""
 					break
 				;;
@@ -1668,6 +1663,31 @@ Email_Password(){
 			esac
 		fi
 	done
+}
+
+Email_Encrypt_Password(){
+	PWENCFILE="$EMAIL_DIR/emailpw.enc"
+	emailPwEnc=$(grep "emailPwEnc=" "$EMAIL_CONF" | cut -f2 -d"=" | sed 's/""//')
+	if [ -f /usr/sbin/openssl11 ]; then
+		printf "$1" | /usr/sbin/openssl11 aes-256-cbc $emailPwEnc -out "$PWENCFILE" -pass pass:ditbabot,isoi
+	else
+		printf "$1" | /usr/sbin/openssl aes-256-cbc $emailPwEnc -out "$PWENCFILE" -pass pass:ditbabot,isoi
+	fi
+}
+
+Email_Decrypt_Password(){
+	PWENCFILE="$EMAIL_DIR/emailpw.enc"
+	if /usr/sbin/openssl aes-256-cbc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi >/dev/null 2>&1 ; then
+		# old OpenSSL 1.0.x
+		PASSWORD="$(/usr/sbin/openssl aes-256-cbc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi 2>/dev/null)"
+	elif /usr/sbin/openssl aes-256-cbc -d -md md5 -in "$PWENCFILE" -pass pass:ditbabot,isoi >/dev/null 2>&1 ; then
+		# new OpenSSL 1.1.x non-converted password
+		PASSWORD="$(/usr/sbin/openssl aes-256-cbc -d -md md5 -in "$PWENCFILE" -pass pass:ditbabot,isoi 2>/dev/null)"
+	elif /usr/sbin/openssl aes-256-cbc $emailPwEnc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi >/dev/null 2>&1 ; then
+		# new OpenSSL 1.1.x converted password with -pbkdf2 flag
+		PASSWORD="$(/usr/sbin/openssl aes-256-cbc $emailPwEnc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi 2>/dev/null)"
+	fi
+	echo "$PASSWORD"
 }
 
 Email_Recipients(){
@@ -1805,18 +1825,7 @@ SendEmail(){
 			echo "--MULTIPART-MIXED-BOUNDARY--"
 		} >> /tmp/mail.txt
 
-		PWENCFILE="$EMAIL_DIR/emailpw.enc"
-		PASSWORD=""
-		if /usr/sbin/openssl aes-256-cbc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi >/dev/null 2>&1 ; then
-			# old OpenSSL 1.0.x
-			PASSWORD="$(/usr/sbin/openssl aes-256-cbc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi 2>/dev/null)"
-		elif /usr/sbin/openssl aes-256-cbc -d -md md5 -in "$PWENCFILE" -pass pass:ditbabot,isoi >/dev/null 2>&1 ; then
-			# new OpenSSL 1.1.x non-converted password
-			PASSWORD="$(/usr/sbin/openssl aes-256-cbc -d -md md5 -in "$PWENCFILE" -pass pass:ditbabot,isoi 2>/dev/null)"
-		elif /usr/sbin/openssl aes-256-cbc $emailPwEnc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi >/dev/null 2>&1 ; then
-			# new OpenSSL 1.1.x converted password with -pbkdf2 flag
-			PASSWORD="$(/usr/sbin/openssl aes-256-cbc $emailPwEnc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi 2>/dev/null)"
-		fi
+		PASSWORD=$(Email_Decrypt_Password)
 
 		/usr/sbin/curl -s --show-error --url "$PROTOCOL://$SMTP:$PORT" \
 		--mail-from "$FROM_ADDRESS" --mail-rcpt "$TO_ADDRESS" \
@@ -3804,19 +3813,7 @@ case "$1" in
 			if Email_ConfExists; then
 				rm -f "$SCRIPT_WEB_DIR/password.htm"
 				sleep 3
-				PWENCFILE="$EMAIL_DIR/emailpw.enc"
-				PASSWORD=""
-				if /usr/sbin/openssl aes-256-cbc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi >/dev/null 2>&1 ; then
-					# old OpenSSL 1.0.x
-					PASSWORD="$(/usr/sbin/openssl aes-256-cbc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi 2>/dev/null)"
-				elif /usr/sbin/openssl aes-256-cbc -d -md md5 -in "$PWENCFILE" -pass pass:ditbabot,isoi >/dev/null 2>&1 ; then
-					# new OpenSSL 1.1.x non-converted password
-					PASSWORD="$(/usr/sbin/openssl aes-256-cbc -d -md md5 -in "$PWENCFILE" -pass pass:ditbabot,isoi 2>/dev/null)"
-				elif /usr/sbin/openssl aes-256-cbc $emailPwEnc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi >/dev/null 2>&1 ; then
-					# new OpenSSL 1.1.x converted password with -pbkdf2 flag
-					PASSWORD="$(/usr/sbin/openssl aes-256-cbc $emailPwEnc -d -in "$PWENCFILE" -pass pass:ditbabot,isoi 2>/dev/null)"
-				fi
-				echo "$PASSWORD" > "$SCRIPT_WEB_DIR/password.htm"
+				Email_Decrypt_Password > "$SCRIPT_WEB_DIR/password.htm"
 			fi
 		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}deleteemailpassword" ]; then
 			rm -f "$SCRIPT_WEB_DIR/password.htm"
