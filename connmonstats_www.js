@@ -1671,7 +1671,7 @@ function saveStatus(section) {
 					iziToast.success({ message: 'Save successful' });
 					showhide('btnSave' + section, true);
 					loadCustomSettings();
-					if (section === 'Navigate4') { postConnTest(); }
+					if (section === 'Navigate3') { postConnTest(); }
 				}
 			}
 		}
@@ -1680,10 +1680,8 @@ function saveStatus(section) {
 
 function saveConfig(section) {
 	switch (section) {
-		case 'Navigate4':
+		case 'Navigate3':
 			if (validateAll()) {
-				$j('[name*=connmon_]').prop('disabled', false);
-
 				var disabledfields = $j('#' + section).find('[disabled]');
 				disabledfields.prop('disabled', false);
 
