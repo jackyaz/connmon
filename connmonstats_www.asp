@@ -714,10 +714,10 @@
 														style="border:0;">
 														<tr class="apply_gen" valign="top" height="35px">
 															<td colspan="2" class="savebutton">
-																<input type="button" onclick="saveConfig('Navigate4');"
+																<input type="button" onclick="saveConfig('Navigate3');"
 																	value="Save" class="button_gen savebutton"
-																	name="button" id="btnSaveNavigate4">
-																<img id="imgSaveNavigate4"
+																	name="button" id="btnSaveNavigate3">
+																<img id="imgSaveNavigate3"
 																	style="display:none;vertical-align:middle;margin:5px;"
 																	src="images/InternetScan.gif" />
 															</td>

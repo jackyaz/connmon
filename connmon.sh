@@ -2560,7 +2560,6 @@ CustomAction_List(){
 			fi
 		done
 	fi
-
 	printf "Scripts that will be run:\\n" > "$SCRIPT_STORAGE_DIR/.customactionlist"
 	FILES="$USER_SCRIPT_DIR/*.sh"
 	for f in $FILES; do
