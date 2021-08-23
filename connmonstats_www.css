@@ -124,7 +124,7 @@ div.schedulesettings {
 }
 
 div.sortTableContainer {
-  height: 795px;
+  height: 715px;
   overflow-y: scroll;
   width: 745px;
   border: 1px solid #000;
@@ -162,6 +162,14 @@ tbody.sortTableContent td {
   font-size: 12px;
 }
 
+tbody.sortTableContent tr.sortRow:nth-child(odd) td {
+  background-color: #2f3a3e;
+}
+
+tbody.sortTableContent tr.sortRow:nth-child(even) td {
+  background-color: #475a5f;
+}
+
 thead.sortTableHeader th:first-child,
 thead.sortTableHeader th:last-child {
   border-right: none;
@@ -170,14 +178,6 @@ thead.sortTableHeader th:last-child {
 thead.sortTableHeader th:first-child,
 thead.sortTableHeader td:first-child {
   border-left: none;
-}
-
-tbody.sortTableContent tr.sortRow:nth-child(odd) td {
-  background-color: #2f3a3e;
-}
-
-tbody.sortTableContent tr.sortRow:nth-child(even) td {
-  background-color: #475a5f;
 }
 
 th.sortable {
@@ -232,4 +232,9 @@ td.savebutton {
   margin-top: 5px;
   margin-bottom: 5px;
   padding: 3px;
+}
+
+.notificationtype {
+  display: inline-block;
+  min-width: 80px;
 }

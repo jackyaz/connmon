@@ -240,6 +240,19 @@ function formatNumberSetting(forminput) {
 	}
 }
 
+function formatNumberSetting3DP(forminput) {
+	var inputname = forminput.name;
+	var inputvalue = forminput.value * 1;
+
+	if (inputvalue < 0 || forminput.value.length == 0 || inputvalue == NaN || forminput.value == '.') {
+		return false;
+	}
+	else {
+		forminput.value = parseFloat(forminput.value).toFixed(3);
+		return true;
+	}
+}
+
 function validateSchedule(forminput, hoursmins) {
 	var inputname = forminput.name;
 	var inputvalues = forminput.value.split(',');
@@ -811,6 +824,7 @@ function getLastXFile() {
 	$j.ajax({
 		url: '/ext/connmon/lastx.htm',
 		dataType: 'text',
+		cache: false,
 		error: function (xhr) {
 			setTimeout(getLastXFile, 1000);
 		},
@@ -954,17 +968,18 @@ $j.fn.serializeObject = function () {
 	var a = this.serializeArray();
 	$j.each(a, function () {
 		if (o[this.name] !== undefined && this.name.indexOf('connmon') !== -1 && this.name.indexOf('version') === -1 && this.name.indexOf('ipaddr') === -1 && this.name.indexOf('domain') === -1 &&
-			this.name.indexOf('schdays') === -1 && this.name.indexOf('pushover_list') === -1 && this.name.indexOf('webhook_list') === -1) {
+			this.name.indexOf('schdays') === -1 && this.name.indexOf('pushover_list') === -1 && this.name.indexOf('pushover_list') === -1 && this.name.indexOf('webhook_list') === -1 &&
+			this.name !== 'connmon_notifications_pingtest' && this.name !== 'connmon_notifications_pingthreshold' && this.name !== 'connmon_notifications_jitterthreshold' && this.name !== 'connmon_notifications_linequalitythreshold') {
 			if (!o[this.name].push) {
 				o[this.name] = [o[this.name]];
 			}
 			o[this.name].push(this.value || '');
 		}
 		else if (this.name.indexOf('connmon') !== -1 && this.name.indexOf('version') === -1 && this.name.indexOf('ipaddr') === -1 && this.name.indexOf('domain') === -1 && this.name.indexOf('schdays') === -1 &&
-			this.name.indexOf('pushover_list') === -1 && this.name.indexOf('webhook_list') === -1) {
+			this.name.indexOf('pushover_list') === -1 && this.name.indexOf('pushover_list') === -1 && this.name.indexOf('webhook_list') === -1 &&
+			this.name !== 'connmon_notifications_pingtest' && this.name !== 'connmon_notifications_pingthreshold' && this.name !== 'connmon_notifications_jitterthreshold' && this.name !== 'connmon_notifications_linequalitythreshold') {
 			o[this.name] = this.value || '';
 		}
-
 		if (this.name.indexOf('schdays') !== -1) {
 			var schdays = [];
 			$j.each($j('input[name="connmon_schdays"]:checked'), function () {
@@ -976,11 +991,90 @@ $j.fn.serializeObject = function () {
 			}
 			o['connmon_schdays'] = schdaysstring;
 		}
+		if (this.name === 'connmon_notifications_pingtest') {
+			var pingtesttypes = [];
+			$j.each($j('input[name="connmon_notifications_pingtest"]:checked'), function () {
+				pingtesttypes.push($j(this).val());
+			});
+			o['connmon_notifications_pingtest'] = pingtesttypes.join(',');
+		}
+		if (this.name === 'connmon_notifications_pingthreshold') {
+			var pingthresholdtypes = [];
+			$j.each($j('input[name="connmon_notifications_pingthreshold"]:checked'), function () {
+				pingthresholdtypes.push($j(this).val());
+			});
+			o['connmon_notifications_pingthreshold'] = pingthresholdtypes.join(',');
+		}
+		if (this.name === 'connmon_notifications_jitterthreshold') {
+			var jitterthresholdtypes = [];
+			$j.each($j('input[name="connmon_notifications_jitterthreshold"]:checked'), function () {
+				jitterthresholdtypes.push($j(this).val());
+			});
+			o['connmon_notifications_jitterthreshold'] = jitterthresholdtypes.join(',');
+		}
+		if (this.name === 'connmon_notifications_linequalitythreshold') {
+			var linequalitythresholdtypes = [];
+			$j.each($j('input[name="connmon_notifications_linequalitythreshold"]:checked'), function () {
+				linequalitythresholdtypes.push($j(this).val());
+			});
+			o['connmon_notifications_linequalitythreshold'] = linequalitythresholdtypes.join(',');
+		}
+		if (this.name.indexOf('connmon_notifications_email_list') !== -1) {
+			o['connmon_notifications_email_list'] = document.getElementById('connmon_notifications_email_list').value.replace(/\n/g, '||||');
+		}
 		if (this.name.indexOf('connmon_notifications_pushover_list') !== -1) {
 			o['connmon_notifications_pushover_list'] = document.getElementById('connmon_notifications_pushover_list').value.replace(/\n/g, '||||');
 		}
 		if (this.name.indexOf('connmon_notifications_webhook_list') !== -1) {
 			o['connmon_notifications_webhook_list'] = document.getElementById('connmon_notifications_webhook_list').value.replace(/\n/g, '||||');
+		}
+	});
+
+	$j.each(this, function () {
+		if (this.name.indexOf('schdays') !== -1) {
+			var schdays = [];
+			$j.each($j('input[name="connmon_schdays"]:checked'), function () {
+				schdays.push($j(this).val());
+			});
+			if (schdays.length === 0) {
+				o['connmon_schdays'] = '*';
+			}
+		}
+		if (this.name === 'connmon_notifications_pingtest') {
+			var pingtesttypes = [];
+			$j.each($j('input[name="connmon_notifications_pingtest"]:checked'), function () {
+				pingtesttypes.push($j(this).val());
+			});
+			if (pingtesttypes.length === 0) {
+				o['connmon_notifications_pingtest'] = 'None';
+			}
+		}
+		if (this.name === 'connmon_notifications_pingthreshold') {
+			var pingthresholdtypes = [];
+			$j.each($j('input[name="connmon_notifications_pingthreshold"]:checked'), function () {
+				pingthresholdtypes.push($j(this).val());
+			});
+			if (pingthresholdtypes.length === 0) {
+				o['connmon_notifications_pingthreshold'] = 'None';
+			}
+		}
+		if (this.name === 'connmon_notifications_jitterthreshold') {
+			var jitterthresholdtypes = [];
+			$j.each($j('input[name="connmon_notifications_jitterthreshold"]:checked'), function () {
+				jitterthresholdtypes.push($j(this).val());
+			});
+			if (jitterthresholdtypes.length === 0) {
+				o['connmon_notifications_jitterthreshold'] = 'None';
+			}
+		}
+		if (this.name === 'connmon_notifications_linequalitythreshold') {
+			var linequalitythresholdtypes = [];
+			$j.each($j('input[name="connmon_notifications_linequalitythreshold"]:checked'), function () {
+				linequalitythresholdtypes.push($j(this).val());
+			});
+			if (linequalitythresholdtypes.length === 0) {
+				o['connmon_notifications_linequalitythreshold'] = 'None';
+			}
 		}
 	});
 	return o;
@@ -990,13 +1084,13 @@ $j.fn.serializeObjectEmail = function () {
 	var o = customSettings;
 	var a = this.serializeArray();
 	$j.each(a, function () {
-		if (o[this.name] !== undefined && this.name.indexOf('email_') !== -1) {
+		if (o[this.name] !== undefined && this.name.indexOf('email_') !== -1 && this.name.indexOf('show_pass') !== -1) {
 			if (!o[this.name].push) {
 				o[this.name] = [o[this.name]];
 			}
 			o[this.name].push(this.value || '');
 		}
-		else if (this.name.indexOf('email_') !== -1) {
+		else if (this.name.indexOf('email_') !== -1 && this.name.indexOf('show_pass') !== -1) {
 			o[this.name] = this.value || '';
 		}
 	});
@@ -1021,17 +1115,23 @@ function errorCSVExport() {
 	document.getElementById('aExport').href = 'javascript:alert(\'Error exporting CSV,please refresh the page and try again\')';
 }
 
-
-
 function jyNavigate(tab, type, tabslength) {
 	for (var i = 1; i <= tabslength; i++) {
-		if (i === tab) {
+		if (tab === 0) {
 			$j('#' + type + 'Navigate' + i).show();
-			$j('#btn' + type + 'Navigate' + i).css({ 'background': '#085F96', 'background': '-webkit-linear-gradient(#09639C 0%,#003047 100%)', 'background': '-o-linear-gradient(#09639C 0%,#003047 100%)', 'background': 'linear-gradient(#09639C 0%,#003047 100%)' });
+			$j('#btn' + type + 'Navigate' + i).css('background', '');
+			$j('#btn' + type + 'Navigate0').css({ 'background': '#085F96', 'background': '-webkit-linear-gradient(#09639C 0%,#003047 100%)', 'background': '-o-linear-gradient(#09639C 0%,#003047 100%)', 'background': 'linear-gradient(#09639C 0%,#003047 100%)' });
 		}
 		else {
-			$j('#' + type + 'Navigate' + i).hide();
-			$j('#btn' + type + 'Navigate' + i).css('background', '');
+			if (i === tab) {
+				$j('#' + type + 'Navigate' + i).show();
+				$j('#btn' + type + 'Navigate' + i).css({ 'background': '#085F96', 'background': '-webkit-linear-gradient(#09639C 0%,#003047 100%)', 'background': '-o-linear-gradient(#09639C 0%,#003047 100%)', 'background': 'linear-gradient(#09639C 0%,#003047 100%)' });
+			}
+			else {
+				$j('#' + type + 'Navigate' + i).hide();
+				$j('#btn' + type + 'Navigate' + i).css('background', '');
+			}
+			$j('#btn' + type + 'Navigate0').css('background', '');
 		}
 	}
 }
@@ -1098,6 +1198,7 @@ function getEmailConfFile() {
 	$j.ajax({
 		url: '/ext/connmon/email_config.htm',
 		dataType: 'text',
+		cache: false,
 		error: function (xhr) {
 			setTimeout(getEmailConfFile, 1000);
 		},
@@ -1125,6 +1226,7 @@ function getEmailpwFile() {
 	$j.ajax({
 		url: '/ext/connmon/password.htm',
 		dataType: 'text',
+		cache: false,
 		error: function (xhr) {
 			setTimeout(getEmailpwFile, 1000);
 		},
@@ -1140,6 +1242,7 @@ function getConfFile() {
 	$j.ajax({
 		url: '/ext/connmon/config.htm',
 		dataType: 'text',
+		cache: false,
 		error: function (xhr) {
 			setTimeout(getConfFile, 1000);
 		},
@@ -1177,17 +1280,31 @@ function getConfFile() {
 						}
 					}
 				}
-				else if (configdata[i].indexOf('EMAIL_LIST') !== -1) {
-					continue;
+				else if (settingname === 'notifications_pingtest') {
+					var pingtesttypearray = settingvalue.split(',');
+					for (var i2 = 0; i2 < pingtesttypearray.length; i2++) {
+						$j('#connmon_pingtest_' + pingtesttypearray[i2].toLowerCase()).prop('checked', true);
+					}
 				}
-				else if (configdata[i].indexOf('NOTIFICATIONS') !== -1 && configdata[i].indexOf('INFLUXDB') === -1 && configdata[i].indexOf('HEALTHCHECK') === -1 && configdata[i].indexOf('CUSTOM') === -1 && configdata[i].indexOf('PUSHOVER') === -1 &&
-					configdata[i].indexOf('WEBHOOK') === -1 && configdata[i].indexOf('EMAIL') === -1) {
-					continue;
+				else if (settingname === 'notifications_pingthreshold') {
+					var pingthresholdtypearray = settingvalue.split(',');
+					for (var i2 = 0; i2 < pingthresholdtypearray.length; i2++) {
+						$j('#connmon_pingthreshold_' + pingthresholdtypearray[i2].toLowerCase()).prop('checked', true);
+					}
 				}
-				else if (settingname.indexOf('notifications_pushover_list') !== -1) {
-					eval('document.form.connmon_' + settingname).value = settingvalue.replace(/,/g, '\n');
+				else if (settingname === 'notifications_jitterthreshold') {
+					var jitterthresholdtypearray = settingvalue.split(',');
+					for (var i2 = 0; i2 < jitterthresholdtypearray.length; i2++) {
+						$j('#connmon_jitterthreshold_' + jitterthresholdtypearray[i2].toLowerCase()).prop('checked', true);
+					}
 				}
-				else if (settingname.indexOf('notifications_webhook_list') !== -1) {
+				else if (settingname === 'notifications_linequalitythreshold') {
+					var linequalitythresholdtypearray = settingvalue.split(',');
+					for (var i2 = 0; i2 < linequalitythresholdtypearray.length; i2++) {
+						$j('#connmon_linequalitythreshold_' + linequalitythresholdtypearray[i2].toLowerCase()).prop('checked', true);
+					}
+				}
+				else if (settingname.indexOf('notifications_email_list') !== -1 || settingname.indexOf('notifications_pushover_list') !== -1 || settingname.indexOf('notifications_webhook_list') !== -1) {
 					eval('document.form.connmon_' + settingname).value = settingvalue.replace(/,/g, '\n');
 				}
 				else {
@@ -1277,6 +1394,7 @@ function getCustomactionList() {
 	$j.ajax({
 		url: '/ext/connmon/customactionlist.htm',
 		dataType: 'text',
+		cache: false,
 		error: function (xhr) {
 			setTimeout(getCustomactionList, 1000);
 		},
@@ -1291,11 +1409,28 @@ function getChangelogFile() {
 	$j.ajax({
 		url: '/ext/connmon/changelog.htm',
 		dataType: 'text',
+		cache: false,
 		error: function (xhr) {
 			setTimeout(getChangelogFile, 5000);
 		},
 		success: function (data) {
 			$j('#divchangelog').html(data);
+		}
+	});
+}
+
+function getVersionChangelogFile() {
+	$j.ajax({
+		url: '/ext/connmon/detect_changelog.js',
+		dataType: 'script',
+		error: function (xhr) {
+			setTimeout(getVersionChangelogFile, 5000);
+		},
+		success: function () {
+			var serverver = getVersionNumber('server');
+			$j('#connmon_version_server').html('<a style="color:#FFCC00;text-decoration:underline;" href="javascript:void(0);">Updated version available: ' + serverver + '</a>');
+			$j('#connmon_version_server').on('mouseover', function () { return overlib(changelog, 0, 0); });
+			$j('#connmon_version_server')[0].onmouseout = nd;
 		}
 	});
 }
@@ -1402,15 +1537,13 @@ function scriptUpdateLayout() {
 
 	if (localver !== serverver && serverver !== 'N/A') {
 		if (serverver.indexOf('hotfix') === -1) {
-			$j('#connmon_version_server').html('<a style="color:#FFCC00;text-decoration:underline;" href="javascript:void(0);">Updated version available: ' + updatestatus + '</a>');
-			$j('#connmon_version_server').on('mouseover', function () { return overlib(changelog, 0, 0); });
-			$j('#connmon_version_server')[0].onmouseout = nd;
+			getVersionChangelogFile();
 		}
 		else {
-			$j('#connmon_version_server').text('Updated version available: ' + updatestatus);
+			$j('#connmon_version_server').text(serverver);
 		}
+		showhide('connmon_version_server', true)
 		showhide('btnChkUpdate', false);
-		showhide('connmon_version_server', true);
 		showhide('btnDoUpdate', true);
 	}
 }
@@ -1439,7 +1572,7 @@ function initial() {
 	var starttab = getCookie('StartTab', 'number');
 	if (starttab === 0) { starttab = 1; }
 	$j('#starttab').val(starttab);
-	jyNavigate(starttab, '', 6);
+	jyNavigate(starttab, '', 5);
 	jyNavigate(1, 'Chart', 3);
 	jyNavigate(1, 'NotificationType', 4);
 	jyNavigate(1, 'NotificationMethod', 6);
@@ -1476,9 +1609,7 @@ function statusUpdate() {
 				showhide('connmon_version_server', true);
 				if (updatestatus !== 'None') {
 					if (updatestatus.indexOf('hotfix') === -1) {
-						$j('#connmon_version_server').html('<a style="color:#FFCC00;text-decoration:underline;" href="javascript:void(0);">Updated version available: ' + updatestatus + '</a>');
-						$j('#connmon_version_server').on('mouseover', function () { return overlib(changelog, 0, 0); });
-						$j('#connmon_version_server')[0].onmouseout = nd;
+						getVersionChangelogFile();
 					}
 					else {
 						$j('#connmon_version_server').text('Updated version available: ' + updatestatus);
@@ -1499,12 +1630,12 @@ function statusUpdate() {
 }
 
 function checkUpdate() {
-	showhide('btnChkUpdate', false);
 	document.formScriptActions.action_script.value = 'start_addon_settings;start_connmoncheckupdate';
 	document.formScriptActions.submit();
+	showhide('btnChkUpdate', false);
 	document.getElementById('imgChkUpdate').style.display = '';
-	setTimeout(statusUpdate, 2000);
 	iziToast.info({ message: 'Checking for updates...', timeout: false });
+	setTimeout(statusUpdate, 2000);
 }
 
 function doUpdate() {
@@ -1593,10 +1724,22 @@ function saveConfig(section) {
 				return false;
 			}
 			break;
-		case 'NotificationMethodNavigate1':
+		case 'NotificationMethodNavigate1Config':
 			var disabledfields = $j('#' + section).find('[disabled]');
 			disabledfields.prop('disabled', false);
-			document.getElementById('amng_custom').value = JSON.stringify($j('#' + section).find('input,select,textarea').serializeObjectEmail());
+			document.getElementById('amng_custom').value = JSON.stringify($j('#table_connmonemailconfig').find('input,select,textarea').serializeObject());
+			document.formScriptActions.action_script.value = 'start_addon_settings;start_connmonconfig';
+			document.formScriptActions.submit();
+			disabledfields.prop('disabled', true);
+			showhide('btnSave' + section, false);
+			showhide('imgSave' + section, true);
+			iziToast.info({ message: 'Saving...', timeout: false });
+			setTimeout(saveStatus, 5000, section);
+			break;
+		case 'NotificationMethodNavigate1Email':
+			var disabledfields = $j('#' + section).find('[disabled]');
+			disabledfields.prop('disabled', false);
+			document.getElementById('amng_custom').value = JSON.stringify($j('#table_emailconfig').find('input,select,textarea').serializeObjectEmail());
 			document.formScriptActions.action_script.value = 'start_addon_settings;start_connmonemailconfig';
 			document.formScriptActions.submit();
 			disabledfields.prop('disabled', true);
@@ -1624,6 +1767,7 @@ function getConntestResultFile() {
 	$j.ajax({
 		url: '/ext/connmon/ping-result.htm',
 		dataType: 'text',
+		cache: false,
 		error: function (xhr) {
 			setTimeout(getConntestResultFile, 500);
 		},
