@@ -1387,6 +1387,14 @@ Process_Upgrade(){
 	if [ ! -f "$SCRIPT_STORAGE_DIR/.emailinfo" ]; then
 		Email_Header silent
 	fi
+	if [ ! -f /tmp/start_apply.htm  ]; then
+		cp -f /www/start_apply.htm /tmp/
+		if ! grep -q 'addon_settings' /tmp/start_apply.htm ; then
+			sed -i "/}else if(action_script == \"start_sig_check\"){/i }else if(action_script.indexOf(\"addon_settings\") != -1){ \/\/ do nothing" /tmp/start_apply.htm
+		fi
+		umount /www/start_apply.htm 2>/dev/null
+		mount -o bind /tmp/start_apply.htm /www/start_apply.htm
+	fi
 }
 
 Shortcut_Script(){
