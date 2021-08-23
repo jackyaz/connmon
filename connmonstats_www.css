@@ -4,59 +4,20 @@ p {
 
 thead.collapsible-jquery {
   color: white;
-  padding: 0px;
+  padding: 0;
   width: 100%;
   border: none;
   text-align: left;
   outline: none;
-  cursor: pointer;
 }
 
 td.nodata {
-  font-size: 48px !important;
-  font-weight: bolder !important;
-  height: 65px !important;
-  font-family: Arial !important;
-  border: none !important;
-  text-align: center !important;
-}
-
-.StatsTable {
-  table-layout: fixed !important;
-  width: 747px !important;
-  text-align: center !important;
-}
-
-.StatsTable th {
-  background-color:#1F2D35 !important;
-  background:#2F3A3E !important;
-  border-bottom:none !important;
-  border-top:none !important;
-  color: white !important;
-  padding: 4px !important;
-  font-size: 11px !important;
-}
-
-.StatsTable td {
-  padding: 2px !important;
-  word-wrap: break-word !important;
-  overflow-wrap: break-word !important;
-  font-size: 12px !important;
-}
-
-.StatsTable a {
-  font-weight: bolder !important;
-  text-decoration: underline !important;
-}
-
-.StatsTable th:first-child,
-.StatsTable td:first-child {
-  border-left: none !important;
-}
-
-.StatsTable th:last-child ,
-.StatsTable td:last-child {
-  border-right: none !important;
+  font-size: 48px;
+  font-weight: bolder;
+  height: 65px;
+  font-family: Arial, sans-serif;
+  border: none;
+  text-align: center;
 }
 
 .SettingsTable {
@@ -64,24 +25,17 @@ td.nodata {
 }
 
 .SettingsTable input {
-  text-align: left;
-  margin-left: 3px !important;
+  margin-left: 3px;
+  margin-top: 3px;
 }
 
 .SettingsTable input.savebutton {
   text-align: center;
-  margin-top: 5px;
-  margin-bottom: 5px;
+  margin-top: 3px;
+  margin-bottom: 3px;
   border-right: solid 1px black;
   border-left: solid 1px black;
   border-bottom: solid 1px black;
-}
-
-.SettingsTable td.savebutton {
-  border-right: solid 1px black;
-  border-left: solid 1px black;
-  border-bottom: solid 1px black;
-  background-color:rgb(77,89,93);
 }
 
 .SettingsTable .cronbutton {
@@ -93,80 +47,76 @@ td.nodata {
 }
 
 .SettingsTable select {
-  margin-left: 3px !important;
+  margin-left: 3px;
 }
 
 .SettingsTable label {
-  margin-right: 10px !important;
-  vertical-align: top !important;
+  margin-right: 10px;
+  vertical-align: top;
 }
 
 .SettingsTable th {
-  background-color: #1F2D35 !important;
-  background: #2F3A3E !important;
-  border-bottom: none !important;
-  border-top: none !important;
-  font-size: 12px !important;
-  color: white !important;
-  padding: 4px !important;
-  font-weight: bolder !important;
-  padding: 0px !important;
+  background-color: #2f3a3e;
+  border-bottom: none;
+  border-top: none;
+  font-size: 12px;
+  color: white;
+  padding: 4px;
+  font-weight: bolder;
 }
 
 .SettingsTable td {
-  word-wrap: break-word !important;
-  overflow-wrap: break-word !important;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   border-right: none;
   border-left: none;
 }
 
 .SettingsTable span.settingname {
-  background-color: #1F2D35 !important;
-  background: #2F3A3E !important;
+  background-color: #2f3a3e;
 }
 
 .SettingsTable td.settingname {
   border-right: solid 1px black;
   border-left: solid 1px black;
-  background-color: #1F2D35 !important;
-  background: #2F3A3E !important;
-  width: 35% !important;
+  background-color: #2f3a3e;
+  width: 35%;
 }
 
 .SettingsTable td.settingvalue {
-  text-align: left !important;
+  text-align: left;
   border-right: solid 1px black;
 }
 
-.SettingsTable th:first-child{
-  border-left: none !important;
+.SettingsTable th:first-child {
+  border-left: none;
 }
 
 .SettingsTable th:last-child {
-  border-right: none !important;
+  border-right: none;
 }
 
 .SettingsTable .invalid {
-  background-color: darkred !important;
+  background-color: darkred;
 }
 
 .SettingsTable .disabled {
-  background-color: #CCCCCC !important;
-  color: #888888 !important;
+  background-color: #ccc;
+  color: #888;
 }
 
 .removespacing {
-  padding-left: 0px !important;
-  margin-left: 0px !important;
-  margin-bottom: 5px !important;
-  text-align: center !important;
+  padding-left: 0;
+  margin-left: 0;
+  margin-bottom: 5px;
+  text-align: center;
 }
 
-.schedulespan {
-  display:inline-block !important;
-  width:70px !important;
-  color:#FFFFFF !important;
-  font-weight: bold !important;
+.FormTable td .schedulespan {
+  display: inline-block;
+  width: 70px;
+  color: #fff;
+  font-weight: bold;
 }
 
 div.schedulesettings {
@@ -174,70 +124,117 @@ div.schedulesettings {
 }
 
 div.sortTableContainer {
-  height: 300px;
+  height: 715px;
   overflow-y: scroll;
   width: 745px;
   border: 1px solid #000;
 }
 
 .sortTable {
-  table-layout: fixed !important;
+  table-layout: fixed;
   border: none;
 }
 
 thead.sortTableHeader th {
   background-image: linear-gradient(rgb(146, 160, 165) 0%, rgb(102, 117, 124) 100%);
-  border-top: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  border-bottom: 1px solid #000 !important;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid #000;
   font-weight: bolder;
   padding: 2px;
   text-align: center;
   color: #fff;
   position: sticky;
   top: 0;
-  font-size: 11px !important;
+  font-size: 11px;
+}
+
+tbody.sortTableContent td {
+  border-bottom: 1px solid #000;
+  border-left: none;
+  border-right: 1px solid #000;
+  border-top: none;
+  padding: 2px;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+tbody.sortTableContent tr.sortRow:nth-child(odd) td {
+  background-color: #2f3a3e;
+}
+
+tbody.sortTableContent tr.sortRow:nth-child(even) td {
+  background-color: #475a5f;
 }
 
 thead.sortTableHeader th:first-child,
 thead.sortTableHeader th:last-child {
-  border-right: none !important;
-}
-
-thead.sortTableHeader th:last-child {
-  /*padding-left: 4px !important;*/
+  border-right: none;
 }
 
 thead.sortTableHeader th:first-child,
 thead.sortTableHeader td:first-child {
-  border-left: none !important;
-}
-
-tbody.sortTableContent td:last-child, tbody.sortTableContent tr.sortNormalRow td:last-child, tbody.sortTableContent tr.sortAlternateRow td:last-child {
-  /*padding-left: 4px !important;*/
-}
-
-tbody.sortTableContent td{
-  border-bottom: 1px solid #000 !important;
-  border-left: none !important;
-  border-right: 1px solid #000 !important;
-  border-top: none !important;
-  padding: 2px;
-  text-align: center;
-  overflow: hidden !important;
-  white-space: nowrap !important;
-  font-size: 12px !important;
-}
-
-tbody.sortTableContent tr.sortRow:nth-child(odd) td {
-  background-color: #2F3A3E !important;
-}
-
-tbody.sortTableContent tr.sortRow:nth-child(even) td {
-  background-color: #475A5F !important;
+  border-left: none;
 }
 
 th.sortable {
   cursor: pointer;
+}
+
+td.savebutton {
+  border: 0;
+  background-color: rgb(77, 89, 93);
+}
+
+.testbutton {
+  text-align: center;
+  min-width: 75px;
+  width: 75px;
+  margin-bottom: 3px;
+  vertical-align: middle;
+  height: 24px;
+}
+
+.navbutton {
+  text-align: center;
+  min-width: 122px;
+  width: 122px;
+  vertical-align: middle;
+  height: 55px;
+}
+
+.chartnavbutton {
+  text-align: center;
+  min-width: 122px;
+  width: 122px;
+  vertical-align: middle;
+  margin: 5px;
+}
+
+.notificationtypenavbutton {
+  text-align: center;
+  min-width: 122px;
+  width: 122px;
+  vertical-align: middle;
+  height: 55px;
+  margin: 5px;
+}
+
+.notificationmethodnavbutton {
+  text-align: center;
+  min-width: 120px;
+  width: 120px;
+  vertical-align: middle;
+  height: 55px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding: 3px;
+}
+
+.notificationtype {
+  display: inline-block;
+  min-width: 80px;
 }
