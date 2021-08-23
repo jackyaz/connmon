@@ -1228,7 +1228,10 @@ function getEmailpwFile() {
 		dataType: 'text',
 		cache: false,
 		error: function (xhr) {
-			setTimeout(getEmailpwFile, 1000);
+			document.formScriptActions.action_script.value = 'start_addon_settings;start_connmoncustomactionlist;start_connmonemailpassword';
+			document.formScriptActions.submit();
+			setTimeout(getCustomactionList, 10000);
+			setTimeout(getEmailpwFile, 10000);
 		},
 		success: function (data) {
 			document.form.email_password.value = data;
@@ -1554,8 +1557,8 @@ function initial() {
 	show_menu();
 	document.formScriptActions.action_script.value = 'start_addon_settings;start_connmoncustomactionlist;start_connmonemailpassword';
 	document.formScriptActions.submit();
-	setTimeout(getCustomactionList, 5000);
-	setTimeout(getEmailpwFile, 5000);
+	setTimeout(getCustomactionList, 10000);
+	setTimeout(getEmailpwFile, 10000);
 	getConfFile();
 	getEmailConfFile();
 	getStatstitleFile();
