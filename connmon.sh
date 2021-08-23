@@ -1395,6 +1395,7 @@ Process_Upgrade(){
 		umount /www/start_apply.htm 2>/dev/null
 		mount -o bind /tmp/start_apply.htm /www/start_apply.htm
 	fi
+	Update_File CHANGELOG.md
 }
 
 Shortcut_Script(){
