@@ -1652,7 +1652,6 @@ function postConnTest() {
 	setTimeout(redrawAllCharts, 3000);
 }
 
-
 function saveStatus(section) {
 	$j.ajax({
 		url: '/ext/connmon/detect_save.js',
