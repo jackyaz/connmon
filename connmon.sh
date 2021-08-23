@@ -1396,7 +1396,7 @@ Process_Upgrade(){
 		mount -o bind /tmp/start_apply.htm /www/start_apply.htm
 	fi
 	Update_File CHANGELOG.md
-	if [ ! -f /tmp/connstatstitle.txt ]; then
+	if [ ! -f "$SCRIPT_STORAGE_DIR/connstatstext.js" ]; then
 		echo "Stats last updated: Not yet updated" > /tmp/connstatstitle.txt
 		WriteStats_ToJS /tmp/connstatstitle.txt "$SCRIPT_STORAGE_DIR/connstatstext.js" setConnmonStatsTitle statstitle
 	fi
