@@ -87,7 +87,7 @@ Check_Lock(){
 				exit 1
 			else
 				if [ "$1" = "webui" ]; then
-					echo 'var connmonstatus = "LOCKED";' > /tmp/detect_connmon.js
+					echo 'var connmonstatus = "LOCKED";' > "$SCRIPT_WEB_DIR/detect_connmon.js"
 					exit 1
 				fi
 				return 1
@@ -142,14 +142,15 @@ Update_Check(){
 	echo 'var updatestatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_update.js"
 	doupdate="false"
 	localver=$(grep "SCRIPT_VERSION=" "/jffs/scripts/$SCRIPT_NAME" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
+	Set_Version_Custom_Settings local "$localver"
 	/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep -qF "jackyaz" || { Print_Output true "404 error detected - stopping update" "$ERR"; return 1; }
 	serverver=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 	if [ "$localver" != "$serverver" ]; then
 		doupdate="version"
 		Set_Version_Custom_Settings server "$serverver"
 		changelog=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/CHANGELOG.md" | sed -n "/$serverver"'/,/##/p' | head -n -1 | sed 's/## //')
-		echo 'var changelog = "<div style=\"width:350px;\"><b>Changelog</b><br />'"$(echo "$changelog" | tr '\n' '|' | sed 's/|/<br \/>/g')"'</div>"' > "$SCRIPT_WEB_DIR/detect_update.js"
-		echo 'var updatestatus = "'"$serverver"'";'  >> "$SCRIPT_WEB_DIR/detect_update.js"
+		echo 'var changelog = "<div style=\"width:350px;\"><b>Changelog</b><br />'"$(echo "$changelog" | tr '\n' '|' | sed 's/|/<br \/>/g')"'</div>"' > "$SCRIPT_WEB_DIR/detect_changelog.js"
+		echo 'var updatestatus = "'"$serverver"'";'  > "$SCRIPT_WEB_DIR/detect_update.js"
 	else
 		localmd5="$(md5sum "/jffs/scripts/$SCRIPT_NAME" | awk '{print $1}')"
 		remotemd5="$(curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | md5sum | awk '{print $1}')"
@@ -412,22 +413,20 @@ Create_Dirs(){
 }
 
 Create_Symlinks(){
-	rm -rf "${SCRIPT_WEB_DIR:?}/"* 2>/dev/null
+	#rm -rf "${SCRIPT_WEB_DIR:?}/"* 2>/dev/null
 
-	ln -s /tmp/detect_connmon.js "$SCRIPT_WEB_DIR/detect_connmon.js" 2>/dev/null
-	ln -s /tmp/ping-result.txt "$SCRIPT_WEB_DIR/ping-result.htm" 2>/dev/null
-	ln -s "$SCRIPT_STORAGE_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
-	ln -s "$SCRIPT_STORAGE_DIR/lastx.csv" "$SCRIPT_WEB_DIR/lastx.htm" 2>/dev/null
+	ln -sf "$SCRIPT_STORAGE_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
+	ln -sf "$SCRIPT_STORAGE_DIR/lastx.csv" "$SCRIPT_WEB_DIR/lastx.htm" 2>/dev/null
 
-	ln -s "$EMAIL_CONF" "$SCRIPT_WEB_DIR/email_config.htm" 2>/dev/null
-	ln -s "$SCRIPT_CONF" "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
-	ln -s "$SCRIPT_DIR/CHANGELOG.md" "$SCRIPT_WEB_DIR/changelog.htm" 2>/dev/null
-	ln -s "$SCRIPT_STORAGE_DIR/.cron" "$SCRIPT_WEB_DIR/cron.js" 2>/dev/null
-	ln -s "$SCRIPT_STORAGE_DIR/.customactioninfo" "$SCRIPT_WEB_DIR/customactioninfo.htm" 2>/dev/null
-	ln -s "$SCRIPT_STORAGE_DIR/.customactionlist" "$SCRIPT_WEB_DIR/customactionlist.htm" 2>/dev/null
-	ln -s "$SCRIPT_STORAGE_DIR/.emailinfo" "$SCRIPT_WEB_DIR/emailinfo.htm" 2>/dev/null
+	ln -sf "$EMAIL_CONF" "$SCRIPT_WEB_DIR/email_config.htm" 2>/dev/null
+	ln -sf "$SCRIPT_CONF" "$SCRIPT_WEB_DIR/config.htm" 2>/dev/null
+	ln -sf "$SCRIPT_DIR/CHANGELOG.md" "$SCRIPT_WEB_DIR/changelog.htm" 2>/dev/null
+	ln -sf "$SCRIPT_STORAGE_DIR/.cron" "$SCRIPT_WEB_DIR/cron.js" 2>/dev/null
+	ln -sf "$SCRIPT_STORAGE_DIR/.customactioninfo" "$SCRIPT_WEB_DIR/customactioninfo.htm" 2>/dev/null
+	ln -sf "$SCRIPT_STORAGE_DIR/.customactionlist" "$SCRIPT_WEB_DIR/customactionlist.htm" 2>/dev/null
+	ln -sf "$SCRIPT_STORAGE_DIR/.emailinfo" "$SCRIPT_WEB_DIR/emailinfo.htm" 2>/dev/null
 
-	ln -s "$CSV_OUTPUT_DIR" "$SCRIPT_WEB_DIR/csv" 2>/dev/null
+	ln -sf "$CSV_OUTPUT_DIR" "$SCRIPT_WEB_DIR/csv" 2>/dev/null
 
 	if [ ! -d "$SHARED_WEB_DIR" ]; then
 		ln -s "$SHARED_DIR" "$SHARED_WEB_DIR" 2>/dev/null
@@ -1064,8 +1063,8 @@ Run_PingTest(){
 	ScriptStorageLocation load
 	Create_Symlinks
 
-	pingfile=/tmp/pingresult.txt
-	resultfile=/tmp/ping-result.txt
+	pingfile=/tmp/pingfile.txt
+	resultfile="$SCRIPT_WEB_DIR/ping-result.txt"
 	pingduration="$(PingDuration check)"
 	pingtarget="$(PingServer check)"
 	pingtargetip=""
@@ -1073,12 +1072,12 @@ Run_PingTest(){
 	rm -f "$resultfile"
 	rm -f "$pingfile"
 
-	echo 'var connmonstatus = "InProgress";' > /tmp/detect_connmon.js
+	echo 'var connmonstatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_connmon.js"
 
 	Print_Output false "$pingduration second ping test to $pingtarget starting..." "$PASS"
 	if ! Validate_IP "$pingtarget" >/dev/null 2>&1 && ! Validate_Domain "$pingtarget" >/dev/null 2>&1; then
 		Print_Output true "$pingtarget not valid, aborting test. Please correct ASAP" "$ERR"
-		echo 'var connmonstatus = "InvalidServer";' > /tmp/detect_connmon.js
+		echo 'var connmonstatus = "InvalidServer";' > "$SCRIPT_WEB_DIR/detect_connmon.js"
 		Clear_Lock
 		return 1
 	fi
@@ -1181,7 +1180,7 @@ Run_PingTest(){
 	"$SQLITE3_PATH" "$SCRIPT_STORAGE_DIR/connstats.db" < /tmp/connmon-stats.sql >/dev/null 2>&1
 	rm -f /tmp/connmon-stats.sql
 
-	echo 'var connmonstatus = "GenerateCSV";' > /tmp/detect_connmon.js
+	echo 'var connmonstatus = "GenerateCSV";' > "$SCRIPT_WEB_DIR/detect_connmon.js"
 
 	Generate_CSVs
 
@@ -1210,7 +1209,7 @@ Run_PingTest(){
 	if [ "$(echo "$linequal" "$(Conf_Parameters check NOTIFICATIONS_LINEQUALITYTHRESHOLD_VALUE)" | awk '{print ($1 < $2)}')" -eq 1 ]; then
 		TriggerNotifications LineQualityThreshold "$timenowfriendly" "$linequal %" "$(Conf_Parameters check NOTIFICATIONS_LINEQUALITYTHRESHOLD_VALUE) %"
 	fi
-	echo 'var connmonstatus = "Done";' > /tmp/detect_connmon.js
+	echo 'var connmonstatus = "Done";' > "$SCRIPT_WEB_DIR/detect_connmon.js"
 }
 
 Generate_CSVs(){
@@ -3787,9 +3786,9 @@ case "$1" in
 	;;
 	service_event)
 		if [ "$2" = "start" ] && [ "$3" = "$SCRIPT_NAME" ]; then
-			rm -f /tmp/detect_connmon.js
-			rm -f /tmp/pingresult.txt
-			rm -f /tmp/ping-result.txt
+			rm -f "$SCRIPT_WEB_DIR/detect_connmon.js"
+			rm -f /tmp/pingfile.txt
+			rm -f "$SCRIPT_WEB_DIR/ping-result.txt"
 			Check_Lock webui
 			sleep 3
 			Run_PingTest
