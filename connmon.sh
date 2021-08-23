@@ -1376,7 +1376,7 @@ Process_Upgrade(){
 		opkg install bind-dig
 	fi
 	if [ ! -f "$SCRIPT_STORAGE_DIR/.cron" ]; then
-		echo "$CRU_MINUTES $CRU_HOURS * * $CRU_DAYNUMBERS" > "$SCRIPT_STORAGE_DIR/.cron"
+		cru l | grep "$SCRIPT_NAME" | cut -f1-5 -d' ' > "$SCRIPT_STORAGE_DIR/.cron"
 	fi
 	if [ ! -f "$SCRIPT_STORAGE_DIR/.customactioninfo" ]; then
 		CustomAction_Info silent
