@@ -1184,7 +1184,7 @@ Run_PingTest(){
 
 	Generate_CSVs
 
-	echo "Stats last updated: $timenowfriendly" > "/tmp/connstatstitle.txt"
+	echo "Stats last updated: $timenowfriendly" > /tmp/connstatstitle.txt
 	WriteStats_ToJS /tmp/connstatstitle.txt "$SCRIPT_STORAGE_DIR/connstatstext.js" setConnmonStatsTitle statstitle
 	Print_Output false "Test results - Ping $ping ms - Jitter - $jitter ms - Line Quality $linequal %" "$PASS"
 
@@ -1396,6 +1396,10 @@ Process_Upgrade(){
 		mount -o bind /tmp/start_apply.htm /www/start_apply.htm
 	fi
 	Update_File CHANGELOG.md
+	if [ ! -f /tmp/connstatstitle.txt ]; then
+		echo "Stats last updated: Not yet updated" > /tmp/connstatstitle.txt
+		WriteStats_ToJS /tmp/connstatstitle.txt "$SCRIPT_STORAGE_DIR/connstatstext.js" setConnmonStatsTitle statstitle
+	fi
 }
 
 Shortcut_Script(){
