@@ -1393,21 +1393,6 @@ function getCustomactionInfo() {
 	});
 }
 
-function getCustomactionList() {
-	$j.ajax({
-		url: '/ext/connmon/customactionlist.htm',
-		dataType: 'text',
-		cache: false,
-		error: function (xhr) {
-			setTimeout(getCustomactionList, 1000);
-		},
-		success: function (data) {
-			$j('#customaction_details').html(data);
-			getCustomactionInfo();
-		}
-	});
-}
-
 function getChangelogFile() {
 	$j.ajax({
 		url: '/ext/connmon/changelog.htm',
@@ -1531,6 +1516,21 @@ function buildLastXTable() {
 	tablehtml += '</tbody>';
 	tablehtml += '</table>';
 	return tablehtml;
+}
+
+function getCustomactionList() {
+	$j.ajax({
+		url: '/ext/connmon/customactionlist.htm',
+		dataType: 'text',
+		cache: false,
+		error: function (xhr) {
+			setTimeout(getCustomactionList, 1000);
+		},
+		success: function (data) {
+			$j('#customaction_details').html(data);
+			getCustomactionInfo();
+		}
+	});
 }
 
 function scriptUpdateLayout() {
