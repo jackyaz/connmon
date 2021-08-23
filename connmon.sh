@@ -2629,7 +2629,6 @@ Menu_HealthcheckNotifications(){
 		NOTIFICATIONS_HEALTHCHECK=""
 		if ToggleNotificationTypes check NOTIFICATIONS_HEALTHCHECK; then NOTIFICATIONS_HEALTHCHECK="${PASS}Enabled"; else NOTIFICATIONS_HEALTHCHECK="${ERR}Disabled"; fi
 		printf "1.    Toggle healthchecks.io\\n      Currently: ${BOLD}${NOTIFICATIONS_HEALTHCHECK}${CLEARFORMAT}\\n\\n"
-
 		printf "\\n${BOLD}${UNDERLINE}Healthcheck Configuration${CLEARFORMAT}\\n\\n"
 		printf "c1.    Set Healthcheck UUID\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check NOTIFICATIONS_HEALTHCHECK_UUID)"
 		printf "Cron schedule for Healthchecks.io configuration: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(cru l | grep "$SCRIPT_NAME" | cut -f1-5 -d' ')"
@@ -2673,7 +2672,6 @@ Menu_InfluxDB(){
 		NOTIFICATIONS_INFLUXDB=""
 		if ToggleNotificationTypes check NOTIFICATIONS_INFLUXDB; then NOTIFICATIONS_INFLUXDB="${PASS}Enabled"; else NOTIFICATIONS_INFLUXDB="${ERR}Disabled"; fi
 		printf "1.    Toggle InfluxDB exporting\\n      Currently: ${BOLD}${NOTIFICATIONS_INFLUXDB}${CLEARFORMAT}\\n\\n"
-
 		printf "\\n${BOLD}${UNDERLINE}InfluxDB Configuration${CLEARFORMAT}\\n\\n"
 		printf "c1.    Set InfluxDB Host\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_HOST)"
 		printf "c2.    Set InfluxDB Port\\n       Currently: ${SETTING}%s${CLEARFORMAT}\\n\\n" "$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_PORT)"
