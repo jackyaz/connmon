@@ -244,7 +244,7 @@ function formatNumberSetting3DP(forminput) {
 	var inputname = forminput.name;
 	var inputvalue = forminput.value * 1;
 
-	if (inputvalue < 0 || forminput.value.length == 0 || inputvalue == NaN || forminput.value == '.') {
+	if (inputvalue < 0 || forminput.value.length === 0 || isNaN(inputvalue) || forminput.value === '.') {
 		return false;
 	}
 	else {
@@ -1419,6 +1419,23 @@ function getChangelogFile() {
 	});
 }
 
+function getVersionNumber(versiontype) {
+	var versionprop;
+	if (versiontype === 'local') {
+		versionprop = customSettings.connmon_version_local;
+	}
+	else if (versiontype === 'server') {
+		versionprop = customSettings.connmon_version_server;
+	}
+
+	if (typeof versionprop === 'undefined' || versionprop === null) {
+		return 'N/A';
+	}
+	else {
+		return versionprop;
+	}
+}
+
 function getVersionChangelogFile() {
 	$j.ajax({
 		url: '/ext/connmon/detect_changelog.js',
@@ -1513,23 +1530,6 @@ function buildLastXTable() {
 	return tablehtml;
 }
 
-function getVersionNumber(versiontype) {
-	var versionprop;
-	if (versiontype === 'local') {
-		versionprop = customSettings.connmon_version_local;
-	}
-	else if (versiontype === 'server') {
-		versionprop = customSettings.connmon_version_server;
-	}
-
-	if (typeof versionprop === 'undefined' || versionprop === null) {
-		return 'N/A';
-	}
-	else {
-		return versionprop;
-	}
-}
-
 function scriptUpdateLayout() {
 	var localver = getVersionNumber('local');
 	var serverver = getVersionNumber('server');
@@ -1542,7 +1542,7 @@ function scriptUpdateLayout() {
 		else {
 			$j('#connmon_version_server').text(serverver);
 		}
-		showhide('connmon_version_server', true)
+		showhide('connmon_version_server', true);
 		showhide('btnChkUpdate', false);
 		showhide('btnDoUpdate', true);
 	}
