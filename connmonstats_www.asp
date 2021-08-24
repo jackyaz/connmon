@@ -143,7 +143,7 @@
 														<tr style="display:none;">
 															<td colspan="2" style="padding:0;">
 																<textarea cols="63" rows="4" wrap="off"
-																	readonly="readonly" disabled id="conntest_output"
+																	readonly="readonly" id="conntest_output"
 																	class="textarea_log_table"
 																	style="border:0;resize:none;overflow-y:auto;overflow-x:hidden;">Ping test output</textarea>
 															</td>
@@ -1171,7 +1171,7 @@
 															<tr class="even" id="rowemailhelptext">
 																<td colspan="2" class="settingname">
 																	<input autocorrect="off" autocapitalize="off"
-																		type="text" disabled maxlength="255"
+																		type="text" maxlength="255"
 																		style="font-weight:bold;text-align:center;padding:0;background-color:#2f3a3e;border:0;width:100%"
 																		class="input_32_table removespacing"
 																		value="Note: the below configuration is shared with other addons/scripts, such as Diversion"
@@ -1181,7 +1181,7 @@
 															<tr class="even" id="rowemailinfo">
 																<td colspan="2" class="settingvalue">
 																	<textarea cols="75" rows="10" wrap="off"
-																		readonly="readonly" disabled id="emailinfo"
+																		readonly="readonly" id="emailinfo"
 																		class="textarea_log_table"
 																		style="font-size:11px;border:0;resize:none;"
 																		data-lpignore="true"></textarea>
@@ -1527,8 +1527,7 @@
 															<tr class="even" id="rowcustomactioninfo">
 																<td colspan="2" class="settingvalue">
 																	<textarea cols="75" rows="15" wrap="off"
-																		readonly="readonly" disabled
-																		id="customaction_details"
+																		readonly="readonly" id="customaction_details"
 																		class="textarea_log_table"
 																		style="font-size:11px;border:0;resize:none;"
 																		data-lpignore="true"></textarea>
@@ -1604,7 +1603,7 @@
 																<td class="settingname">Healthcheck Cron Schedule</td>
 																<td class="settingvalue">
 																	<input autocorrect="off" autocapitalize="off"
-																		type="text" disabled maxlength="255"
+																		type="text" readonly="readonly" maxlength="255"
 																		style="text-align:left;padding-left:5px;background-color:#475A5F;border:0;"
 																		class="input_32_table removespacing"
 																		id="healthcheckio_cron"
@@ -1798,7 +1797,7 @@
 														<tr class="even" id="rowchangelog">
 															<td colspan="2" class="settingvalue" style="padding:2px;">
 																<textarea cols="75" rows="55" wrap="soft"
-																	readonly="readonly" disabled id="divchangelog"
+																	readonly="readonly" id="divchangelog"
 																	class="textarea_log_table" style="border:0;"
 																	data-lpignore="true"></textarea>
 															</td>
