@@ -238,3 +238,8 @@ td.savebutton {
   display: inline-block;
   min-width: 80px;
 }
+
+textarea.settings {
+  background: #596e74;
+  width: 98%;
+}
