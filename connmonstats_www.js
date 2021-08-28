@@ -1222,6 +1222,19 @@ function getEmailConfFile() {
 	});
 }
 
+function getCustomactionInfo() {
+	$j.ajax({
+		url: '/ext/connmon/customactioninfo.htm',
+		dataType: 'text',
+		error: function (xhr) {
+			setTimeout(getCustomactionInfo, 1000);
+		},
+		success: function (data) {
+			$j('#customaction_details').append('\n' + data);
+		}
+	});
+}
+
 function getCustomactionList() {
 	$j.ajax({
 		url: '/ext/connmon/customactionlist.htm',
@@ -1391,19 +1404,6 @@ function getEmailInfo() {
 		},
 		success: function (data) {
 			$j('#emailinfo').html(data);
-		}
-	});
-}
-
-function getCustomactionInfo() {
-	$j.ajax({
-		url: '/ext/connmon/customactioninfo.htm',
-		dataType: 'text',
-		error: function (xhr) {
-			setTimeout(getCustomactionInfo, 1000);
-		},
-		success: function (data) {
-			$j('#customaction_details').append('\n' + data);
 		}
 	});
 }
