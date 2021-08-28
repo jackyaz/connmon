@@ -17,7 +17,7 @@ Currently, supported mechanisms for notifications/integrations are:
 *   Healthcheck monitoring (https://healthchecks.io/)
 *   InfluxDB data export (if you already run InfluxDB, you can push connmon data to it and visualize it in Grafana, for example)
 
-There are 4 "events" which trigger the notifications:
+There are 4 events which trigger the notifications:
 *   On each ping test
 *   Ping threshold exceeded
 *   Jitter threshold exceeded
@@ -97,7 +97,7 @@ connmon will create links for Diversion to follow the configuration to the above
 
 *   NEW: Option to turn automatic ping tests on/off
 *   NEW: CLI menu shows URL for WebUI page
-*   NEW: CLI commands for "about" and "help"
+*   NEW: CLI commands for about and help
 *   IMPROVED: Scheduling of automatic ping tests is now much more flexible
 *   IMPROVED: Update function now includes a prompt rather than applying update
 *   IMPROVED: Use colours in CLI menu to highlight settings
@@ -154,6 +154,6 @@ connmon will create links for Diversion to follow the configuration to the above
 
 *   NEW: All connmon options can be configured in the WebUI
 *   NEW: Ping test duration and frequency is now user configurable
-*   CHANGED: WebUI "check for updates" no longer needs a page refresh (thanks to @dave14305 !)
+*   CHANGED: WebUI check for updates no longer needs a page refresh (thanks to @dave14305 !)
 *   CHANGED: WebUI tab name is now connmon and not Uptime Monitoring
-*   IMPROVED: Reduced use of "lock files" to make script more responsive from the WebUI
+*   IMPROVED: Reduced use of lock files to make script more responsive from the WebUI
