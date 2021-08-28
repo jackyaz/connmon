@@ -11,10 +11,10 @@
 
 Currently, supported mechanisms for notifications/integrations are:
 *   Email
-*   [Discord webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
-*   [Pushover](https://pushover.net/)
+*   Discord webhook (https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
+*   Pushover (https://pushover.net/)
 *   Custom actions (write your own scripts to do whatever you'd like)
-*   [Healthcheck monitoring](https://healthchecks.io/)
+*   Healthcheck monitoring (https://healthchecks.io/)
 *   InfluxDB data export (if you already run InfluxDB, you can push connmon data to it and visualize it in Grafana, for example)
 
 There are 4 "events" which trigger the notifications:
