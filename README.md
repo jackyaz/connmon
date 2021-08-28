@@ -3,7 +3,7 @@
 ![Shellcheck](https://github.com/jackyaz/connmon/actions/workflows/shellcheck.yml/badge.svg)
 
 ## v3.0.0
-### Updated on 2021-08-15
+### Updated on 2021-08-28
 ## About
 connmon is an internet connection monitoring tool for AsusWRT Merlin with charts for daily, weekly and monthly summaries.
 
@@ -41,9 +41,15 @@ If this does not work, you will need to use the full path:
 ```
 
 ## Screenshots
-![WebUI](https://puu.sh/HACve/5abb816c02.png)
+![WebUI1](https://puu.sh/I7cBZ/30524b48ae.png)
 
-![CLI UI](https://puu.sh/HACv1/ec4e09211b.png)
+![WebUI2](https://puu.sh/I7cC0/3433cf06f7.png)
+
+![WebUI3](https://puu.sh/I7cBY/6affedcc64.png)
+
+![WebUI4](https://puu.sh/I7cBX/7f2d2e0ec5.png)
+
+![CLI UI](https://puu.sh/I7cBV/62329495d3.png)
 
 ## Help
 Please post about any issues and problems here: [Asuswrt-Merlin AddOns on SNBForums](https://www.snbforums.com/forums/asuswrt-merlin-addons.60/?prefix_id=18)
