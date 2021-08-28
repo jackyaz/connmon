@@ -1,11 +1,32 @@
 # Changelog
 
 ## v3.0.0
-20 August 2021
+28 August 2021
 
 *   NEW: Notifications and integrations
 *   NEW: Changelog displayed when updating
 *   NEW: New-look WebUI page
+
+**Notifications and Integrations**
+
+Currently, supported mechanisms for notifications/integrations are:
+*   Email
+*   [Discord webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
+*   [Pushover](https://pushover.net/)
+*   Custom actions (write your own scripts to do whatever you'd like)
+*   [Healthcheck monitoring](https://healthchecks.io/)
+*   InfluxDB data export (if you already run InfluxDB, you can push connmon data to it and visualize it in Grafana, for example)
+
+There are 4 "events" which trigger the notifications:
+*   On each ping test
+*   Ping threshold exceeded
+*   Jitter threshold exceeded
+*   Line Quality threshold exceeded
+
+**Email configuration**
+
+connmon v3.0.0 marks a move to a standalone email configuration that can be utilised by other scripts. If you have Diversion installed, connmon will detect this and migrate Diversion's config to the new standalone location with is /jffs/addons/amtm/mail
+connmon will create links for Diversion to follow the configuration to the above location.
 
 ## v2.11.7
 4 August 2021
