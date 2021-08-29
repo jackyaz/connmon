@@ -1084,13 +1084,13 @@ $j.fn.serializeObjectEmail = function () {
 	var o = customSettings;
 	var a = this.serializeArray();
 	$j.each(a, function () {
-		if (o[this.name] !== undefined && this.name.indexOf('email_') !== -1 && this.name.indexOf('show_pass') !== -1) {
+		if (o[this.name] !== undefined && this.name.indexOf('email_') !== -1 && this.name.indexOf('show_pass') === -1) {
 			if (!o[this.name].push) {
 				o[this.name] = [o[this.name]];
 			}
 			o[this.name].push(this.value || '');
 		}
-		else if (this.name.indexOf('email_') !== -1 && this.name.indexOf('show_pass') !== -1) {
+		else if (this.name.indexOf('email_') !== -1 && this.name.indexOf('show_pass') === -1) {
 			o[this.name] = this.value || '';
 		}
 	});
