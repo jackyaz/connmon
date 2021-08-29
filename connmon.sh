@@ -413,8 +413,6 @@ Create_Dirs(){
 }
 
 Create_Symlinks(){
-	#rm -rf "${SCRIPT_WEB_DIR:?}/"* 2>/dev/null
-
 	ln -sf "$SCRIPT_STORAGE_DIR/connstatstext.js" "$SCRIPT_WEB_DIR/connstatstext.js" 2>/dev/null
 	ln -sf "$SCRIPT_STORAGE_DIR/lastx.csv" "$SCRIPT_WEB_DIR/lastx.htm" 2>/dev/null
 
