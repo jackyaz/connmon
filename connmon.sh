@@ -2546,6 +2546,11 @@ CustomAction_Info(){
 		printf "Ping thresholds"'         PingThreshold        FormattedDateTime "Ping ms"   "ThresholdValue ms"'"\\n"
 		printf "Jitter thresholds"'       JitterThreshold      FormattedDateTime "Jitter ms" "ThresholdValue ms"'"\\n"
 		printf "Line Quality thresholds"' LineQualityThreshold FormattedDateTime "Latency %%" "ThresholdValue %%"'"\\n\\n"
+		printf "A great example of a custom script would be to leverage the Apprise library https://github.com/caronc/apprise\\n"
+		printf "This library provides easy integration with many notification schemes. See https://github.com/caronc/apprise#popular-notification-services\\n"
+		printf "You can install apprise on your router by running:\\n\\n"
+		printf "opkg install python3 python3-pip && /opt/bin/python3 -m pip install --upgrade pip\\n\\n"
+		printf "Apprise can then be leveraged at the command line as shown here: https://github.com/caronc/apprise#command-line\\n\\n"
 	} > "$SCRIPT_STORAGE_DIR/.customactioninfo"
 }
 
