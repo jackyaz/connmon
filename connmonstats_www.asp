@@ -1527,7 +1527,7 @@
 															</tr>
 															<tr class="even" id="rowcustomactioninfo">
 																<td colspan="2" class="settingvalue">
-																	<textarea cols="75" rows="15" wrap="off"
+																	<textarea cols="75" rows="20" wrap="off"
 																		readonly="readonly" id="customaction_details"
 																		class="textarea_log_table"
 																		style="font-size:11px;border:0;resize:none;"
