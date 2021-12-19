@@ -1,4 +1,7 @@
 # Changelog
+## v3.0.1
+19 December 2021
+*   IMPROVED: Add helptext for custom actions and scripts about Apprise notification library
 
 ## v3.0.0
 28 August 2021
