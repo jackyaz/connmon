@@ -1131,7 +1131,6 @@
 															<tr class="even" id="rowemaillist">
 																<td class="settingname">List of email addresses to send
 																	notifications to<br /><span class="settingname"
-																		style="color:#FFCC00;">(overrides generic To address)</span><br /><span class="settingname"
 																		style="color:#FFCC00;">(one per line)</span>
 																</td>
 																<td class="settingvalue" style="padding:2px;">
