@@ -1709,7 +1709,7 @@ Email_Recipients(){
 	update)
 		while true; do
 			ScriptHeader
-			
+
 			printf "${BOLD}${UNDERLINE}Email Recipients Override List${CLEARFORMAT}\\n\\n"
 			NOTIFICATIONS_EMAIL_LIST=$(Email_Recipients check)
 			if [ "$NOTIFICATIONS_EMAIL_LIST" = "" ]; then
