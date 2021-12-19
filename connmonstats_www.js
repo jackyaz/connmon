@@ -1611,6 +1611,7 @@ function statusUpdate() {
 				document.getElementById('imgChkUpdate').style.display = 'none';
 				showhide('connmon_version_server', true);
 				if (updatestatus !== 'None') {
+					customSettings.connmon_version_server = updatestatus;
 					if (updatestatus.indexOf('hotfix') === -1) {
 						getVersionChangelogFile();
 					}
