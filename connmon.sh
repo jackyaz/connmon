@@ -1430,25 +1430,10 @@ PressEnter(){
 }
 
 Email_ConfExists(){
-	if [ ! -f "$EMAIL_CONF" ]; then
-		if [ -f /opt/share/diversion/.conf/email.conf ] && [ ! -L /opt/share/diversion/.conf/email.conf ]; then
-			mv /opt/share/diversion/.conf/email.conf "$EMAIL_CONF"
-			ln -s "$EMAIL_CONF" /opt/share/diversion/.conf/email.conf 2>/dev/null
-		fi
-		if [ -f /opt/share/diversion/.conf/emailpw.enc ] && [ ! -L /opt/share/diversion/.conf/emailpw.enc ]; then
-			mv /opt/share/diversion/.conf/emailpw.enc "$EMAIL_DIR/emailpw.enc"
-			ln -s "$EMAIL_DIR/emailpw.enc" /opt/share/diversion/.conf/emailpw.enc 2>/dev/null
-		fi
-	fi
-
 	if [ -f "$EMAIL_CONF" ]; then
 		dos2unix "$EMAIL_CONF"
 		chmod 0644 "$EMAIL_CONF"
 		. "$EMAIL_CONF"
-		if [ -f /opt/bin/diversion ]; then
-			ln -s "$EMAIL_CONF" /opt/share/diversion/.conf/email.conf 2>/dev/null
-			ln -s "$EMAIL_DIR/emailpw.enc" /opt/share/diversion/.conf/emailpw.enc 2>/dev/null
-		fi
 		return 0
 	else
 		{
@@ -1469,10 +1454,6 @@ Email_ConfExists(){
 			echo "PROTOCOL=\"\""
 			echo "SSL_FLAG=\"\""
 		} > "$EMAIL_CONF"
-		if [ -f /opt/bin/diversion ]; then
-			ln -s "$EMAIL_CONF" /opt/share/diversion/.conf/email.conf 2>/dev/null
-			ln -s "$EMAIL_DIR/emailpw.enc" /opt/share/diversion/.conf/emailpw.enc 2>/dev/null
-		fi
 		return 1
 	fi
 }
