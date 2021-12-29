@@ -1073,12 +1073,6 @@ Run_PingTest(){
 	echo 'var connmonstatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_connmon.js"
 
 	Print_Output false "$pingduration second ping test to $pingtarget starting..." "$PASS"
-	if ! Validate_IP "$pingtarget" >/dev/null 2>&1 && ! Validate_Domain "$pingtarget" >/dev/null 2>&1; then
-		Print_Output true "$pingtarget not valid, aborting test. Please correct ASAP" "$ERR"
-		echo 'var connmonstatus = "InvalidServer";' > "$SCRIPT_WEB_DIR/detect_connmon.js"
-		Clear_Lock
-		return 1
-	fi
 
 	if ! expr "$pingtarget" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null && nslookup "$pingtarget" >/dev/null 2>&1; then
 		pingtargetip="$(dig +short +answer "$pingtarget" | head -n 1)"
