@@ -28,14 +28,14 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v3.0.0"
+readonly SCRIPT_VERSION="v3.0.1"
 SCRIPT_BRANCH="master"
-SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
+SCRIPT_REPO="https://jackyaz.io/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
 readonly SCRIPT_WEBPAGE_DIR="$(readlink /www/user)"
 readonly SCRIPT_WEB_DIR="$SCRIPT_WEBPAGE_DIR/$SCRIPT_NAME"
 readonly SHARED_DIR="/jffs/addons/shared-jy"
-readonly SHARED_REPO="https://raw.githubusercontent.com/jackyaz/shared-jy/master"
+readonly SHARED_REPO="https://jackyaz.io/shared-jy/master"
 readonly SHARED_WEB_DIR="$SCRIPT_WEBPAGE_DIR/shared-jy"
 readonly EMAIL_DIR="/jffs/addons/amtm/mail"
 readonly EMAIL_CONF="$EMAIL_DIR/email.conf"
@@ -143,17 +143,17 @@ Update_Check(){
 	doupdate="false"
 	localver=$(grep "SCRIPT_VERSION=" "/jffs/scripts/$SCRIPT_NAME" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 	Set_Version_Custom_Settings local "$localver"
-	/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep -qF "jackyaz" || { Print_Output true "404 error detected - stopping update" "$ERR"; return 1; }
-	serverver=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
+	/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/404/$SCRIPT_NAME.sh" | grep -qF "jackyaz" || { Print_Output true "404 error detected - stopping update" "$ERR"; return 1; }
+	serverver=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/version/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 	if [ "$localver" != "$serverver" ]; then
 		doupdate="version"
 		Set_Version_Custom_Settings server "$serverver"
-		changelog=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/CHANGELOG.md" | sed -n "/$serverver"'/,/##/p' | head -n -1 | sed 's/## //')
+		changelog=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/files/CHANGELOG.md" | sed -n "/$serverver"'/,/##/p' | head -n -1 | sed 's/## //')
 		echo 'var changelog = "<div style=\"width:350px;\"><b>Changelog</b><br />'"$(echo "$changelog" | tr '\n' '|' | sed 's/|/<br \/>/g')"'</div>"' > "$SCRIPT_WEB_DIR/detect_changelog.js"
 		echo 'var updatestatus = "'"$serverver"'";'  > "$SCRIPT_WEB_DIR/detect_update.js"
 	else
 		localmd5="$(md5sum "/jffs/scripts/$SCRIPT_NAME" | awk '{print $1}')"
-		remotemd5="$(curl -fsL --retry 3 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | md5sum | awk '{print $1}')"
+		remotemd5="$(curl -fsL --retry 3 "$SCRIPT_REPO/md5/$SCRIPT_NAME.sh" | md5sum | awk '{print $1}')"
 		if [ "$localmd5" != "$remotemd5" ]; then
 			doupdate="md5"
 			Set_Version_Custom_Settings server "$serverver-hotfix"
@@ -175,7 +175,7 @@ Update_Version(){
 
 		if [ "$isupdate" = "version" ]; then
 			Print_Output true "New version of $SCRIPT_NAME available - $serverver" "$PASS"
-			changelog=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/CHANGELOG.md" | sed -n "/$serverver"'/,/##/p' | head -n -1 | sed 's/## //')
+			changelog=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/files/CHANGELOG.md" | sed -n "/$serverver"'/,/##/p' | head -n -1 | sed 's/## //')
 			printf "${BOLD}${UNDERLINE}Changelog\\n${CLEARFORMAT}%s\\n\\n" "$changelog"
 		elif [ "$isupdate" = "md5" ]; then
 			Print_Output true "MD5 hash of $SCRIPT_NAME does not match - hotfix available - $serverver" "$PASS"
@@ -188,9 +188,11 @@ Update_Version(){
 				y|Y)
 					printf "\\n"
 					Update_File CHANGELOG.md
+					Update_File README.md
+					Update_File LICENSE
 					Update_File shared-jy.tar.gz
 					Update_File connmonstats_www.asp
-					/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
+					/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/update/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
 					chmod 0755 "/jffs/scripts/$SCRIPT_NAME"
 					Set_Version_Custom_Settings local "$serverver"
 					Set_Version_Custom_Settings server "$serverver"
@@ -212,12 +214,14 @@ Update_Version(){
 	fi
 
 	if [ "$1" = "force" ]; then
-		serverver=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
+		serverver=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/version/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
 		Print_Output true "Downloading latest version ($serverver) of $SCRIPT_NAME" "$PASS"
 		Update_File CHANGELOG.md
+		Update_File README.md
+		Update_File LICENSE
 		Update_File shared-jy.tar.gz
 		Update_File connmonstats_www.asp
-		/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
+		/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/update/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
 		chmod 0755 "/jffs/scripts/$SCRIPT_NAME"
 		Set_Version_Custom_Settings local "$serverver"
 		Set_Version_Custom_Settings server "$serverver"
@@ -235,14 +239,14 @@ Update_Version(){
 Update_File(){
 	if [ "$1" = "connmonstats_www.asp" ]; then
 		tmpfile="/tmp/$1"
-		Download_File "$SCRIPT_REPO/$1" "$tmpfile"
+		Download_File "$SCRIPT_REPO/files/$1" "$tmpfile"
 		if ! diff -q "$tmpfile" "$SCRIPT_DIR/$1" >/dev/null 2>&1; then
 			if [ -f "$SCRIPT_DIR/$1" ]; then
 				Get_WebUI_Page "$SCRIPT_DIR/$1"
 				sed -i "\\~$MyPage~d" /tmp/menuTree.js
 				rm -f "$SCRIPT_WEBPAGE_DIR/$MyPage" 2>/dev/null
 			fi
-			Download_File "$SCRIPT_REPO/$1" "$SCRIPT_DIR/$1"
+			Download_File "$SCRIPT_REPO/files/$1" "$SCRIPT_DIR/$1"
 			Print_Output true "New version of $1 downloaded" "$PASS"
 			Mount_WebUI
 		fi
@@ -267,9 +271,16 @@ Update_File(){
 		fi
 	elif [ "$1" = "CHANGELOG.md" ]; then
 		tmpfile="/tmp/$1"
-		Download_File "$SCRIPT_REPO/$1" "$tmpfile"
+		Download_File "$SCRIPT_REPO/files/$1" "$tmpfile"
 		if ! diff -q "$tmpfile" "$SCRIPT_DIR/$1" >/dev/null 2>&1; then
-			Download_File "$SCRIPT_REPO/$1" "$SCRIPT_DIR/$1"
+			Download_File "$SCRIPT_REPO/files/$1" "$SCRIPT_DIR/$1"
+		fi
+		rm -f "$tmpfile"
+	elif [ "$1" = "README.md" ] || [ "$1" = "LICENSE" ]; then
+		tmpfile="/tmp/$1"
+		Download_File "$SCRIPT_REPO/files/$1" "$tmpfile"
+		if ! diff -q "$tmpfile" "$SCRIPT_DIR/$1" >/dev/null 2>&1; then
+			Download_File "$SCRIPT_REPO/files/$1" "$SCRIPT_DIR/$1"
 		fi
 		rm -f "$tmpfile"
 	else
@@ -1037,7 +1048,7 @@ WriteSql_ToFile(){
 			echo ".mode csv"
 			echo ".headers on"
 			echo ".output ${5}_${6}.htm"
-			echo "SELECT '$1' Metric,Max(strftime('%s',datetime([Timestamp],'unixepoch','localtime','start of day','utc'))) Time,IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] > strftime('%s',datetime($timenow,'unixepoch','localtime','start of day','utc','+1 day','-$maxcount day'))) GROUP BY strftime('%m',datetime([Timestamp],'unixepoch','localtime')),strftime('%d',datetime([Timestamp],'unixepoch','localtime')) ORDER BY [Timestamp] DESC;"
+			echo "SELECT '$1' Metric,Max(strftime('%s',datetime([Timestamp],'unixepoch','start of day'))) Time,IFNULL(Avg([$1]),'NaN') Value FROM $2 WHERE ([Timestamp] > strftime('%s',datetime($timenow,'unixepoch','start of day','+1 day','-$maxcount day'))) GROUP BY strftime('%m',datetime([Timestamp],'unixepoch')),strftime('%d',datetime([Timestamp],'unixepoch')) ORDER BY [Timestamp] DESC;"
 		} > "$7"
 	fi
 }
@@ -1073,12 +1084,6 @@ Run_PingTest(){
 	echo 'var connmonstatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_connmon.js"
 
 	Print_Output false "$pingduration second ping test to $pingtarget starting..." "$PASS"
-	if ! Validate_IP "$pingtarget" >/dev/null 2>&1 && ! Validate_Domain "$pingtarget" >/dev/null 2>&1; then
-		Print_Output true "$pingtarget not valid, aborting test. Please correct ASAP" "$ERR"
-		echo 'var connmonstatus = "InvalidServer";' > "$SCRIPT_WEB_DIR/detect_connmon.js"
-		Clear_Lock
-		return 1
-	fi
 
 	if ! expr "$pingtarget" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null && nslookup "$pingtarget" >/dev/null 2>&1; then
 		pingtargetip="$(dig +short +answer "$pingtarget" | head -n 1)"
@@ -1430,25 +1435,10 @@ PressEnter(){
 }
 
 Email_ConfExists(){
-	if [ ! -f "$EMAIL_CONF" ]; then
-		if [ -f /opt/share/diversion/.conf/email.conf ] && [ ! -L /opt/share/diversion/.conf/email.conf ]; then
-			mv /opt/share/diversion/.conf/email.conf "$EMAIL_CONF"
-			ln -s "$EMAIL_CONF" /opt/share/diversion/.conf/email.conf 2>/dev/null
-		fi
-		if [ -f /opt/share/diversion/.conf/emailpw.enc ] && [ ! -L /opt/share/diversion/.conf/emailpw.enc ]; then
-			mv /opt/share/diversion/.conf/emailpw.enc "$EMAIL_DIR/emailpw.enc"
-			ln -s "$EMAIL_DIR/emailpw.enc" /opt/share/diversion/.conf/emailpw.enc 2>/dev/null
-		fi
-	fi
-
 	if [ -f "$EMAIL_CONF" ]; then
 		dos2unix "$EMAIL_CONF"
 		chmod 0644 "$EMAIL_CONF"
 		. "$EMAIL_CONF"
-		if [ -f /opt/bin/diversion ]; then
-			ln -s "$EMAIL_CONF" /opt/share/diversion/.conf/email.conf 2>/dev/null
-			ln -s "$EMAIL_DIR/emailpw.enc" /opt/share/diversion/.conf/emailpw.enc 2>/dev/null
-		fi
 		return 0
 	else
 		{
@@ -1469,10 +1459,6 @@ Email_ConfExists(){
 			echo "PROTOCOL=\"\""
 			echo "SSL_FLAG=\"\""
 		} > "$EMAIL_CONF"
-		if [ -f /opt/bin/diversion ]; then
-			ln -s "$EMAIL_CONF" /opt/share/diversion/.conf/email.conf 2>/dev/null
-			ln -s "$EMAIL_DIR/emailpw.enc" /opt/share/diversion/.conf/emailpw.enc 2>/dev/null
-		fi
 		return 1
 	fi
 }
@@ -2534,6 +2520,11 @@ CustomAction_Info(){
 		printf "${BOLD}Ping thresholds${CLEARFORMAT}"'         PingThreshold        FormattedDateTime "Ping ms"   "ThresholdValue ms"'"\\n"
 		printf "${BOLD}Jitter thresholds${CLEARFORMAT}"'       JitterThreshold      FormattedDateTime "Jitter ms" "ThresholdValue ms"'"\\n"
 		printf "${BOLD}Line Quality thresholds${CLEARFORMAT}"' LineQualityThreshold FormattedDateTime "Latency %%" "ThresholdValue %%"'"\\n\\n"
+		printf "A great example of a custom script would be to leverage the Apprise library ${BOLD}https://github.com/caronc/apprise${CLEARFORMAT}\\n"
+		printf "This library provides easy integration with many notification schemes. See ${BOLD}https://github.com/caronc/apprise#popular-notification-services${CLEARFORMAT}\\n"
+		printf "You can install apprise on your router by running:\\n\\n"
+		printf "${BOLD}opkg install python3 python3-pip && /opt/bin/python3 -m pip install --upgrade pip${CLEARFORMAT}\\n\\n"
+		printf "Apprise can then be leveraged at the command line as shown here: ${BOLD}https://github.com/caronc/apprise#command-line${CLEARFORMAT}\\n\\n"
 		printf "e.     Go back\\n\\n"
 		printf "${BOLD}##############################################################${CLEARFORMAT}\\n"
 		printf "\\n"
@@ -2546,6 +2537,11 @@ CustomAction_Info(){
 		printf "Ping thresholds"'         PingThreshold        FormattedDateTime "Ping ms"   "ThresholdValue ms"'"\\n"
 		printf "Jitter thresholds"'       JitterThreshold      FormattedDateTime "Jitter ms" "ThresholdValue ms"'"\\n"
 		printf "Line Quality thresholds"' LineQualityThreshold FormattedDateTime "Latency %%" "ThresholdValue %%"'"\\n\\n"
+		printf "A great example of a custom script would be to leverage the Apprise library https://github.com/caronc/apprise\\n"
+		printf "This library provides easy integration with many notification schemes. See https://github.com/caronc/apprise#popular-notification-services\\n"
+		printf "You can install apprise on your router by running:\\n\\n"
+		printf "opkg install python3 python3-pip && /opt/bin/python3 -m pip install --upgrade pip\\n\\n"
+		printf "Apprise can then be leveraged at the command line as shown here: https://github.com/caronc/apprise#command-line\\n\\n"
 	} > "$SCRIPT_STORAGE_DIR/.customactioninfo"
 }
 
@@ -3185,6 +3181,7 @@ Menu_Install(){
 	Create_Symlinks
 
 	Update_File CHANGELOG.md
+	Update_File README.md
 	Update_File connmonstats_www.asp
 	Update_File shared-jy.tar.gz
 
@@ -3203,6 +3200,8 @@ Menu_Install(){
 	Run_PingTest
 
 	Clear_Lock
+
+	Download_File "$SCRIPT_REPO/install-success/LICENSE" "$SCRIPT_DIR/LICENSE"
 
 	ScriptHeader
 	MainMenu
@@ -3952,13 +3951,13 @@ case "$1" in
 	;;
 	develop)
 		SCRIPT_BRANCH="develop"
-		SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
+		SCRIPT_REPO="https://jackyaz.io/$SCRIPT_NAME/$SCRIPT_BRANCH"
 		Update_Version force
 		exit 0
 	;;
 	stable)
 		SCRIPT_BRANCH="master"
-		SCRIPT_REPO="https://raw.githubusercontent.com/jackyaz/$SCRIPT_NAME/$SCRIPT_BRANCH"
+		SCRIPT_REPO="https://jackyaz.io/$SCRIPT_NAME/$SCRIPT_BRANCH"
 		Update_Version force
 		exit 0
 	;;
