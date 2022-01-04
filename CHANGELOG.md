@@ -4,6 +4,8 @@
 19 December 2021
 *   IMPROVED: Add helptext for custom actions and scripts about Apprise notification library
 *   FIXED: Remove ping target validation when running ping test, it can incorrectly mask downtime - e.g. DNS is unavailable
+*   CHANGED: Script now downloads updates via Scarf Gateway (see bottom of README)
+*   CHANGED: Script now installs LICENSE and README files during install
 
 ## v3.0.0
 28 August 2021
