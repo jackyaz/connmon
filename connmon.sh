@@ -192,7 +192,7 @@ Update_Version(){
 					Update_File LICENSE
 					Update_File shared-jy.tar.gz
 					Update_File connmonstats_www.asp
-					/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/update/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
+					Download_File "$SCRIPT_REPO/update/$SCRIPT_NAME.sh" "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
 					chmod 0755 "/jffs/scripts/$SCRIPT_NAME"
 					Set_Version_Custom_Settings local "$serverver"
 					Set_Version_Custom_Settings server "$serverver"
@@ -221,7 +221,7 @@ Update_Version(){
 		Update_File LICENSE
 		Update_File shared-jy.tar.gz
 		Update_File connmonstats_www.asp
-		/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/update/$SCRIPT_NAME.sh" -o "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
+		Download_File "$SCRIPT_REPO/update/$SCRIPT_NAME.sh" "/jffs/scripts/$SCRIPT_NAME" && Print_Output true "$SCRIPT_NAME successfully updated"
 		chmod 0755 "/jffs/scripts/$SCRIPT_NAME"
 		Set_Version_Custom_Settings local "$serverver"
 		Set_Version_Custom_Settings server "$serverver"
