@@ -74,10 +74,10 @@ Firmware_Version_Check(){
 ### Code for these functions inspired by https://github.com/Adamm00 - credit to @Adamm ###
 Check_Lock(){
 	if [ -f "/tmp/$SCRIPT_NAME.lock" ]; then
-		ageoflock="$(($(/bin/date +%s) - $(/bin/date +%s -r /tmp/$SCRIPT_NAME.lock)))"
+		ageoflock="$(($(/bin/date "+%s") - $(/bin/date "+%s" -r "/tmp/$SCRIPT_NAME.lock")))"
 		if [ "$ageoflock" -gt 600 ]; then
 			Print_Output true "Stale lock file found (>600 seconds old) - purging lock" "$ERR"
-			kill "$(sed -n '1p' /tmp/$SCRIPT_NAME.lock)" >/dev/null 2>&1
+			kill "$(sed -n '1p' "/tmp/$SCRIPT_NAME.lock")" >/dev/null 2>&1
 			Clear_Lock
 			echo "$$" > "/tmp/$SCRIPT_NAME.lock"
 			return 0
