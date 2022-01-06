@@ -28,7 +28,7 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v3.0.1"
+readonly SCRIPT_VERSION="v3.0.2"
 SCRIPT_BRANCH="master"
 SCRIPT_REPO="https://jackyaz.io/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -40,7 +40,7 @@ readonly SHARED_WEB_DIR="$SCRIPT_WEBPAGE_DIR/shared-jy"
 readonly EMAIL_DIR="/jffs/addons/amtm/mail"
 readonly EMAIL_CONF="$EMAIL_DIR/email.conf"
 readonly EMAIL_REGEX="^(([A-Za-z0-9]+((\.|\-|\_|\+)?[A-Za-z0-9]?)*[A-Za-z0-9]+)|[A-Za-z0-9]+)@(([A-Za-z0-9]+)+((\.|\-|\_)?([A-Za-z0-9]+)+)*)+\.([A-Za-z]{2,})+$"
-[ -z "$(nvram get odmpid)" ] && ROUTER_MODEL=$(nvram get productid) || ROUTER_MODEL=$(nvram get odmpid)
+[ -z "$(nvram get odmpid)" ] && ROUTER_MODEL="$(nvram get productid)" || ROUTER_MODEL="$(nvram get odmpid)"
 [ -f /opt/bin/sqlite3 ] && SQLITE3_PATH=/opt/bin/sqlite3 || SQLITE3_PATH=/usr/sbin/sqlite3
 ### End of script variables ###
 
@@ -74,10 +74,10 @@ Firmware_Version_Check(){
 ### Code for these functions inspired by https://github.com/Adamm00 - credit to @Adamm ###
 Check_Lock(){
 	if [ -f "/tmp/$SCRIPT_NAME.lock" ]; then
-		ageoflock=$(($(/bin/date +%s) - $(/bin/date +%s -r /tmp/$SCRIPT_NAME.lock)))
+		ageoflock="$(($(/bin/date "+%s") - $(/bin/date "+%s" -r "/tmp/$SCRIPT_NAME.lock")))"
 		if [ "$ageoflock" -gt 600 ]; then
 			Print_Output true "Stale lock file found (>600 seconds old) - purging lock" "$ERR"
-			kill "$(sed -n '1p' /tmp/$SCRIPT_NAME.lock)" >/dev/null 2>&1
+			kill "$(sed -n '1p' "/tmp/$SCRIPT_NAME.lock")" >/dev/null 2>&1
 			Clear_Lock
 			echo "$$" > "/tmp/$SCRIPT_NAME.lock"
 			return 0
@@ -141,14 +141,14 @@ Set_Version_Custom_Settings(){
 Update_Check(){
 	echo 'var updatestatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_update.js"
 	doupdate="false"
-	localver=$(grep "SCRIPT_VERSION=" "/jffs/scripts/$SCRIPT_NAME" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
+	localver="$(grep "SCRIPT_VERSION=" "/jffs/scripts/$SCRIPT_NAME" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')"
 	Set_Version_Custom_Settings local "$localver"
 	/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/404/$SCRIPT_NAME.sh" | grep -qF "jackyaz" || { Print_Output true "404 error detected - stopping update" "$ERR"; return 1; }
-	serverver=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/version/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
+	serverver="$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/version/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')"
 	if [ "$localver" != "$serverver" ]; then
 		doupdate="version"
 		Set_Version_Custom_Settings server "$serverver"
-		changelog=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/files/CHANGELOG.md" | sed -n "/$serverver"'/,/##/p' | head -n -1 | sed 's/## //')
+		changelog="$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/files/CHANGELOG.md" | sed -n "/$serverver"'/,/##/p' | head -n -1 | sed 's/## //')"
 		echo 'var changelog = "<div style=\"width:350px;\"><b>Changelog</b><br />'"$(echo "$changelog" | tr '\n' '|' | sed 's/|/<br \/>/g')"'</div>"' > "$SCRIPT_WEB_DIR/detect_changelog.js"
 		echo 'var updatestatus = "'"$serverver"'";'  > "$SCRIPT_WEB_DIR/detect_update.js"
 	else
@@ -175,7 +175,7 @@ Update_Version(){
 
 		if [ "$isupdate" = "version" ]; then
 			Print_Output true "New version of $SCRIPT_NAME available - $serverver" "$PASS"
-			changelog=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/files/CHANGELOG.md" | sed -n "/$serverver"'/,/##/p' | head -n -1 | sed 's/## //')
+			changelog="$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/files/CHANGELOG.md" | sed -n "/$serverver"'/,/##/p' | head -n -1 | sed 's/## //')"
 			printf "${BOLD}${UNDERLINE}Changelog\\n${CLEARFORMAT}%s\\n\\n" "$changelog"
 		elif [ "$isupdate" = "md5" ]; then
 			Print_Output true "MD5 hash of $SCRIPT_NAME does not match - hotfix available - $serverver" "$PASS"
@@ -214,7 +214,7 @@ Update_Version(){
 	fi
 
 	if [ "$1" = "force" ]; then
-		serverver=$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/version/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')
+		serverver="$(/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 "$SCRIPT_REPO/version/$SCRIPT_NAME.sh" | grep "SCRIPT_VERSION=" | grep -m1 -oE 'v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})')"
 		Print_Output true "Downloading latest version ($serverver) of $SCRIPT_NAME" "$PASS"
 		Update_File CHANGELOG.md
 		Update_File README.md
@@ -332,7 +332,7 @@ Conf_FromSettings(){
 				SETTINGNAME="$(echo "$line" | cut -f1 -d'=' | awk '{print toupper($1)}')"
 				SETTINGVALUE="$(echo "$line" | cut -f2 -d'=')"
 				if [ "$SETTINGNAME" = "NOTIFICATIONS_PUSHOVER_LIST" ] || [ "$SETTINGNAME" = "NOTIFICATIONS_WEBHOOK_LIST" ] || [ "$SETTINGNAME" = "NOTIFICATIONS_EMAIL_LIST" ]; then
-					SETTINGVALUE=$(echo "$SETTINGVALUE" | sed 's~||||~,~g')
+					SETTINGVALUE="$(echo "$SETTINGVALUE" | sed 's~||||~,~g')"
 				fi
 				sed -i "s~$SETTINGNAME=.*~$SETTINGNAME=$SETTINGVALUE~" "$SCRIPT_CONF"
 			done < "$TMPFILE"
@@ -456,7 +456,7 @@ Conf_Exists(){
 				echo "SCHDAYS=*" >> "$SCRIPT_CONF"
 			fi
 			echo "SCHHOURS=*" >> "$SCRIPT_CONF"
-			PINGFREQUENCY=$(Conf_Parameters check PINGFREQUENCY)
+			PINGFREQUENCY="$(Conf_Parameters check PINGFREQUENCY)"
 			echo "SCHMINS=*/$PINGFREQUENCY" >> "$SCRIPT_CONF"
 			sed -i '/SCHEDULESTART/d;/SCHEDULEEND/d;/PINGFREQUENCY/d;' "$SCRIPT_CONF"
 		fi
@@ -563,7 +563,7 @@ PingServer(){
 			done
 		;;
 		check)
-			PINGSERVER=$(Conf_Parameters check PINGSERVER)
+			PINGSERVER="$(Conf_Parameters check PINGSERVER)"
 			echo "$PINGSERVER"
 		;;
 	esac
@@ -602,7 +602,7 @@ PingDuration(){
 			fi
 		;;
 		check)
-			PINGDURATION=$(Conf_Parameters check PINGDURATION)
+			PINGDURATION="$(Conf_Parameters check PINGDURATION)"
 			echo "$PINGDURATION"
 		;;
 	esac
@@ -641,7 +641,7 @@ DaysToKeep(){
 			fi
 		;;
 		check)
-			DAYSTOKEEP=$(Conf_Parameters check DAYSTOKEEP)
+			DAYSTOKEEP="$(Conf_Parameters check DAYSTOKEEP)"
 			echo "$DAYSTOKEEP"
 		;;
 	esac
@@ -681,7 +681,7 @@ LastXResults(){
 			fi
 		;;
 		check)
-			LASTXRESULTS=$(Conf_Parameters check LASTXRESULTS)
+			LASTXRESULTS="$(Conf_Parameters check LASTXRESULTS)"
 			echo "$LASTXRESULTS"
 		;;
 	esac
@@ -691,8 +691,8 @@ Auto_ServiceEvent(){
 	case $1 in
 		create)
 			if [ -f /jffs/scripts/service-event ]; then
-				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/service-event)
-				STARTUPLINECOUNTEX=$(grep -cx 'if echo "$2" | /bin/grep -q "'"$SCRIPT_NAME"'"; then { /jffs/scripts/'"$SCRIPT_NAME"' service_event "$@" & }; fi # '"$SCRIPT_NAME" /jffs/scripts/service-event)
+				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/service-event)"
+				STARTUPLINECOUNTEX="$(grep -cx 'if echo "$2" | /bin/grep -q "'"$SCRIPT_NAME"'"; then { /jffs/scripts/'"$SCRIPT_NAME"' service_event "$@" & }; fi # '"$SCRIPT_NAME" /jffs/scripts/service-event)"
 
 				if [ "$STARTUPLINECOUNT" -gt 1 ] || { [ "$STARTUPLINECOUNTEX" -eq 0 ] && [ "$STARTUPLINECOUNT" -gt 0 ]; }; then
 					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/service-event
@@ -710,7 +710,7 @@ Auto_ServiceEvent(){
 		;;
 		delete)
 			if [ -f /jffs/scripts/service-event ]; then
-				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/service-event)
+				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/service-event)"
 
 				if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/service-event
@@ -724,15 +724,15 @@ Auto_Startup(){
 	case $1 in
 		create)
 			if [ -f /jffs/scripts/services-start ]; then
-				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/services-start)
+				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/services-start)"
 
 				if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/services-start
 				fi
 			fi
 			if [ -f /jffs/scripts/post-mount ]; then
-				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/post-mount)
-				STARTUPLINECOUNTEX=$(grep -cx "/jffs/scripts/$SCRIPT_NAME startup"' "$@" & # '"$SCRIPT_NAME" /jffs/scripts/post-mount)
+				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/post-mount)"
+				STARTUPLINECOUNTEX="$(grep -cx "/jffs/scripts/$SCRIPT_NAME startup"' "$@" & # '"$SCRIPT_NAME" /jffs/scripts/post-mount)"
 
 				if [ "$STARTUPLINECOUNT" -gt 1 ] || { [ "$STARTUPLINECOUNTEX" -eq 0 ] && [ "$STARTUPLINECOUNT" -gt 0 ]; }; then
 					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/post-mount
@@ -750,14 +750,14 @@ Auto_Startup(){
 		;;
 		delete)
 			if [ -f /jffs/scripts/services-start ]; then
-				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/services-start)
+				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/services-start)"
 
 				if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/services-start
 				fi
 			fi
 			if [ -f /jffs/scripts/post-mount ]; then
-				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/post-mount)
+				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/post-mount)"
 
 				if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/post-mount
@@ -770,7 +770,7 @@ Auto_Startup(){
 Auto_Cron(){
 	case $1 in
 		create)
-			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
+			STARTUPLINECOUNT="$(cru l | grep -c "$SCRIPT_NAME")"
 
 			if [ "$STARTUPLINECOUNT" -eq 0 ]; then
 				CRU_DAYNUMBERS="$(Conf_Parameters check SCHDAYS | sed 's/Sun/0/;s/Mon/1/;s/Tues/2/;s/Wed/3/;s/Thurs/4/;s/Fri/5/;s/Sat/6/;')"
@@ -782,7 +782,7 @@ Auto_Cron(){
 			fi
 		;;
 		delete)
-			STARTUPLINECOUNT=$(cru l | grep -c "$SCRIPT_NAME")
+			STARTUPLINECOUNT="$(cru l | grep -c "$SCRIPT_NAME")"
 			if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 				cru d "$SCRIPT_NAME"
 			fi
@@ -855,7 +855,7 @@ Mount_WebUI(){
 	cp -f "$SCRIPT_DIR/connmonstats_www.asp" "$SCRIPT_WEBPAGE_DIR/$MyPage"
 	echo "$SCRIPT_NAME" > "$SCRIPT_WEBPAGE_DIR/$(echo $MyPage | cut -f1 -d'.').title"
 
-	if [ "$(uname -o)" = "ASUSWRT-Merlin" ]; then
+	if [ "$(/bin/uname -o)" = "ASUSWRT-Merlin" ]; then
 		if [ ! -f /tmp/index_style.css ]; then
 			cp -f /www/index_style.css /tmp/
 		fi
@@ -905,7 +905,7 @@ ExcludeFromQoS(){
 		sed -i 's/^EXCLUDEFROMQOS=.*$/EXCLUDEFROMQOS=false/' "$SCRIPT_CONF"
 	;;
 	check)
-		EXCLUDEFROMQOS=$(Conf_Parameters check EXCLUDEFROMQOS)
+		EXCLUDEFROMQOS="$(Conf_Parameters check EXCLUDEFROMQOS)"
 		echo "$EXCLUDEFROMQOS"
 	;;
 	esac
@@ -922,7 +922,7 @@ AutomaticMode(){
 			Auto_Cron delete 2>/dev/null
 		;;
 		check)
-			AUTOMATED=$(Conf_Parameters check AUTOMATED)
+			AUTOMATED="$(Conf_Parameters check AUTOMATED)"
 			if [ "$AUTOMATED" = "true" ]; then return 0; else return 1; fi
 		;;
 	esac
@@ -939,9 +939,9 @@ TestSchedule(){
 			Auto_Cron create 2>/dev/null
 		;;
 		check)
-			SCHDAYS=$(Conf_Parameters check SCHDAYS)
-			SCHHOURS=$(Conf_Parameters check SCHHOURS)
-			SCHMINS=$(Conf_Parameters check SCHMINS)
+			SCHDAYS="$(Conf_Parameters check SCHDAYS)"
+			SCHHOURS="$(Conf_Parameters check SCHHOURS)"
+			SCHMINS="$(Conf_Parameters check SCHMINS)"
 			echo "$SCHDAYS|$SCHHOURS|$SCHMINS"
 		;;
 	esac
@@ -987,11 +987,11 @@ ScriptStorageLocation(){
 			ScriptStorageLocation load
 		;;
 		check)
-			STORAGELOCATION=$(Conf_Parameters check STORAGELOCATION)
+			STORAGELOCATION="$(Conf_Parameters check STORAGELOCATION)"
 			echo "$STORAGELOCATION"
 		;;
 		load)
-			STORAGELOCATION=$(Conf_Parameters check STORAGELOCATION)
+			STORAGELOCATION="$(Conf_Parameters check STORAGELOCATION)"
 			if [ "$STORAGELOCATION" = "usb" ]; then
 				SCRIPT_STORAGE_DIR="/opt/share/$SCRIPT_NAME.d"
 			elif [ "$STORAGELOCATION" = "jffs" ]; then
@@ -1015,7 +1015,7 @@ OutputTimeMode(){
 			Generate_CSVs
 		;;
 		check)
-			OUTPUTTIMEMODE=$(Conf_Parameters check OUTPUTTIMEMODE)
+			OUTPUTTIMEMODE="$(Conf_Parameters check OUTPUTTIMEMODE)"
 			echo "$OUTPUTTIMEMODE"
 		;;
 	esac
@@ -1135,7 +1135,7 @@ Run_PingTest(){
 	DIFFCOUNT="$((PINGCOUNT - 1))"
 	if [ "$PINGCOUNT" -gt 0 ]; then
 		until [ "$COUNTER" -gt "$PINGCOUNT" ]; do
-			CURPING=$(echo "$PINGLIST" | sed -n "$COUNTER"p | cut -f4 -d"=" | cut -f1 -d" ")
+			CURPING="$(echo "$PINGLIST" | sed -n "$COUNTER"p | cut -f4 -d"=" | cut -f1 -d" ")"
 
 			if [ "$COUNTER" -gt 1 ]; then
 				DIFF="$(echo "$CURPING" "$PREVPING" | awk '{printf "%4.3f\n",$1-$2}')"
@@ -1144,15 +1144,15 @@ Run_PingTest(){
 				TOTALDIFF="$(echo "$TOTALDIFF" "$DIFF" | awk '{printf "%4.3f\n",$1+$2}')"
 			fi
 			PREVPING="$CURPING"
-			COUNTER=$((COUNTER + 1))
+			COUNTER="$((COUNTER + 1))"
 		done
 	fi
 
-	TZ=$(cat /etc/TZ)
+	TZ="$(cat /etc/TZ)"
 	export TZ
 
-	timenow=$(/bin/date +"%s")
-	timenowfriendly=$(/bin/date +"%c")
+	timenow="$(/bin/date +"%s")"
+	timenowfriendly="$(/bin/date +"%c")"
 
 	ping=0
 	jitter=0
@@ -1219,11 +1219,11 @@ Generate_CSVs(){
 	Process_Upgrade
 	renice 15 $$
 	OUTPUTTIMEMODE="$(OutputTimeMode check)"
-	TZ=$(cat /etc/TZ)
+	TZ="$(cat /etc/TZ)"
 	export TZ
 
-	timenow=$(/bin/date +"%s")
-	timenowfriendly=$(/bin/date +"%c")
+	timenow="$(/bin/date +"%s")"
+	timenowfriendly="$(/bin/date +"%c")"
 
 	metriclist="Ping Jitter LineQuality"
 
@@ -1398,7 +1398,9 @@ Process_Upgrade(){
 		umount /www/start_apply.htm 2>/dev/null
 		mount -o bind /tmp/start_apply.htm /www/start_apply.htm
 	fi
-	Update_File CHANGELOG.md
+	if [ ! -f "$SCRIPT_DIR/CHANGELOG.md" ]; then
+		Update_File CHANGELOG.md
+	fi
 	if [ ! -f "$SCRIPT_STORAGE_DIR/connstatstext.js" ]; then
 		echo "Stats last updated: Not yet updated" > /tmp/connstatstitle.txt
 		WriteStats_ToJS /tmp/connstatstitle.txt "$SCRIPT_STORAGE_DIR/connstatstext.js" setConnmonStatsTitle statstitle
@@ -1513,7 +1515,7 @@ Email_EmailAddress(){
 						sed -i 's/^TO_ADDRESS=.*$/TO_ADDRESS="'"$EMAIL_ADDRESS"'"/' "$EMAIL_CONF"
 					elif [ "$1" = "Override" ]; then
 						NOTIFICATIONS_EMAIL_LIST="$(Email_Recipients check),$EMAIL_ADDRESS"
-						NOTIFICATIONS_EMAIL_LIST=$(echo "$NOTIFICATIONS_EMAIL_LIST" | sed 's/,,/,/g;s/,$//;s/^,//')
+						NOTIFICATIONS_EMAIL_LIST="$(echo "$NOTIFICATIONS_EMAIL_LIST" | sed 's/,,/,/g;s/,$//;s/^,//')"
 						sed -i 's/^NOTIFICATIONS_EMAIL_LIST=.*$/NOTIFICATIONS_EMAIL_LIST='"$NOTIFICATIONS_EMAIL_LIST"'/' "$SCRIPT_CONF"
 					fi
 					break
@@ -1667,7 +1669,7 @@ Email_Password(){
 
 Email_Encrypt_Password(){
 	PWENCFILE="$EMAIL_DIR/emailpw.enc"
-	emailPwEnc=$(grep "emailPwEnc=" "$EMAIL_CONF" | cut -f2 -d"=" | sed 's/""//')
+	emailPwEnc="$(grep "emailPwEnc=" "$EMAIL_CONF" | cut -f2 -d"=" | sed 's/""//')"
 	if [ -f /usr/sbin/openssl11 ]; then
 		printf "$1" | /usr/sbin/openssl11 aes-256-cbc $emailPwEnc -out "$PWENCFILE" -pass pass:ditbabot,isoi
 	else
@@ -1697,7 +1699,7 @@ Email_Recipients(){
 			ScriptHeader
 
 			printf "${BOLD}${UNDERLINE}Email Recipients Override List${CLEARFORMAT}\\n\\n"
-			NOTIFICATIONS_EMAIL_LIST=$(Email_Recipients check)
+			NOTIFICATIONS_EMAIL_LIST="$(Email_Recipients check)"
 			if [ "$NOTIFICATIONS_EMAIL_LIST" = "" ]; then
 				NOTIFICATIONS_EMAIL_LIST="Generic To Address will be used"
 			fi
@@ -1726,7 +1728,7 @@ Email_Recipients(){
 		done
 	;;
 	check)
-		NOTIFICATIONS_EMAIL_LIST=$(Conf_Parameters check NOTIFICATIONS_EMAIL_LIST)
+		NOTIFICATIONS_EMAIL_LIST="$(Conf_Parameters check NOTIFICATIONS_EMAIL_LIST)"
 		echo "$NOTIFICATIONS_EMAIL_LIST"
 	;;
 	esac
@@ -1825,7 +1827,7 @@ SendEmail(){
 			echo "--MULTIPART-MIXED-BOUNDARY--"
 		} >> /tmp/mail.txt
 
-		PASSWORD=$(Email_Decrypt_Password)
+		PASSWORD="$(Email_Decrypt_Password)"
 
 		/usr/sbin/curl -s --show-error --url "$PROTOCOL://$SMTP:$PORT" \
 		--mail-from "$FROM_ADDRESS" --mail-rcpt "$TO_ADDRESS" \
@@ -1856,7 +1858,7 @@ Webhook_Targets(){
 			ScriptHeader
 
 			printf "${BOLD}${UNDERLINE}Discord Webhook List${CLEARFORMAT}\\n\\n"
-			NOTIFICATIONS_WEBHOOK_LIST=$(Webhook_Targets check | sed 's~,~\n~g')
+			NOTIFICATIONS_WEBHOOK_LIST="$(Webhook_Targets check | sed 's~,~\n~g')"
 			printf "Currently: ${SETTING}${NOTIFICATIONS_WEBHOOK_LIST}${CLEARFORMAT}\\n\\n"
 			printf "Available options:\\n"
 			printf "1.    Update list\\n"
@@ -1882,7 +1884,7 @@ Webhook_Targets(){
 		done
 	;;
 	check)
-		NOTIFICATIONS_WEBHOOK_LIST=$(Conf_Parameters check NOTIFICATIONS_WEBHOOK_LIST)
+		NOTIFICATIONS_WEBHOOK_LIST="$(Conf_Parameters check NOTIFICATIONS_WEBHOOK_LIST)"
 		echo "$NOTIFICATIONS_WEBHOOK_LIST"
 	;;
 	esac
@@ -1917,7 +1919,7 @@ Pushover_Devices(){
 			ScriptHeader
 
 			printf "${BOLD}${UNDERLINE}Pushover Device List${CLEARFORMAT}\\n\\n"
-			NOTIFICATIONS_PUSHOVER_LIST=$(Pushover_Devices check | sed 's~,~\n~g')
+			NOTIFICATIONS_PUSHOVER_LIST="$(Pushover_Devices check | sed 's~,~\n~g')"
 			printf "Currently: ${SETTING}${NOTIFICATIONS_PUSHOVER_LIST}${CLEARFORMAT}\\n\\n"
 			printf "Available options:\\n"
 			printf "1.    Update list\\n"
@@ -1943,7 +1945,7 @@ Pushover_Devices(){
 		done
 	;;
 	check)
-		NOTIFICATIONS_PUSHOVER_LIST=$(Conf_Parameters check NOTIFICATIONS_PUSHOVER_LIST)
+		NOTIFICATIONS_PUSHOVER_LIST="$(Conf_Parameters check NOTIFICATIONS_PUSHOVER_LIST)"
 		echo "$NOTIFICATIONS_PUSHOVER_LIST"
 	;;
 	esac
@@ -1951,8 +1953,8 @@ Pushover_Devices(){
 
 SendPushover(){
 	PUSHOVERCONTENT="$1"
-	PUSHOVER_API=$(Conf_Parameters check NOTIFICATIONS_PUSHOVER_API)
-	PUSHOVER_USERKEY=$(Conf_Parameters check NOTIFICATIONS_PUSHOVER_USERKEY)
+	PUSHOVER_API="$(Conf_Parameters check NOTIFICATIONS_PUSHOVER_API)"
+	PUSHOVER_USERKEY="$(Conf_Parameters check NOTIFICATIONS_PUSHOVER_USERKEY)"
 	if [ -z "$PUSHOVER_API" ] || [ -z "$PUSHOVER_USERKEY" ]; then
 		Print_Output false "No Pushover API or UserKey specified" "$ERR"
 		return 1
@@ -1973,7 +1975,7 @@ SendPushover(){
 }
 
 SendHealthcheckPing(){
-	NOTIFICATIONS_HEALTHCHECK_UUID=$(Conf_Parameters check NOTIFICATIONS_HEALTHCHECK_UUID)
+	NOTIFICATIONS_HEALTHCHECK_UUID="$(Conf_Parameters check NOTIFICATIONS_HEALTHCHECK_UUID)"
 	TESTFAIL=""
 	if [ "$1" = "Fail" ]; then
 		TESTFAIL="/fail"
@@ -1995,15 +1997,15 @@ SendToInfluxDB(){
 	PING="$2"
 	JITTER="$3"
 	LINEQUAL="$4"
-	NOTIFICATIONS_INFLUXDB_HOST=$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_HOST)
-	NOTIFICATIONS_INFLUXDB_PORT=$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_PORT)
-	NOTIFICATIONS_INFLUXDB_DB=$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_DB)
-	NOTIFICATIONS_INFLUXDB_VERSION=$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_VERSION)
+	NOTIFICATIONS_INFLUXDB_HOST="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_HOST)"
+	NOTIFICATIONS_INFLUXDB_PORT="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_PORT)"
+	NOTIFICATIONS_INFLUXDB_DB="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_DB)"
+	NOTIFICATIONS_INFLUXDB_VERSION="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_VERSION)"
 
 	if [ "$NOTIFICATIONS_INFLUXDB_VERSION" = "1.8" ]; then
 		INFLUX_AUTHHEADER="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_USERNAME):$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_PASSWORD)"
 	elif [ "$NOTIFICATIONS_INFLUXDB_VERSION" = "2.0" ]; then
-		INFLUX_AUTHHEADER=$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_APITOKEN)
+		INFLUX_AUTHHEADER="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_APITOKEN)"
 	fi
 
 	/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 --output /dev/null -XPOST "http://$NOTIFICATIONS_INFLUXDB_HOST:$NOTIFICATIONS_INFLUXDB_PORT/api/v2/write?bucket=$NOTIFICATIONS_INFLUXDB_DB&precision=s" \
@@ -2032,7 +2034,7 @@ ToggleNotificationTypes(){
 			sed -i 's/^'"$2"'=.*$/'"$2"'=false/' "$SCRIPT_CONF"
 		;;
 		check)
-			NOTIFICATION_SETTING=$(Conf_Parameters check "$2")
+			NOTIFICATION_SETTING="$(Conf_Parameters check "$2")"
 			if [ "$NOTIFICATION_SETTING" = "true" ]; then return 0; else return 1; fi
 		;;
 	esac
@@ -2056,12 +2058,12 @@ Conf_Parameters(){
 				;;
 				"Webhook Target")
 					NOTIFICATIONS_WEBHOOK_LIST="$(Webhook_Targets check),$3"
-					NOTIFICATIONS_WEBHOOK_LIST=$(echo "$NOTIFICATIONS_WEBHOOK_LIST" | sed 's~,,~,~g;s~,$~~;s~^,~~')
+					NOTIFICATIONS_WEBHOOK_LIST="$(echo "$NOTIFICATIONS_WEBHOOK_LIST" | sed 's~,,~,~g;s~,$~~;s~^,~~')"
 					sed -i 's~^NOTIFICATIONS_WEBHOOK_LIST=.*$~NOTIFICATIONS_WEBHOOK_LIST='"$NOTIFICATIONS_WEBHOOK_LIST"'~' "$SCRIPT_CONF"
 				;;
 				"Pushover Device")
 					NOTIFICATIONS_PUSHOVER_LIST="$(Pushover_Devices check),$3"
-					NOTIFICATIONS_PUSHOVER_LIST=$(echo "$NOTIFICATIONS_PUSHOVER_LIST" | sed 's~,,~,~g;s~,$~~;s~^,~~')
+					NOTIFICATIONS_PUSHOVER_LIST="$(echo "$NOTIFICATIONS_PUSHOVER_LIST" | sed 's~,,~,~g;s~,$~~;s~^,~~')"
 					sed -i 's~^NOTIFICATIONS_PUSHOVER_LIST=.*$~NOTIFICATIONS_PUSHOVER_LIST='"$NOTIFICATIONS_PUSHOVER_LIST"'~' "$SCRIPT_CONF"
 				;;
 				"Pushover API Token")
@@ -2104,7 +2106,7 @@ Conf_Parameters(){
 			esac
 		;;
 		check)
-			NOTIFICATION_SETTING=$(grep "$2=" "$SCRIPT_CONF" | cut -f2 -d"=")
+			NOTIFICATION_SETTING="$(grep "$2=" "$SCRIPT_CONF" | cut -f2 -d"=")"
 			echo "$NOTIFICATION_SETTING"
 		;;
 	esac
@@ -2222,13 +2224,13 @@ TriggerNotifications(){
 		LINEQUAL="$3"
 		THRESHOLD="$4"
 	fi
-	NOTIFICATIONMETHODS=$(NotificationMethods check "$TRIGGERTYPE")
+	NOTIFICATIONMETHODS="$(NotificationMethods check "$TRIGGERTYPE")"
 	IFS=$','
 	for NOTIFICATIONMETHOD in $NOTIFICATIONMETHODS; do
-		NOTIFICATIONMETHOD_SETTING=$(echo "NOTIFICATIONS_${NOTIFICATIONMETHOD}" | tr "a-z" "A-Z")
+		NOTIFICATIONMETHOD_SETTING="$(echo "NOTIFICATIONS_${NOTIFICATIONMETHOD}" | tr "a-z" "A-Z")"
 		if ToggleNotificationTypes check "$NOTIFICATIONMETHOD_SETTING"; then
 			if [ "$NOTIFICATIONMETHOD" = "Email" ]; then
-				NOTIFICATIONS_EMAIL_LIST=$(Email_Recipients check)
+				NOTIFICATIONS_EMAIL_LIST="$(Email_Recipients check)"
 				if [ -z "$NOTIFICATIONS_EMAIL_LIST" ]; then
 					if [ "$TRIGGERTYPE" = "PingTest" ]; then
 						SendEmail "Ping test result from $SCRIPT_NAME - $DATETIME" "<p>Ping: $PING<br />Jitter: $JITTER<br />Line Quality: $LINEQUAL</p>"
@@ -2253,7 +2255,7 @@ TriggerNotifications(){
 					done
 				fi
 			elif [ "$NOTIFICATIONMETHOD" = "Webhook" ]; then
-				NOTIFICATIONS_WEBHOOK_LIST=$(Webhook_Targets check)
+				NOTIFICATIONS_WEBHOOK_LIST="$(Webhook_Targets check)"
 				for WEBHOOK in $NOTIFICATIONS_WEBHOOK_LIST; do
 					if [ "$TRIGGERTYPE" = "PingTest" ]; then
 						SendWebhook "Ping test result from $SCRIPT_NAME - $DATETIME\n\nPing: $PING\nJitter: $JITTER\nLine Quality: $LINEQUAL" "$WEBHOOK"
@@ -2297,7 +2299,7 @@ TriggerNotifications(){
 	unset IFS
 
 	if ToggleNotificationTypes check NOTIFICATIONS_HEALTHCHECK && [ "$TRIGGERTYPE" = "PingTest" ]; then
-		NOTIFICATIONS_HEALTHCHECK_UUID=$(Conf_Parameters check NOTIFICATIONS_HEALTHCHECK_UUID)
+		NOTIFICATIONS_HEALTHCHECK_UUID="$(Conf_Parameters check NOTIFICATIONS_HEALTHCHECK_UUID)"
 		TESTFAIL=""
 		if [ "$(echo "$LINEQUAL" | cut -f1 -d' ' | cut -f1 -d'.')" -eq 0 ]; then
 			SendHealthcheckPing "Fail"
@@ -2317,7 +2319,7 @@ Menu_EmailNotifications(){
 		ScriptHeader
 		NOTIFICATIONS_EMAIL=""
 		if ToggleNotificationTypes check NOTIFICATIONS_EMAIL; then NOTIFICATIONS_EMAIL="${PASS}Enabled"; else NOTIFICATIONS_EMAIL="${ERR}Disabled"; fi
-		NOTIFICATIONS_EMAIL_LIST=$(Email_Recipients check)
+		NOTIFICATIONS_EMAIL_LIST="$(Email_Recipients check)"
 		if [ "$NOTIFICATIONS_EMAIL_LIST" = "" ]; then
 			NOTIFICATIONS_EMAIL_LIST="Generic To Address will be used"
 		fi
@@ -2385,7 +2387,7 @@ Menu_EmailNotifications(){
 				Email_SSL
 			;;
 			cs)
-				NOTIFICATIONS_EMAIL_LIST=$(Email_Recipients check)
+				NOTIFICATIONS_EMAIL_LIST="$(Email_Recipients check)"
 				if [ -z "$NOTIFICATIONS_EMAIL_LIST" ]; then
 					SendEmail "Test email - $(/bin/date +"%c")" "This is a test email!"
 				else
@@ -2412,7 +2414,7 @@ Menu_WebhookNotifications(){
 		ScriptHeader
 		NOTIFICATIONS_WEBHOOK=""
 		if ToggleNotificationTypes check NOTIFICATIONS_WEBHOOK; then NOTIFICATIONS_WEBHOOK="${PASS}Enabled"; else NOTIFICATIONS_WEBHOOK="${ERR}Disabled"; fi
-		NOTIFICATIONS_WEBHOOK_LIST=$(Webhook_Targets check | sed 's~,~\n~g')
+		NOTIFICATIONS_WEBHOOK_LIST="$(Webhook_Targets check | sed 's~,~\n~g')"
 		printf "1.     Toggle Discord webhook notifications (subject to type configuration)\\n       Currently: ${BOLD}${NOTIFICATIONS_WEBHOOK}${CLEARFORMAT}\\n\\n"
 		printf "2.     Set list of Discord webhook URLs for %s\\n       Current webhooks:\\n       ${SETTING}${NOTIFICATIONS_WEBHOOK_LIST}${CLEARFORMAT}\\n\\n" "$SCRIPT_NAME"
 		printf "cs.    Send a test webhook notification\\n\\n"
@@ -2434,7 +2436,7 @@ Menu_WebhookNotifications(){
 				Webhook_Targets update
 			;;
 			cs)
-				NOTIFICATIONS_WEBHOOK_LIST=$(Webhook_Targets check)
+				NOTIFICATIONS_WEBHOOK_LIST="$(Webhook_Targets check)"
 				if [ -z "$NOTIFICATIONS_WEBHOOK_LIST" ]; then
 					printf "\\n"
 					Print_Output false "No Webhook URL specified" "$ERR"
@@ -2463,7 +2465,7 @@ Menu_PushoverNotifications(){
 		ScriptHeader
 		NOTIFICATIONS_PUSHOVER=""
 		if ToggleNotificationTypes check NOTIFICATIONS_PUSHOVER; then NOTIFICATIONS_PUSHOVER="${PASS}Enabled"; else NOTIFICATIONS_PUSHOVER="${ERR}Disabled"; fi
-		NOTIFICATIONS_PUSHOVER_LIST=$(Pushover_Devices check)
+		NOTIFICATIONS_PUSHOVER_LIST="$(Pushover_Devices check)"
 		if [ -z "$NOTIFICATIONS_PUSHOVER_LIST" ]; then
 			NOTIFICATIONS_PUSHOVER_LIST="All devices"
 		fi
@@ -2876,18 +2878,18 @@ NotificationMethods(){
 							SETTINGNAME="NOTIFICATIONS_LINEQUALITYTHRESHOLD"
 						;;
 					esac
-					NOTIFICATION_SETTING=$(Conf_Parameters check "$SETTINGNAME")
+					NOTIFICATION_SETTING="$(Conf_Parameters check "$SETTINGNAME")"
 					if [ "$SETTINGVALUE" = "None" ]; then
 						sed -i 's/^'"$SETTINGNAME"'=.*$/'"$SETTINGNAME"'=None/' "$SCRIPT_CONF"
 					else
 						if echo "$NOTIFICATION_SETTING" | grep -q "$SETTINGVALUE"; then
-							NOTIFICATION_SETTING=$(echo "$NOTIFICATION_SETTING" | sed 's/'"$SETTINGVALUE"'//g;s/,,/,/g;s/,$//;s/^,//')
+							NOTIFICATION_SETTING="$(echo "$NOTIFICATION_SETTING" | sed 's/'"$SETTINGVALUE"'//g;s/,,/,/g;s/,$//;s/^,//')"
 							sed -i 's/^'"$SETTINGNAME"'=.*$/'"$SETTINGNAME"'='"$NOTIFICATION_SETTING"'/' "$SCRIPT_CONF"
 						else
-							NOTIFICATION_SETTING=$(echo "$SETTINGVALUE,$NOTIFICATION_SETTING" | sed 's/None//g;s/,,/,/g;s/,$//;s/^,//')
+							NOTIFICATION_SETTING="$(echo "$SETTINGVALUE,$NOTIFICATION_SETTING" | sed 's/None//g;s/,,/,/g;s/,$//;s/^,//')"
 							sed -i 's/^'"$SETTINGNAME"'=.*$/'"$SETTINGNAME"'='"$NOTIFICATION_SETTING"'/' "$SCRIPT_CONF"
 						fi
-						NOTIFICATION_SETTING=$(Conf_Parameters check "$SETTINGNAME")
+						NOTIFICATION_SETTING="$(Conf_Parameters check "$SETTINGNAME")"
 						if [ -z "$NOTIFICATION_SETTING" ]; then
 							sed -i 's/^'"$SETTINGNAME"'=.*$/'"$SETTINGNAME"'=None/' "$SCRIPT_CONF"
 						fi
@@ -2898,19 +2900,19 @@ NotificationMethods(){
 		check)
 			case "$2" in
 				PingTest)
-					NOTIFICATION_SETTING=$(Conf_Parameters check NOTIFICATIONS_PINGTEST)
+					NOTIFICATION_SETTING="$(Conf_Parameters check NOTIFICATIONS_PINGTEST)"
 					echo "$NOTIFICATION_SETTING"
 				;;
 				PingThreshold)
-					NOTIFICATION_SETTING=$(Conf_Parameters check NOTIFICATIONS_PINGTHRESHOLD)
+					NOTIFICATION_SETTING="$(Conf_Parameters check NOTIFICATIONS_PINGTHRESHOLD)"
 					echo "$NOTIFICATION_SETTING"
 				;;
 				JitterThreshold)
-					NOTIFICATION_SETTING=$(Conf_Parameters check NOTIFICATIONS_JITTERTHRESHOLD)
+					NOTIFICATION_SETTING="$(Conf_Parameters check NOTIFICATIONS_JITTERTHRESHOLD)"
 					echo "$NOTIFICATION_SETTING"
 				;;
 				LineQualityThreshold)
-					NOTIFICATION_SETTING=$(Conf_Parameters check NOTIFICATIONS_LINEQUALITYTHRESHOLD)
+					NOTIFICATION_SETTING="$(Conf_Parameters check NOTIFICATIONS_LINEQUALITYTHRESHOLD)"
 					echo "$NOTIFICATION_SETTING"
 				;;
 			esac
@@ -3835,7 +3837,7 @@ case "$1" in
 		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}TestEmail" ]; then
 			rm -f "$SCRIPT_WEB_DIR/detect_test.js"
 			echo 'var teststatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_test.js"
-			NOTIFICATIONS_EMAIL_LIST=$(Email_Recipients check)
+			NOTIFICATIONS_EMAIL_LIST="$(Email_Recipients check)"
 			if [ -z "$NOTIFICATIONS_EMAIL_LIST" ]; then
 				if SendEmail "Test email - $(/bin/date +"%c")" "This is a test email!"; then
 					echo 'var teststatus = "Success";' > "$SCRIPT_WEB_DIR/detect_test.js"
@@ -3861,7 +3863,7 @@ case "$1" in
 		elif [ "$2" = "start" ] && [ "$3" = "${SCRIPT_NAME}TestWebhooks" ]; then
 			rm -f "$SCRIPT_WEB_DIR/detect_test.js"
 			echo 'var teststatus = "InProgress";' > "$SCRIPT_WEB_DIR/detect_test.js"
-			NOTIFICATIONS_WEBHOOK_LIST=$(Webhook_Targets check)
+			NOTIFICATIONS_WEBHOOK_LIST="$(Webhook_Targets check)"
 			if [ -z "$NOTIFICATIONS_WEBHOOK_LIST" ]; then
 				echo 'var teststatus = "Fail";' > "$SCRIPT_WEB_DIR/detect_test.js"
 			fi
