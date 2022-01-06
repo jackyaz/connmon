@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.0.2
+06 January 2022
+*   FIXED: Only download CHANGELOG on upgrade if it doesn't exist
+
 ## v3.0.1
 05 January 2022
 *   IMPROVED: Add helptext for custom actions and scripts about Apprise notification library
