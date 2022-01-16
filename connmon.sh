@@ -28,8 +28,8 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="connmon"
-readonly SCRIPT_VERSION="v3.0.2"
-SCRIPT_BRANCH="master"
+readonly SCRIPT_VERSION="v3.0.3"
+SCRIPT_BRANCH="develop"
 SCRIPT_REPO="https://jackyaz.io/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
 readonly SCRIPT_WEBPAGE_DIR="$(readlink /www/user)"
@@ -1398,8 +1398,14 @@ Process_Upgrade(){
 		umount /www/start_apply.htm 2>/dev/null
 		mount -o bind /tmp/start_apply.htm /www/start_apply.htm
 	fi
+	if [ ! -f "$SCRIPT_DIR/README.md" ]; then
+		Update_File README.md
+	fi
 	if [ ! -f "$SCRIPT_DIR/CHANGELOG.md" ]; then
 		Update_File CHANGELOG.md
+	fi
+	if [ ! -f "$SCRIPT_DIR/LICENSE" ]; then
+		Update_File LICENSE
 	fi
 	if [ ! -f "$SCRIPT_STORAGE_DIR/connstatstext.js" ]; then
 		echo "Stats last updated: Not yet updated" > /tmp/connstatstitle.txt
@@ -2001,6 +2007,10 @@ SendToInfluxDB(){
 	NOTIFICATIONS_INFLUXDB_PORT="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_PORT)"
 	NOTIFICATIONS_INFLUXDB_DB="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_DB)"
 	NOTIFICATIONS_INFLUXDB_VERSION="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_VERSION)"
+	NOTIFICATIONS_INFLUXDB_PROTO="http"
+	if [ "$NOTIFICATIONS_INFLUXDB_PORT" = "443" ]; then
+		NOTIFICATIONS_INFLUXDB_PROTO="https"
+	fi
 
 	if [ "$NOTIFICATIONS_INFLUXDB_VERSION" = "1.8" ]; then
 		INFLUX_AUTHHEADER="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_USERNAME):$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_PASSWORD)"
@@ -2008,7 +2018,7 @@ SendToInfluxDB(){
 		INFLUX_AUTHHEADER="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_APITOKEN)"
 	fi
 
-	/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 --output /dev/null -XPOST "http://$NOTIFICATIONS_INFLUXDB_HOST:$NOTIFICATIONS_INFLUXDB_PORT/api/v2/write?bucket=$NOTIFICATIONS_INFLUXDB_DB&precision=s" \
+	/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 --output /dev/null -XPOST "$NOTIFICATIONS_INFLUXDB_PROTO://$NOTIFICATIONS_INFLUXDB_HOST:$NOTIFICATIONS_INFLUXDB_PORT/api/v2/write?bucket=$NOTIFICATIONS_INFLUXDB_DB&precision=s" \
 --header "Authorization: Token $INFLUX_AUTHHEADER" --header "Accept-Encoding: gzip" \
 --data-raw "ping value=$PING $TIMESTAMP
 jitter value=$JITTER $TIMESTAMP
