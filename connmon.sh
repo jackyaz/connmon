@@ -1398,8 +1398,14 @@ Process_Upgrade(){
 		umount /www/start_apply.htm 2>/dev/null
 		mount -o bind /tmp/start_apply.htm /www/start_apply.htm
 	fi
+	if [ ! -f "$SCRIPT_DIR/README.md" ]; then
+		Update_File README.md
+	fi
 	if [ ! -f "$SCRIPT_DIR/CHANGELOG.md" ]; then
 		Update_File CHANGELOG.md
+	fi
+	if [ ! -f "$SCRIPT_DIR/LICENSE" ]; then
+		Update_File LICENSE
 	fi
 	if [ ! -f "$SCRIPT_STORAGE_DIR/connstatstext.js" ]; then
 		echo "Stats last updated: Not yet updated" > /tmp/connstatstitle.txt
