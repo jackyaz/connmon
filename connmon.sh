@@ -2018,7 +2018,7 @@ SendToInfluxDB(){
 		INFLUX_AUTHHEADER="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_APITOKEN)"
 	fi
 
-	/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 --output /dev/null -XPOST "$NOTIFICATIONS_INFLUXDB_PROTO://$NOTIFICATIONS_INFLUXDB_HOST:$NOTIFICATIONS_INFLUXDB_PORT/api/v2/write?bucket=$NOTIFICATIONS_INFLUXDB_DB&precision=s" \
+	/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 --output /dev/null -XPOST "$NOTIFICATIONS_INFLUXDB_PROTO://$NOTIFICATIONS_INFLUXDB_HOST:$NOTIFICATIONS_INFLUXDB_PORT/api/v2/write?bucket=$NOTIFICATIONS_INFLUXDB_DB&org=influxdata&precision=s" \
 --header "Authorization: Token $INFLUX_AUTHHEADER" --header "Accept-Encoding: gzip" \
 --data-raw "ping value=$PING $TIMESTAMP
 jitter value=$JITTER $TIMESTAMP
