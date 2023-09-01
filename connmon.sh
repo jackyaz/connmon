@@ -330,7 +330,7 @@ Conf_FromSettings(){
 			sed -i "s/connmon_//g;s/ /=/g" "$TMPFILE"
 			while IFS='' read -r line || [ -n "$line" ]; do
 				SETTINGNAME="$(echo "$line" | cut -f1 -d'=' | awk '{print toupper($1)}')"
-				SETTINGVALUE="$(echo "$line" | cut -f2 -d'=')"
+				SETTINGVALUE="$(echo "$line" | cut -f2- -d'=')"
 				if [ "$SETTINGNAME" = "NOTIFICATIONS_PUSHOVER_LIST" ] || [ "$SETTINGNAME" = "NOTIFICATIONS_WEBHOOK_LIST" ] || [ "$SETTINGNAME" = "NOTIFICATIONS_EMAIL_LIST" ]; then
 					SETTINGVALUE="$(echo "$SETTINGVALUE" | sed 's~||||~,~g')"
 				fi
@@ -2116,7 +2116,7 @@ Conf_Parameters(){
 			esac
 		;;
 		check)
-			NOTIFICATION_SETTING="$(grep "$2=" "$SCRIPT_CONF" | cut -f2 -d"=")"
+			NOTIFICATION_SETTING="$(grep "$2=" "$SCRIPT_CONF" | cut -f2- -d"=")"
 			echo "$NOTIFICATION_SETTING"
 		;;
 	esac
