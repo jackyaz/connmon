@@ -330,7 +330,7 @@ Conf_FromSettings(){
 			sed -i "s/connmon_//g;s/ /=/g" "$TMPFILE"
 			while IFS='' read -r line || [ -n "$line" ]; do
 				SETTINGNAME="$(echo "$line" | cut -f1 -d'=' | awk '{print toupper($1)}')"
-				SETTINGVALUE="$(echo "$line" | cut -f2 -d'=')"
+				SETTINGVALUE="$(echo "$line" | cut -f2- -d'=')"
 				if [ "$SETTINGNAME" = "NOTIFICATIONS_PUSHOVER_LIST" ] || [ "$SETTINGNAME" = "NOTIFICATIONS_WEBHOOK_LIST" ] || [ "$SETTINGNAME" = "NOTIFICATIONS_EMAIL_LIST" ]; then
 					SETTINGVALUE="$(echo "$SETTINGVALUE" | sed 's~||||~,~g')"
 				fi
@@ -2018,7 +2018,7 @@ SendToInfluxDB(){
 		INFLUX_AUTHHEADER="$(Conf_Parameters check NOTIFICATIONS_INFLUXDB_APITOKEN)"
 	fi
 
-	/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 --output /dev/null -XPOST "$NOTIFICATIONS_INFLUXDB_PROTO://$NOTIFICATIONS_INFLUXDB_HOST:$NOTIFICATIONS_INFLUXDB_PORT/api/v2/write?bucket=$NOTIFICATIONS_INFLUXDB_DB&precision=s" \
+	/usr/sbin/curl -fsL --retry 3 --connect-timeout 15 --output /dev/null -XPOST "$NOTIFICATIONS_INFLUXDB_PROTO://$NOTIFICATIONS_INFLUXDB_HOST:$NOTIFICATIONS_INFLUXDB_PORT/api/v2/write?bucket=$NOTIFICATIONS_INFLUXDB_DB&org=influxdata&precision=s" \
 --header "Authorization: Token $INFLUX_AUTHHEADER" --header "Accept-Encoding: gzip" \
 --data-raw "ping value=$PING $TIMESTAMP
 jitter value=$JITTER $TIMESTAMP
@@ -2116,7 +2116,7 @@ Conf_Parameters(){
 			esac
 		;;
 		check)
-			NOTIFICATION_SETTING="$(grep "$2=" "$SCRIPT_CONF" | cut -f2 -d"=")"
+			NOTIFICATION_SETTING="$(grep "$2=" "$SCRIPT_CONF" | cut -f2- -d"=")"
 			echo "$NOTIFICATION_SETTING"
 		;;
 	esac
